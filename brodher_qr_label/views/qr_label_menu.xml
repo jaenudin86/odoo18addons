@@ -1,0 +1,10 @@
+<odoo>
+    <record id="action_qr_label_serial" model="ir.actions.act_window">
+        <field name="name">QR Label Serials</field>
+        <field name="res_model">qr.label.serial</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_qr_label_root" name="QR Label" parent="stock.menu_stock_root" sequence="95"/>
+    <menuitem id="menu_qr_label_serial" name="Label Serials" parent="menu_qr_label_root" action="action_qr_label_serial"/>
+</odoo>

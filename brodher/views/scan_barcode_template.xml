@@ -1,0 +1,27 @@
+<odoo>
+  <template id="scan_barcode_template">
+    <t t-call="web.layout">
+      <div class="container">
+        <form method="post" action="/scan">
+          <t t-call="web.csrf_token"/>
+          <div class="form-group">
+            <input type="text" name="barcode" placeholder="Scan barcode..." class="form-control"/>
+            <button type="submit" class="btn btn-primary mt-2">Search</button>
+          </div>
+        </form>
+
+        <t t-if="product">
+          <div class="alert alert-success mt-3">
+            <p><strong>Nama:</strong> <t t-esc="product.name"/></p>
+            <p><strong>Barcode:</strong> <t t-esc="product.barcode"/></p>
+            <p><strong>Nomor Artiker:</strong> <t t-esc="product.default_code"/></p>
+            <p><strong>Brand:</strong> <t t-esc="product.product_brand_id.name"/></p>
+            <p><strong>Size:</strong> <t t-esc="product.size"/></p>
+            <p><strong>Price:</strong> <t t-esc="product.list_price"/> IDR</p>
+            <p><strong>Ingredient:</strong> <t t-esc="product.ingredient"/></p>
+          </div>
+        </t>
+      </div>
+    </t>
+  </template>
+</odoo>

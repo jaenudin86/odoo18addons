@@ -1,0 +1,12 @@
+<odoo>
+    <!-- Action Cetak QRCode -->
+    <report
+        id="action_report_stock_picking_qrcode"
+        model="stock.picking"
+        string="Lot/SN QRCode Labels"
+        report_type="qweb-pdf"
+        name="brodher.stock_picking_qrcode_report"
+        file="brodher.stock_picking_qrcode_report"
+        print_report_name="'Lot_SN_QRCode_' + object.name"
+    />
+</odoo>

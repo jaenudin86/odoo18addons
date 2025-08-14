@@ -1,0 +1,60 @@
+<odoo>
+<record id="action_report_stock_picking_qrcode" model="ir.actions.report">
+    <field name="name">Lot/SN QRCode Labels</field>
+    <field name="model">stock.picking</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">brodher.stock_picking_qrcode_report</field>
+    <field name="report_file">brodher.stock_picking_qrcode_report</field>
+    <field name="binding_model_id" ref="stock.model_stock_picking"/>
+    <field name="binding_type">report</field>
+</record>
+<record id="action_report_stock_picking_qrcode_barcode" model="ir.actions.report">
+    <field name="name">QRCode Labels</field>
+    <field name="model">stock.picking</field>
+    <field name="report_type">qweb-pdf</field>
+    <field name="report_name">brodher.stock_picking_qrcode_barcode_report</field>
+    <field name="report_file">brodher.stock_picking_qrcode_barcode_report</field>
+    <field name="binding_model_id" ref="stock.model_stock_picking"/>
+    <field name="binding_type">report</field>
+</record>
+<template id="brodher.stock_picking_qrcode_report">
+    <t t-call="web.basic_layout">
+        <t t-foreach="docs" t-as="picking">
+            <div style="display: flex; flex-wrap: wrap;">
+                <t t-foreach="picking.move_line_ids" t-as="line">
+                    <t t-if="line.lot_id">
+                        <!-- <t t-foreach="range(int(line.product_uom_qty))" t-as="i"> -->
+                            <div style="width: 33%; text-align: center; margin-bottom: 10px;">
+                               <strong><t t-esc="line.product_id.display_name"/></strong><br/>
+                                <span><t t-esc="line.lot_id.name"/></span><br/>
+                               <img t-att-src="'/report/barcode/QR/%s' % line.lot_id.name" style="width:100px;height:100px;"/>
+                            </div>
+                        <!-- </t> -->
+                    </t>
+                </t>
+            </div>
+        </t>
+    </t>
+</template>
+<template id="brodher.stock_picking_qrcode_barcode_report">
+    <t t-call="web.basic_layout">
+        <t t-foreach="docs" t-as="picking">
+            <div style="display: flex; flex-wrap: wrap;">
+                <t t-foreach="picking.move_line_ids" t-as="line">
+                    <t t-if="line.lot_id">
+                        <!-- <t t-foreach="range(int(line.product_uom_qty))" t-as="i"> -->
+                            <div style="width: 33%; text-align: center; margin-bottom: 10px;">
+                               <strong><t t-esc="line.product_id.display_name"/></strong><br/>
+                                <span><t t-esc="line.product_id.barcode"/></span><br/>
+                              <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or line.product_id.default_code or '')"
+                                 style="width:100px; height:100px;"/>
+                            </div>
+                        <!-- </t> -->
+                    </t>
+                </t>
+            </div>
+        </t>
+    </t>
+</template>
+</odoo>
+

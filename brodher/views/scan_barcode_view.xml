@@ -1,0 +1,32 @@
+<!-- views/scan_barcode_view.xml -->
+<odoo>
+  <record id="action_scan_barcode_view" model="ir.actions.act_window">
+    <field name="name">Scan Barcode</field>
+    <field name="res_model">brodher.scan.barcode</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+  </record>
+
+  <record id="view_scan_barcode_form" model="ir.ui.view">
+    <field name="name">brodher.scan.barcode.form</field>
+    <field name="model">brodher.scan.barcode</field>
+    <field name="arch" type="xml">
+      <form string="Scan Barcode">
+        <group>
+          <field name="barcode" placeholder="Scan barcode here"/>
+        </group>
+        <footer>
+          <button name="action_scan" type="object" string="Search" class="btn-primary"/>
+        </footer>
+        <group>
+          <field name="name" readonly="1"/>
+          <field name="default_code" readonly="1"/>
+          <field name="brand_id" readonly="1"/>
+          <field name="list_price" readonly="1"/>
+          <field name="size" readonly="1"/>
+          <field name="ingredient" readonly="1"/>
+        </group>
+      </form>
+    </field>
+  </record>
+</odoo>

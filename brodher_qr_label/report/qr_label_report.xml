@@ -1,0 +1,21 @@
+<odoo>
+  <template id="report_qr_label_serial">
+    <t t-call="web.html_container">
+      <t t-foreach="docs" t-as="picking">
+        <div class="page">
+          Cetak QR untuk: <t t-esc="picking.name"/>
+        </div>
+      </t>
+    </t>
+  </template>
+
+  <report
+    id="action_report_qr_label"
+    string="Cetak Label QRCode"
+    model="stock.picking"
+    report_type="qweb-pdf"
+    name="brodher_qr_label.report_qr_label_serial"
+    file="brodher_qr_label.report_qr_label_serial"
+    print_report_name="'Label QR - %s' % object.name"
+  />
+</odoo>
