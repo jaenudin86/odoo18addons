@@ -4,7 +4,7 @@
         <field name="name">brodher.sn.move.tree</field>
         <field name="model">brodher.sn.move</field>
         <field name="arch" type="xml">
-            <tree string="Serial Number Movements">
+            <list string="Serial Number Movements">
                 <field name="serial_number_name"/>
                 <field name="product_tmpl_id"/>
                 <field name="move_type"/>
@@ -12,7 +12,7 @@
                 <field name="location_dest_id"/>
                 <field name="move_date"/>
                 <field name="user_id"/>
-            </tree>
+            </list>
         </field>
     </record>
 
