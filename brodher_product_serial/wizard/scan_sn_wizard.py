@@ -105,7 +105,11 @@ class ScanSNWizard(models.TransientModel):
                 wizard.expected_quantities = html
             else:
                 wizard.expected_quantities = ''
-
+    @api.depends('picking_id', 'picking_id.sn_move_ids')
+    def _compute_total_scanned(self):
+            for wizard in self:
+                # Menghitung jumlah SN yang sudah berhasil di-scan untuk picking ini
+                wizard.total_scanned = len(wizard.picking_id.sn_move_ids) if wizard.picking_id else 0
     @api.depends('scanned_sn', 'serial_number_id', 'input_method')
     def _compute_sn_info(self):
         for wizard in self:
