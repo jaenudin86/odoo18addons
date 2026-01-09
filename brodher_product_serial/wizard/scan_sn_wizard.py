@@ -106,6 +106,29 @@ class ScanSNWizard(models.TransientModel):
             else:
                 wizard.expected_quantities = ''
     @api.depends('picking_id', 'picking_id.sn_move_ids')
+    def _compute_scanned_list(self):
+        for wizard in self:
+            if wizard.picking_id and wizard.picking_id.sn_move_ids:
+                html = '<div style="max-height: 150px; overflow-y: auto; margin-top: 10px;">'
+                html += '<strong>Recently Scanned:</strong><table class="table table-sm">'
+                html += '<thead><tr><th>SN</th><th>Product</th><th>Time</th><th>User</th></tr></thead><tbody>'
+                
+                # Menampilkan 10 scan terakhir, diurutkan dari yang terbaru
+                recent_moves = wizard.picking_id.sn_move_ids.sorted(lambda m: m.move_date, reverse=True)[:10]
+                for move in recent_moves:
+                    # Pastikan field move_date ada di model brodher.sn.move
+                    formatted_time = move.move_date.strftime("%H:%M:%S") if move.move_date else "-"
+                    
+                    html += f'<tr><td><code>{move.serial_number_name}</code></td>'
+                    html += f'<td><small>{move.product_tmpl_id.name}</small></td>'
+                    html += f'<td><small>{formatted_time}</small></td>'
+                    html += f'<td><small>{move.user_id.name}</small></td></tr>'
+                
+                html += '</tbody></table></div>'
+                wizard.scanned_list = html
+            else:
+                wizard.scanned_list = '<p class="text-muted"><em>No serial numbers scanned yet</em></p>'
+    @api.depends('picking_id', 'picking_id.sn_move_ids')
     def _compute_total_scanned(self):
             for wizard in self:
                 # Menghitung jumlah SN yang sudah berhasil di-scan untuk picking ini
