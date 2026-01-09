@@ -31,14 +31,14 @@
                         </group>
                     </group>
                     <field name="serial_number_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="name"/>
                             <field name="sn_type"/>
                             <field name="year_code"/>
                             <field name="sequence_number"/>
                             <field name="sn_status"/>
                             <field name="sn_generated_date"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>
@@ -71,14 +71,14 @@
                         </group>
                     </group>
                     <field name="serial_number_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="name"/>
                             <field name="sn_type"/>
                             <field name="year_code"/>
                             <field name="sequence_number"/>
                             <field name="sn_status"/>
                             <field name="sn_generated_date"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>

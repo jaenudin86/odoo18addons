@@ -39,6 +39,6 @@ class ProductProduct(models.Model):
             'name': _('Serial Numbers - %s') % self.name,
             'type': 'ir.actions.act_window',
             'res_model': 'stock.lot',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('product_id', '=', self.id), ('sn_type', '!=', False)],
         }

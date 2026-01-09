@@ -37,14 +37,14 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Move History" name="move_history" invisible="not sn_type">
                     <field name="sn_move_ids" readonly="1">
-                        <tree>
+                        <list>
                             <field name="move_date"/>
                             <field name="move_type"/>
                             <field name="location_src_id"/>
                             <field name="location_dest_id"/>
                             <field name="user_id"/>
                             <field name="picking_id"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>
