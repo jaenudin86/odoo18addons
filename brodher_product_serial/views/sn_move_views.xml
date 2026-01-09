@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="brodher_sn_move_tree_view" model="ir.ui.view">
+        <field name="name">brodher.sn.move.tree</field>
+        <field name="model">brodher.sn.move</field>
+        <field name="arch" type="xml">
+            <tree string="Serial Number Movements">
+                <field name="serial_number_name"/>
+                <field name="product_tmpl_id"/>
+                <field name="move_type"/>
+                <field name="location_src_id"/>
+                <field name="location_dest_id"/>
+                <field name="move_date"/>
+                <field name="user_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="brodher_sn_move_form_view" model="ir.ui.view">
+        <field name="name">brodher.sn.move.form</field>
+        <field name="model">brodher.sn.move</field>
+        <field name="arch" type="xml">
+            <form string="Serial Number Movement">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="serial_number_id"/>
+                            <field name="product_tmpl_id"/>
+                            <field name="move_type"/>
+                        </group>
+                        <group>
+                            <field name="location_src_id"/>
+                            <field name="location_dest_id"/>
+                            <field name="move_date"/>
+                            <field name="user_id"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="brodher_sn_move_action" model="ir.actions.act_window">
+        <field name="name">SN Movements</field>
+        <field name="res_model">brodher.sn.move</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_brodher_sn_move"
+              name="SN Movements"
+              parent="stock.menu_stock_root"
+              action="brodher_sn_move_action"
+              sequence="51"/>
+</odoo>
