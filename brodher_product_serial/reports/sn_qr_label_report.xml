@@ -9,7 +9,6 @@
         <field name="report_file">brodher_product_serial.report_sn_qr_labels</field>
         <field name="binding_model_id" ref="stock.model_stock_lot"/>
         <field name="binding_type">report</field>
-        <field name="paperformat_id" ref="base.paperformat_a4"/>
     </record>
 
     <!-- Report Template -->
