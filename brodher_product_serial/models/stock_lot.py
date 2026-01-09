@@ -56,20 +56,14 @@ class StockLot(models.Model):
             else:
                 record.qr_code = False
     
-    # --- BAGIAN YANG DIUPDATE ---
-    
     @api.model
-    def _get_next_sequence(self, sn_type, year_code):
-        """ 
-        Mencari nomor terakhir secara GLOBAL berdasarkan tipe dan tahun.
-        Dihapus filter product_id agar sequence terus lanjut meski beda produk.
-        """
+    def _get_next_sequence(self, sn_type, year_code, product_id):
         last_sn = self.search([
             ('sn_type', '=', sn_type),
             ('year_code', '=', year_code),
-            ('name', '=like', f'PF{year_code}{sn_type}%')
+            ('name', 'like', f'PF{year_code}{sn_type}%'),
+            ('product_id', '=', product_id)
         ], order='sequence_number desc', limit=1)
-        
         return (last_sn.sequence_number + 1) if last_sn and last_sn.sequence_number else 1
     
     @api.model
@@ -92,16 +86,12 @@ class StockLot(models.Model):
         current_year = datetime.now().strftime('%y')
         serial_numbers = []
         
-        # Ambil sequence awal secara global (sekali saja sebelum loop)
-        next_seq = self._get_next_sequence(sn_type, current_year)
-        
         for i in range(quantity):
+            next_seq = self._get_next_sequence(sn_type, current_year, product.id)
             sn_name = f"PF{current_year}{sn_type}{next_seq:07d}"
             
-            # Cek duplikat name tetap dilakukan untuk keamanan database
-            if self.search([('name', '=', sn_name)], limit=1):
+            if self.search([('name', '=', sn_name), ('product_id', '=', product.id)], limit=1):
                 _logger.warning('SN %s exists! Skipping...' % sn_name)
-                next_seq += 1
                 continue
             
             try:
@@ -118,18 +108,11 @@ class StockLot(models.Model):
                 })
                 serial_numbers.append(sn_record)
                 _logger.info('✓ Created: %s' % sn_name)
-                
-                # Tambahkan sequence manual agar tidak memanggil database di dalam loop
-                next_seq += 1 
-                
             except Exception as e:
                 _logger.error('✗ Failed %s: %s' % (sn_name, str(e)))
-                next_seq += 1
                 continue
         
         return serial_numbers
-
-    # --- AKHIR BAGIAN YANG DIUPDATE ---
     
     def action_print_qr_labels(self):
         return self.env.ref('brodher_product_serial.action_report_sn_qr_labels').report_action(self)

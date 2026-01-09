@@ -8,6 +8,7 @@ class StockPicking(models.Model):
     sn_move_ids = fields.One2many('brodher.sn.move', 'picking_id', string='SN Moves')
     scanned_sn_count = fields.Integer(string='Scanned SN', compute='_compute_scanned_sn_count')
     require_sn_scan = fields.Boolean(string='Require SN', compute='_compute_require_sn_scan')
+    has_sn_products = fields.Boolean(string='Has SN Products', compute='_compute_has_sn_products')
     
     @api.depends('sn_move_ids')
     def _compute_scanned_sn_count(self):
@@ -18,12 +19,31 @@ class StockPicking(models.Model):
     def _compute_require_sn_scan(self):
         for picking in self:
             picking.require_sn_scan = any(
-                move.product_id.product_tmpl_id.sn_product_type
+                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
+                for move in picking.move_ids_without_package
+            )
+    
+    @api.depends('move_ids_without_package')
+    def _compute_has_sn_products(self):
+        """Check if picking has products with SN tracking"""
+        for picking in self:
+            picking.has_sn_products = any(
+                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
                 for move in picking.move_ids_without_package
             )
     
     def action_scan_serial_number(self):
         self.ensure_one()
+        
+        # Check if has SN products
+        if not self.has_sn_products:
+            raise UserError(_(
+                'This picking does not contain any products with Serial Number tracking!\n\n'
+                'Please ensure products have:\n'
+                '1. Tracking: By Unique Serial Number\n'
+                '2. Serial Number Type: Man or Woman'
+            ))
+        
         move_type = 'internal'
         if self.picking_type_code == 'incoming':
             move_type = 'in'
@@ -61,7 +81,9 @@ class StockPicking(models.Model):
         
         for move in self.move_ids_without_package:
             product_tmpl = move.product_id.product_tmpl_id
-            if not product_tmpl.sn_product_type:
+            
+            # Skip products without SN tracking
+            if move.product_id.tracking != 'serial' or not product_tmpl.sn_product_type:
                 continue
             
             scanned_count = len(self.sn_move_ids.filtered(
