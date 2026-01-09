@@ -60,14 +60,20 @@
                     <field name="scanned_list" nolabel="1" colspan="2"/>
                 </group>
                 
-                <footer>
-                    <button string="✓ Confirm" name="action_confirm_scan" type="object" 
-                            class="btn-success" data-hotkey="q" 
-                            invisible="has_sn_products == False"/>
-                    
-                    <button string="✓ Done &amp; Close" name="action_done" type="object" class="btn-primary" data-hotkey="d"/>
-                    <button string="Cancel" special="cancel" data-hotkey="z"/>
-                </footer>
+            <footer>
+                <button string="✓ Confirm Scan" 
+                        name="action_confirm_scan" 
+                        type="object" 
+                        class="btn-success" 
+                        invisible="has_sn_products == False"/>
+                        
+                <button string="✓ Done &amp; Close" 
+                        name="action_done" 
+                        type="object" 
+                        class="btn-primary"/>
+                        
+                <button string="Cancel" special="cancel"/>
+            </footer>
             </form>
         </field>
     </record>

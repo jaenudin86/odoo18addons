@@ -175,6 +175,10 @@ class ScanSNWizard(models.TransientModel):
     def action_confirm_scan(self):
         self.ensure_one()
         
+            #     # TAMBAHAN: Jika picking tidak butuh SN, jangan proses apapun
+        if not self.has_sn_products:
+            raise UserError(_('This picking does not contain any products that require Serial Number scanning.'))
+
         sn = None
         if self.input_method == 'scan':
             if not self.scanned_sn:
@@ -239,7 +243,44 @@ class ScanSNWizard(models.TransientModel):
             }
         }
     
+    # def action_confirm_scan(self):
+    #     self.ensure_one()
+        
+    #     # TAMBAHAN: Jika picking tidak butuh SN, jangan proses apapun
+    #     if not self.has_sn_products:
+    #         raise UserError(_('This picking does not contain any products that require Serial Number scanning.'))
+
+    #     sn = None
+    #     # ... (logic pencarian SN Anda yang sudah ada tetap sama) ...
+    #     if self.input_method == 'scan':
+    #         if not self.scanned_sn:
+    #             raise UserError(_('Please scan or enter serial number!'))
+    #         sn = self.env['stock.lot'].search([('name', '=', self.scanned_sn), ('sn_type', '!=', False)], limit=1)
+    #         if not sn:
+    #             raise ValidationError(_('Serial Number %s not found!') % self.scanned_sn)
+    #     else:
+    #         if not self.serial_number_id:
+    #             raise UserError(_('Please select a serial number!'))
+    #         sn = self.serial_number_id
+
+    #     # ... (rest of your confirm logic) ...
+    #     # Pastikan return-nya tetap membuka wizard agar bisa scan barang berikutnya
+    #     return {
+    #         'type': 'ir.actions.act_window',
+    #         'res_model': 'brodher.scan.sn.wizard',
+    #         'view_mode': 'form',
+    #         'target': 'new',
+    #         'context': self.env.context,
+    #     }
+    
     def action_done(self):
+        self.ensure_one()
+        
+        # TAMBAHAN: Jika picking tidak punya produk SN, langsung tutup tanpa validasi
+        if not self.has_sn_products:
+            return {'type': 'ir.actions.act_window_close'}
+
+        # Jika ada produk SN, lakukan validasi seperti biasa
         is_complete, error_msg = self.picking_id._check_sn_scan_completion()
         if not is_complete:
             return {
