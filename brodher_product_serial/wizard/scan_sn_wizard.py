@@ -11,7 +11,31 @@ class ScanSNWizard(models.TransientModel):
     _description = 'Scan Serial Number Wizard'
     
     # ... (field lainnya tetap sama) ...
+# ... (field lainnya tetap sama) ...
+    picking_id = fields.Many2one('stock.picking', string='Stock Picking', required=True)
+    picking_name = fields.Char(related='picking_id.name', string='Picking')
+    picking_type = fields.Selection(related='picking_id.picking_type_code', string='Type')
+    input_method = fields.Selection([('scan', 'Scan QR Code'), ('manual', 'Select Manually')], default='scan', required=True)
+    scanned_sn = fields.Char(string='Scan Serial Number')
+    serial_number_id = fields.Many2one('stock.lot', string='Select Serial Number', domain="[('id', 'in', available_sn_ids)]")
+    available_sn_ids = fields.Many2many('stock.lot', compute='_compute_available_sn_ids', string='Available SNs')
+    move_type = fields.Selection([('in', 'Stock In'), ('out', 'Stock Out'), ('internal', 'Internal Transfer')], required=True, default='in')
+    location_src_id = fields.Many2one('stock.location', string='From')
+    location_dest_id = fields.Many2one('stock.location', string='To', required=True)
+    notes = fields.Text(string='Notes')
+    sn_info = fields.Html(string='Serial Number Info', compute='_compute_sn_info')
+    total_scanned = fields.Integer(string='Total Scanned', compute='_compute_total_scanned')
+    scanned_list = fields.Html(string='Scanned List', compute='_compute_scanned_list')
+    expected_quantities = fields.Html(string='Expected Quantities', compute='_compute_expected_quantities')
 
+    # Tambahan field untuk notifikasi jika tidak ada SN
+    has_sn_products = fields.Boolean(compute='_compute_has_sn_products')
+    @api.depends('picking_id')
+    def _compute_has_sn_products(self):
+        for wizard in self:
+            # Cek apakah ada produk dengan tracking serial
+            sn_moves = wizard.picking_id.move_ids_without_package.filtered(lambda m: m.product_id.tracking == 'serial')
+            wizard.has_sn_products = bool(sn_moves)
     @api.depends('picking_id', 'move_type')
     def _compute_available_sn_ids(self):
         for wizard in self:
