@@ -273,16 +273,41 @@ class ScanSNWizard(models.TransientModel):
     #         'context': self.env.context,
     #     }
     
+    # def action_done(self):
+    #     self.ensure_one()
+        
+    #     # TAMBAHAN: Jika picking tidak punya produk SN, langsung tutup tanpa validasi
+    #     if not self.has_sn_products:
+    #         return {'type': 'ir.actions.act_window_close'}
+
+    #     # Jika ada produk SN, lakukan validasi seperti biasa
+    #     is_complete, error_msg = self.picking_id._check_sn_scan_completion()
+    #     if not is_complete:
+    #         return {
+    #             'type': 'ir.actions.act_window',
+    #             'res_model': 'brodher.sn.validation.wizard',
+    #             'view_mode': 'form',
+    #             'target': 'new',
+    #             'context': {
+    #                 'default_picking_id': self.picking_id.id,
+    #                 'default_warning_message': error_msg,
+    #             }
+    #         }
+    #     return {'type': 'ir.actions.act_window_close'}
     def action_done(self):
         self.ensure_one()
         
-        # TAMBAHAN: Jika picking tidak punya produk SN, langsung tutup tanpa validasi
+        # 1. Jika TIDAK ADA produk SN, langsung validasi picking dan tutup
         if not self.has_sn_products:
+            # Memanggil fungsi validate bawaan Odoo
+            self.picking_id.button_validate() 
             return {'type': 'ir.actions.act_window_close'}
 
-        # Jika ada produk SN, lakukan validasi seperti biasa
+        # 2. Jika ADA produk SN, cek dulu kelengkapannya
         is_complete, error_msg = self.picking_id._check_sn_scan_completion()
+        
         if not is_complete:
+            # Jika belum lengkap, lempar ke wizard konfirmasi (force validate)
             return {
                 'type': 'ir.actions.act_window',
                 'res_model': 'brodher.sn.validation.wizard',
@@ -293,4 +318,7 @@ class ScanSNWizard(models.TransientModel):
                     'default_warning_message': error_msg,
                 }
             }
+        
+        # 3. Jika sudah lengkap scan-nya, otomatis validasi picking
+        self.picking_id.button_validate()
         return {'type': 'ir.actions.act_window_close'}
