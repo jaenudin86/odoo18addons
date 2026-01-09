@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="scan_sn_wizard_form_view" model="ir.ui.view">
+        <field name="name">brodher.scan.sn.wizard.form</field>
+        <field name="model">brodher.scan.sn.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Scan Serial Number">
+                <div class="alert alert-info" role="alert" style="margin-bottom: 15px;">
+                    <div class="row">
+                        <div class="col-8">
+                            <strong>📦 Picking:</strong> <field name="picking_name" readonly="1" class="oe_inline"/>
+                            | <strong>Type:</strong> <field name="picking_type" readonly="1" class="oe_inline"/>
+                        </div>
+                        <div class="col-4 text-right">
+                            <strong>Scanned:</strong> <field name="total_scanned" readonly="1" class="oe_inline" style="font-size: 18px; color: #28a745;"/>
+                        </div>
+                    </div>
+                </div>
+                
+                <field name="expected_quantities" nolabel="1" colspan="2"/>
+                
+                <separator string="Input Serial Number"/>
+                
+                <group>
+                    <group>
+                        <field name="picking_id" invisible="1"/>
+                        <field name="available_sn_ids" invisible="1"/>
+                        
+                        <field name="input_method" widget="radio" options="{'horizontal': true}"/>
+                        
+                        <field name="scanned_sn" 
+                               placeholder="📱 Scan QR Code or Type Serial Number" 
+                               style="font-size: 20px; font-family: monospace; font-weight: bold;"
+                               invisible="input_method == 'manual'"/>
+                        
+                        <field name="serial_number_id"
+                               placeholder="Select Serial Number from list..."
+                               invisible="input_method == 'scan'"
+                               options="{'no_create': True, 'no_create_edit': True}"/>
+                    </group>
+                    <group>
+                        <field name="move_type" readonly="1"/>
+                        <field name="location_src_id" readonly="1"/>
+                        <field name="location_dest_id" readonly="1"/>
+                        <field name="notes" placeholder="Optional notes..."/>
+                    </group>
+                </group>
+                
+                <group>
+                    <field name="sn_info" nolabel="1" colspan="2"/>
+                </group>
+                
+                <group>
+                    <field name="scanned_list" nolabel="1" colspan="2"/>
+                </group>
+                
+                <footer>
+                    <button string="✓ Confirm" name="action_confirm_scan" type="object" class="btn-success" data-hotkey="q"/>
+                    <button string="✓ Done &amp; Close" name="action_done" type="object" class="btn-primary" data-hotkey="d"/>
+                    <button string="Cancel" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

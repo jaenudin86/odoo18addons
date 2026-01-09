@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_sn_wizard_form_view" model="ir.ui.view">
+        <field name="name">brodher.product.sn.wizard.form</field>
+        <field name="model">brodher.product.sn.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Generate Serial Numbers">
+                <group>
+                    <field name="product_tmpl_id" readonly="1"/>
+                    <field name="product_id" readonly="1" invisible="not product_id"/>
+                    <field name="sn_type"/>
+                    <field name="quantity"/>
+                    <field name="preview_sn" readonly="1" string="Preview"/>
+                </group>
+                <footer>
+                    <button string="Generate" name="action_generate" type="object" class="oe_highlight" data-hotkey="q"/>
+                    <button string="Cancel" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

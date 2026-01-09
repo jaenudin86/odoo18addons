@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="message_wizard_form_view" model="ir.ui.view">
+        <field name="name">brodher.message.wizard.form</field>
+        <field name="model">brodher.message.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Message">
+                <group>
+                    <field name="message" nolabel="1" widget="text"/>
+                </group>
+                <footer>
+                    <button string="OK" special="cancel" class="oe_highlight"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

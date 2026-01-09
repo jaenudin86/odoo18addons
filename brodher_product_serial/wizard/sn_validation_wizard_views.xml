@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sn_validation_wizard_form_view" model="ir.ui.view">
+        <field name="name">brodher.sn.validation.wizard.form</field>
+        <field name="model">brodher.sn.validation.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Serial Number Validation Warning">
+                <div class="alert alert-warning" role="alert">
+                    <h4>⚠️ Incomplete Serial Number Scanning</h4>
+                </div>
+                
+                <group>
+                    <field name="picking_id" invisible="1"/>
+                    <field name="warning_message" nolabel="1" widget="text" readonly="1"/>
+                </group>
+                
+                <div class="alert alert-info" role="alert">
+                    <p><strong>What would you like to do?</strong></p>
+                    <ul>
+                        <li><strong>Continue Scanning:</strong> Go back to scan remaining serial numbers</li>
+                        <li><strong>Force Validate:</strong> Skip SN scanning and proceed (not recommended)</li>
+                    </ul>
+                </div>
+                
+                <footer>
+                    <button string="Continue Scanning" name="action_continue_scan" type="object" class="btn-primary" data-hotkey="q"/>
+                    <button string="Force Validate" name="action_force_validate" type="object" class="btn-warning" 
+                            confirm="Are you sure you want to validate without scanning all serial numbers?" data-hotkey="f"/>
+                    <button string="Cancel" special="cancel" data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
