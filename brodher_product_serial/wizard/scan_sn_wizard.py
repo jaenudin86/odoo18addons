@@ -433,6 +433,7 @@ class ScanSNWizard(models.TransientModel):
         sn.write(update_vals)
         
         # Auto assign to move line
+        move_line_found = False
         for move_line in self.picking_id.move_line_ids_without_package:
             if move_line.product_id == sn.product_id and not move_line.lot_id:
                 move_line.write({
@@ -441,10 +442,35 @@ class ScanSNWizard(models.TransientModel):
                     'quantity': 1,
                 })
                 _logger.info('✓ Auto assigned SN %s to move line' % sn.name)
+                move_line_found = True
                 break
         
         _logger.info('✓ SN %s scanned - Type: %s, Picking: %s' % (sn.name, self.move_type, self.picking_id.name))
-        
+         # If no empty move line, create new one
+        if not move_line_found:
+            # Find the stock move for this product
+            stock_move = self.picking_id.move_ids_without_package.filtered(
+                lambda m: m.product_id == sn.product_id
+            )
+            
+            if stock_move:
+                stock_move = stock_move[0]
+                
+                # Create new move line
+                self.env['stock.move.line'].create({
+                    'picking_id': self.picking_id.id,
+                    'move_id': stock_move.id,
+                    'product_id': sn.product_id.id,
+                    'product_uom_id': sn.product_id.uom_id.id,
+                    'location_id': self.location_src_id.id,
+                    'location_dest_id': self.location_dest_id.id,
+                    'lot_id': sn.id,
+                    'lot_name': sn.name,
+                    'quantity': 1,
+                    'qty_done': 1,  # IMPORTANT: Set qty_done
+                    'company_id': self.env.company.id,
+                })
+                _logger.info('✓ Created new move line for SN %s' % sn.name)
         # Return wizard for next scan
         return {
             'type': 'ir.actions.act_window',

@@ -17,9 +17,11 @@ class StockPicking(models.Model):
     
     @api.depends('move_ids_without_package')
     def _compute_require_sn_scan(self):
+        """Check if picking requires SN scan - ONLY for products with SN tracking"""
         for picking in self:
             picking.require_sn_scan = any(
-                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
+                move.product_id.tracking == 'serial' and 
+                move.product_id.product_tmpl_id.sn_product_type
                 for move in picking.move_ids_without_package
             )
     
@@ -74,34 +76,51 @@ class StockPicking(models.Model):
             'domain': [('picking_id', '=', self.id)],
         }
     
+
+    
     def _check_sn_scan_completion(self):
+        """Check if all required SNs are scanned - ONLY for products with SN tracking"""
         self.ensure_one()
-        if not self.require_sn_scan:
-            return True, None
+        
+        # Check if there are ANY products that require SN
+        has_sn_products = False
         
         for move in self.move_ids_without_package:
             product_tmpl = move.product_id.product_tmpl_id
             
-            # Skip products without SN tracking
-            if move.product_id.tracking != 'serial' or not product_tmpl.sn_product_type:
-                continue
-            
-            scanned_count = len(self.sn_move_ids.filtered(
-                lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
-            ))
-            required_qty = int(move.product_uom_qty)
-            
-            if scanned_count < required_qty:
-                return False, _(
-                    'Product "%s" requires %d serial numbers, but only %d scanned!'
-                ) % (product_tmpl.name, required_qty, scanned_count)
+            # Check if product has SN tracking enabled
+            if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
+                has_sn_products = True
+                
+                # Count scanned SN for this product
+                scanned_count = len(self.sn_move_ids.filtered(
+                    lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
+                ))
+                required_qty = int(move.product_uom_qty)
+                
+                # Check if not enough scanned
+                if scanned_count < required_qty:
+                    return False, _(
+                        'Product "%s" requires %d serial numbers, but only %d scanned!\n\n'
+                        '⚠️ Please scan all serial numbers for products with SN tracking.'
+                    ) % (product_tmpl.name, required_qty, scanned_count)
         
+        # If no SN products at all, or all scanned - return True
         return True, None
     
     def button_validate(self):
+        """Override validate - only check SN for products with SN tracking"""
         for picking in self:
-            if picking.require_sn_scan:
+            # Check if ANY product requires SN
+            has_sn_products = any(
+                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
+                for move in picking.move_ids_without_package
+            )
+            
+            # Only check SN completion if there are SN products
+            if has_sn_products:
                 is_complete, error_msg = picking._check_sn_scan_completion()
+                
                 if not is_complete:
                     return {
                         'type': 'ir.actions.act_window',
@@ -113,4 +132,6 @@ class StockPicking(models.Model):
                             'default_warning_message': error_msg,
                         }
                     }
+        
+        # Continue with normal validation
         return super(StockPicking, self).button_validate()
