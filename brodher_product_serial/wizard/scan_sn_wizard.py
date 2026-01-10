@@ -445,46 +445,107 @@ class ScanSNWizard(models.TransientModel):
                 move_line_found = True
                 break
         
-        _logger.info('✓ SN %s scanned - Type: %s, Picking: %s' % (sn.name, self.move_type, self.picking_id.name))
-         # If no empty move line, create new one
-        if not move_line_found:
-            # Find the stock move for this product
-            stock_move = self.picking_id.move_ids_without_package.filtered(
-                lambda m: m.product_id == sn.product_id
-            )
+   # ========================================
+        # AUTO CREATE/UPDATE STOCK MOVE LINE
+        # ========================================
+        
+        _logger.info('=== Processing stock move line for SN %s (Type: %s) ===' % (sn.name, self.move_type))
+        
+        # Find stock move for this product
+        stock_move = self.picking_id.move_ids_without_package.filtered(
+            lambda m: m.product_id == sn.product_id
+        )
+        
+        if not stock_move:
+            raise UserError(_('Stock move not found for product %s!') % sn.product_id.name)
+        
+        stock_move = stock_move[0]
+        
+        # CRITICAL: Get correct locations
+        if self.move_type == 'out':
+            # OUTGOING: dari gudang ke customer
+            # Location src = stock location (internal)
+            # Location dest = customer location (external)
+            loc_src = self.location_src_id
+            loc_dest = self.location_dest_id
             
-            if stock_move:
-                stock_move = stock_move[0]
+            _logger.info('OUTGOING - Src: %s, Dest: %s' % (loc_src.complete_name, loc_dest.complete_name))
+            
+        elif self.move_type == 'in':
+            # INCOMING: dari vendor ke gudang
+            loc_src = self.location_src_id
+            loc_dest = self.location_dest_id
+            
+            _logger.info('INCOMING - Src: %s, Dest: %s' % (loc_src.complete_name, loc_dest.complete_name))
+            
+        else:
+            # INTERNAL
+            loc_src = self.location_src_id
+            loc_dest = self.location_dest_id
+        
+        # Check if move line already exists for this SN in this picking
+        existing_move_line = self.env['stock.move.line'].search([
+            ('picking_id', '=', self.picking_id.id),
+            ('move_id', '=', stock_move.id),
+            ('lot_id', '=', sn.id)
+        ], limit=1)
+        
+        if existing_move_line:
+            # Update existing
+            existing_move_line.write({
+                'quantity': 1,
+                'qty_done': 1,
+                'location_id': loc_src.id,
+                'location_dest_id': loc_dest.id,
+            })
+            _logger.info('✓ Updated existing move line for SN %s' % sn.name)
+            
+        else:
+            # Try to find empty move line (no lot assigned yet)
+            empty_move_line = self.env['stock.move.line'].search([
+                ('picking_id', '=', self.picking_id.id),
+                ('move_id', '=', stock_move.id),
+                ('lot_id', '=', False),
+            ], order='id', limit=1)
+            
+            if empty_move_line:
+                # Update empty move line
+                empty_move_line.write({
+                    'lot_id': sn.id,
+                    'lot_name': sn.name,
+                    'quantity': 1,
+                    'qty_done': 1,
+                    'location_id': loc_src.id,
+                    'location_dest_id': loc_dest.id,
+                })
+                _logger.info('✓ Updated empty move line with SN %s' % sn.name)
                 
-                # Create new move line
-                self.env['stock.move.line'].create({
+            else:
+                # Create new move line - CRITICAL for OUTGOING
+                move_line_vals = {
                     'picking_id': self.picking_id.id,
                     'move_id': stock_move.id,
                     'product_id': sn.product_id.id,
                     'product_uom_id': sn.product_id.uom_id.id,
-                    'location_id': self.location_src_id.id,
-                    'location_dest_id': self.location_dest_id.id,
+                    'location_id': loc_src.id,
+                    'location_dest_id': loc_dest.id,
                     'lot_id': sn.id,
                     'lot_name': sn.name,
                     'quantity': 1,
-                    'qty_done': 1,  # IMPORTANT: Set qty_done
+                    'qty_done': 1,
                     'company_id': self.env.company.id,
-                })
-                _logger.info('✓ Created new move line for SN %s' % sn.name)
-        # Return wizard for next scan
-        return {
-            'type': 'ir.actions.act_window',
-            'res_model': 'brodher.scan.sn.wizard',
-            'view_mode': 'form',
-            'target': 'new',
-            'context': {
-                'default_picking_id': self.picking_id.id,
-                'default_move_type': self.move_type,
-                'default_location_src_id': self.location_src_id.id if self.location_src_id else False,
-                'default_location_dest_id': self.location_dest_id.id,
-                'default_input_method': self.input_method,
-            }
-        }
+                }
+                
+                new_move_line = self.env['stock.move.line'].create(move_line_vals)
+                _logger.info('✓ Created new move line ID %s for SN %s (Src: %s → Dest: %s)' % (
+                    new_move_line.id, sn.name, loc_src.name, loc_dest.name
+                ))
+        
+        # Force refresh stock move
+        stock_move._action_assign()
+        stock_move._recompute_state()
+        
+        _logger.info('✓ Stock move line processed successfully for SN %s' % sn.name)
 
     def action_done(self):
         is_complete, error_msg = self.picking_id._check_sn_scan_completion()
