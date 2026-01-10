@@ -147,53 +147,53 @@ class ScanSNWizard(models.TransientModel):
     
     @api.depends('picking_id')
     def _compute_expected_quantities(self):
-        """Show expected vs scanned quantities - only for SN tracked products"""
+        """Show expected vs scanned quantities"""
         for wizard in self:
             if wizard.picking_id:
-                html = '<div style="margin: 10px 0;"><strong>Products to Scan:</strong>'
+                html = '<div style="margin: 10px 0;"><strong>Products in This Picking:</strong>'
                 html += '<table class="table table-sm table-bordered" style="margin-top: 5px;">'
-                html += '<thead><tr><th>Product</th><th>Expected</th><th>Scanned</th><th>Remaining</th><th>Status</th></tr></thead><tbody>'
-                
-                has_sn_products = False
+                html += '<thead><tr><th>Product</th><th>Tracking</th><th>Expected</th><th>Scanned</th><th>Status</th></tr></thead><tbody>'
                 
                 for move in wizard.picking_id.move_ids_without_package:
                     product_tmpl = move.product_id.product_tmpl_id
-                    
-                    # ONLY show products with SN tracking enabled
-                    if move.product_id.tracking != 'serial' or not product_tmpl.sn_product_type:
-                        continue
-                    
-                    has_sn_products = True
-                    
                     expected = int(move.product_uom_qty)
-                    scanned = len(wizard.picking_id.sn_move_ids.filtered(
-                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
-                    ))
-                    remaining = expected - scanned
                     
-                    if scanned >= expected:
-                        status = '<span style="color: green;">✓ Complete</span>'
-                        row_style = 'background: #d4edda;'
-                    elif scanned > 0:
-                        status = '<span style="color: orange;">◐ Partial</span>'
-                        row_style = 'background: #fff3cd;'
+                    # Check if has SN tracking
+                    has_sn_tracking = move.product_id.tracking == 'serial' and product_tmpl.sn_product_type
+                    
+                    if has_sn_tracking:
+                        # Product dengan SN tracking
+                        scanned = len(wizard.picking_id.sn_move_ids.filtered(
+                            lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
+                        ))
+                        
+                        if scanned >= expected:
+                            status = '<span style="color: green;">✓ Complete</span>'
+                            row_style = 'background: #d4edda;'
+                        elif scanned > 0:
+                            status = '<span style="color: orange;">◐ Partial</span>'
+                            row_style = 'background: #fff3cd;'
+                        else:
+                            status = '<span style="color: red;">○ Pending</span>'
+                            row_style = ''
+                        
+                        html += f'<tr style="{row_style}">'
+                        html += f'<td>{product_tmpl.name}</td>'
+                        html += f'<td><span class="badge badge-info">SN Tracking</span></td>'
+                        html += f'<td class="text-center">{expected}</td>'
+                        html += f'<td class="text-center"><strong>{scanned}</strong></td>'
+                        html += f'<td class="text-center">{status}</td></tr>'
                     else:
-                        status = '<span style="color: red;">○ Pending</span>'
-                        row_style = ''
-                    
-                    html += f'<tr style="{row_style}">'
-                    html += f'<td>{product_tmpl.name}</td>'
-                    html += f'<td class="text-center">{expected}</td>'
-                    html += f'<td class="text-center"><strong>{scanned}</strong></td>'
-                    html += f'<td class="text-center"><strong style="color: red;">{remaining}</strong></td>'
-                    html += f'<td class="text-center">{status}</td></tr>'
+                        # Product tanpa SN tracking
+                        html += f'<tr style="background: #e9ecef;">'
+                        html += f'<td>{product_tmpl.name}</td>'
+                        html += f'<td><span class="badge badge-secondary">No SN</span></td>'
+                        html += f'<td class="text-center">{expected}</td>'
+                        html += f'<td class="text-center">-</td>'
+                        html += f'<td class="text-center"><span style="color: gray;">No scan required</span></td></tr>'
                 
                 html += '</tbody></table></div>'
-                
-                if has_sn_products:
-                    wizard.expected_quantities = html
-                else:
-                    wizard.expected_quantities = '<div class="alert alert-info">No products with Serial Number tracking in this picking.</div>'
+                wizard.expected_quantities = html
             else:
                 wizard.expected_quantities = ''
     

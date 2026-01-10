@@ -15,18 +15,30 @@
                 </group>
                 
                 <div class="alert alert-info" role="alert">
-                    <p><strong>What would you like to do?</strong></p>
+                    <p><strong>Important Notes:</strong></p>
                     <ul>
+                        <li><strong>Products WITH Serial Number Tracking:</strong> Must scan all required SNs</li>
+                        <li><strong>Products WITHOUT Serial Number Tracking:</strong> Can be validated normally without scanning</li>
                         <li><strong>Continue Scanning:</strong> Go back to scan remaining serial numbers</li>
-                        <li><strong>Force Validate:</strong> Skip SN scanning and proceed (not recommended)</li>
+                        <li><strong>Force Validate:</strong> Skip SN scanning (not recommended)</li>
                     </ul>
                 </div>
                 
                 <footer>
-                    <button string="Continue Scanning" name="action_continue_scan" type="object" class="btn-primary" data-hotkey="q"/>
-                    <button string="Force Validate" name="action_force_validate" type="object" class="btn-warning" 
-                            confirm="Are you sure you want to validate without scanning all serial numbers?" data-hotkey="f"/>
-                    <button string="Cancel" special="cancel" data-hotkey="z"/>
+                    <button string="Continue Scanning" 
+                            name="action_continue_scan" 
+                            type="object" 
+                            class="btn-primary"
+                            data-hotkey="q"/>
+                    <button string="Force Validate" 
+                            name="action_force_validate" 
+                            type="object" 
+                            class="btn-warning" 
+                            confirm="Are you sure you want to validate without scanning all serial numbers?"
+                            data-hotkey="f"/>
+                    <button string="Cancel" 
+                            special="cancel"
+                            data-hotkey="z"/>
                 </footer>
             </form>
         </field>
