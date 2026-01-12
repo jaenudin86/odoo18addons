@@ -26,8 +26,13 @@
                         <h2><t t-esc="product.display_name"/></h2>
                         <p style="font-size: 14px; color: #666;">
                             <strong>Internal Reference:</strong> <t t-esc="product.default_code or 'N/A'"/>
-                            <span style="margin: 0 15px;">|</span>
-                            <strong>Type:</strong> <t t-esc="product.product_tmpl_id.sn_product_type_display or 'N/A'"/>
+                            <t t-if="product.product_tmpl_id.sn_product_type">
+                                <span style="margin: 0 15px;">|</span>
+                                <strong>Type:</strong> 
+                                <span t-if="product.product_tmpl_id.sn_product_type == 'M'">Man</span>
+                                <span t-elif="product.product_tmpl_id.sn_product_type == 'W'">Woman</span>
+                                <span t-else=""><t t-esc="product.product_tmpl_id.sn_product_type"/></span>
+                            </t>
                         </p>
                     </div>
 
@@ -41,24 +46,29 @@
                         </span>
                     </div>
 
-                    <!-- QR Codes Grid -->
+                    <!-- No Serial Numbers Message -->
+                    <t t-if="not serial_numbers">
+                        <div class="text-center" style="margin-top: 50px; color: #999;">
+                            <h4>No serial numbers found for this product.</h4>
+                        </div>
+                    </t>
+
+                    <!-- QR Codes Grid - QR ABOVE, SN BELOW -->
                     <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                         <t t-foreach="serial_numbers" t-as="sn">
                             <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
                                 <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                    <!-- Product Name -->
-                                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; min-height: 30px;">
-                                        <t t-esc="sn.product_id.display_name"/>
+                                    
+                                    <!-- QR Code - DI ATAS -->
+                                    <div style="margin-bottom: 8px;">
+                                        <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                             style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
                                     </div>
                                     
-                                    <!-- Serial Number -->
-                                    <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                    <!-- Serial Number - DI BAWAH QR CODE -->
+                                    <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
                                         <t t-esc="sn.name"/>
                                     </div>
-                                    
-                                    <!-- QR Code -->
-                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                         style="width: 100px; height: 100px; margin: 5px auto;"/>
                                     
                                     <!-- Status Badge -->
                                     <div style="margin-top: 5px;">
@@ -127,12 +137,38 @@
                         <h2><t t-esc="product_tmpl.name"/></h2>
                         <p style="font-size: 14px; color: #666;">
                             <strong>Internal Reference:</strong> <t t-esc="product_tmpl.default_code or 'N/A'"/>
-                            <span style="margin: 0 15px;">|</span>
-                            <strong>Type:</strong> <t t-esc="product_tmpl.sn_product_type_display or 'N/A'"/>
+                            <t t-if="product_tmpl.sn_product_type">
+                                <span style="margin: 0 15px;">|</span>
+                                <strong>Type:</strong> 
+                                <span t-if="product_tmpl.sn_product_type == 'M'">Man</span>
+                                <span t-elif="product_tmpl.sn_product_type == 'W'">Woman</span>
+                                <span t-else=""><t t-esc="product_tmpl.sn_product_type"/></span>
+                            </t>
                             <span style="margin: 0 15px;">|</span>
                             <strong>Variants:</strong> <t t-esc="len(product_tmpl.product_variant_ids)"/>
                         </p>
                     </div>
+
+                    <!-- Count total SNs -->
+                    <t t-set="total_sns" t-value="0"/>
+                    <t t-foreach="product_tmpl.product_variant_ids" t-as="var">
+                        <t t-set="sns" t-value="var.env['stock.lot'].search([('product_id', '=', var.id), ('sn_type', '!=', False)])"/>
+                        <t t-set="total_sns" t-value="total_sns + len(sns)"/>
+                    </t>
+
+                    <!-- Total Count -->
+                    <div class="text-center" style="margin-bottom: 15px;">
+                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold;">
+                            Total Serial Numbers: <t t-esc="total_sns"/>
+                        </span>
+                    </div>
+
+                    <!-- No Serial Numbers Message -->
+                    <t t-if="total_sns == 0">
+                        <div class="text-center" style="margin-top: 50px; color: #999;">
+                            <h4>No serial numbers found for this product template.</h4>
+                        </div>
+                    </t>
 
                     <!-- Loop through all variants -->
                     <t t-foreach="product_tmpl.product_variant_ids" t-as="variant">
@@ -149,19 +185,22 @@
                                 </span>
                             </div>
 
-                            <!-- QR Codes Grid for this variant -->
+                            <!-- QR Codes Grid for this variant - QR ABOVE, SN BELOW -->
                             <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                                 <t t-foreach="serial_numbers" t-as="sn">
                                     <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
                                         <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                            <!-- Serial Number -->
-                                            <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
-                                                <t t-esc="sn.name"/>
+                                            
+                                            <!-- QR Code - DI ATAS -->
+                                            <div style="margin-bottom: 8px;">
+                                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                                     style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
                                             </div>
                                             
-                                            <!-- QR Code -->
-                                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                                 style="width: 100px; height: 100px; margin: 5px auto;"/>
+                                            <!-- Serial Number - DI BAWAH QR CODE -->
+                                            <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
+                                                <t t-esc="sn.name"/>
+                                            </div>
                                             
                                             <!-- Status Badge -->
                                             <div style="margin-top: 5px;">
@@ -246,25 +285,30 @@
                         </span>
                     </div>
 
-                    <!-- QR Codes Grid -->
+                    <!-- No Serial Numbers Message -->
+                    <t t-if="not picking.sn_move_ids">
+                        <div class="text-center" style="margin-top: 50px; color: #999;">
+                            <h4>No serial numbers scanned for this picking.</h4>
+                        </div>
+                    </t>
+
+                    <!-- QR Codes Grid - QR ABOVE, SN BELOW -->
                     <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                         <t t-foreach="picking.sn_move_ids" t-as="sn_move">
                             <t t-set="sn" t-value="sn_move.serial_number_id"/>
                             <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
                                 <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                    <!-- Product Name -->
-                                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; min-height: 30px;">
-                                        <t t-esc="sn.product_id.display_name"/>
+                                    
+                                    <!-- QR Code - DI ATAS -->
+                                    <div style="margin-bottom: 8px;">
+                                        <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                             style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
                                     </div>
                                     
-                                    <!-- Serial Number -->
-                                    <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                    <!-- Serial Number - DI BAWAH QR CODE -->
+                                    <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
                                         <t t-esc="sn.name"/>
                                     </div>
-                                    
-                                    <!-- QR Code -->
-                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                         style="width: 100px; height: 100px; margin: 5px auto;"/>
                                     
                                     <!-- Move Type Badge -->
                                     <div style="margin-top: 5px;">
