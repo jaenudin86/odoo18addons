@@ -201,23 +201,45 @@ class ScanSNInWizard(models.TransientModel):
         # Update SN
         sn.write({'sn_status': 'available', 'last_sn_move_date': fields.Datetime.now()})
         
-        # Create move line
+        # Create move line - ODOO 18 VERSION
         stock_move = self.picking_id.move_ids_without_package.filtered(lambda m: m.product_id == sn.product_id)
         if stock_move:
             stock_move = stock_move[0]
-            self.env['stock.move.line'].create({
-                'picking_id': self.picking_id.id,
-                'move_id': stock_move.id,
-                'product_id': sn.product_id.id,
-                'product_uom_id': sn.product_id.uom_id.id,
-                'location_id': self.location_src_id.id,
-                'location_dest_id': self.location_dest_id.id,
-                'lot_id': sn.id,
-                'lot_name': sn.name,
-                'quantity': 1,
-                'qty_done': 1,
-                'company_id': self.env.company.id,
-            })
+            
+            # Cek apakah sudah ada move line untuk SN ini
+            existing_move_line = self.env['stock.move.line'].search([
+                ('move_id', '=', stock_move.id),
+                ('lot_id', '=', sn.id),
+            ], limit=1)
+            
+            if not existing_move_line:
+                # Tentukan location_id
+                location_src = self.location_src_id.id if self.location_src_id else stock_move.location_id.id
+                
+                # ODOO 18: Gunakan 'quantity' bukan 'qty_done'
+                move_line_vals = {
+                    'picking_id': self.picking_id.id,
+                    'move_id': stock_move.id,
+                    'product_id': sn.product_id.id,
+                    'product_uom_id': sn.product_id.uom_id.id,
+                    'location_id': location_src,
+                    'location_dest_id': self.location_dest_id.id,
+                    'lot_id': sn.id,
+                    'lot_name': sn.name,
+                    'quantity': 1.0,  # Odoo 18 menggunakan 'quantity' untuk done qty
+                    'company_id': self.env.company.id,
+                }
+                
+                try:
+                    move_line = self.env['stock.move.line'].create(move_line_vals)
+                    _logger.info(f'✓ Move line created for SN {sn.name} with quantity=1.0')
+                except Exception as e:
+                    _logger.error(f'Error creating move line for SN {sn.name}: {str(e)}')
+                    raise UserError(_(
+                        'Error creating stock move line: %s'
+                    ) % str(e))
+            else:
+                _logger.warning(f'Move line already exists for SN {sn.name}')
         
         _logger.info('✓ INCOMING: SN %s scanned' % sn.name)
         
