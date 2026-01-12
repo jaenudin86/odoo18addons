@@ -221,45 +221,60 @@ class ScanSNInWizard(models.TransientModel):
             'last_sn_move_date': fields.Datetime.now()
         })
         
-        # Create move line - ODOO 18 VERSION
+        # SOLUSI: Cari atau update move line yang sudah ada, JANGAN buat baru
         stock_move = self.picking_id.move_ids_without_package.filtered(lambda m: m.product_id == sn.product_id)
         if stock_move:
             stock_move = stock_move[0]
             
-            # Cek apakah sudah ada move line untuk SN ini
+            # Cari move line yang sudah ada untuk SN ini
             existing_move_line = self.env['stock.move.line'].search([
                 ('move_id', '=', stock_move.id),
                 ('lot_id', '=', sn.id),
             ], limit=1)
             
-            if not existing_move_line:
-                # Tentukan location_id
-                location_src = self.location_src_id.id if self.location_src_id else stock_move.location_id.id
-                
-                # ODOO 18: Gunakan 'quantity' bukan 'qty_done'
-                move_line_vals = {
-                    'picking_id': self.picking_id.id,
-                    'move_id': stock_move.id,
-                    'product_id': sn.product_id.id,
-                    'product_uom_id': sn.product_id.uom_id.id,
-                    'location_id': location_src,
-                    'location_dest_id': self.location_dest_id.id,
-                    'lot_id': sn.id,
-                    'lot_name': sn.name,
-                    'quantity': 1.0,  # Odoo 18 menggunakan 'quantity' untuk done qty
-                    'company_id': self.env.company.id,
-                }
-                
-                try:
-                    move_line = self.env['stock.move.line'].create(move_line_vals)
-                    _logger.info(f'✓ Move line created for SN {sn.name} with quantity=1.0')
-                except Exception as e:
-                    _logger.error(f'Error creating move line for SN {sn.name}: {str(e)}')
-                    raise UserError(_(
-                        'Error creating stock move line: %s'
-                    ) % str(e))
+            if existing_move_line:
+                # Kalau sudah ada, update quantity-nya saja
+                _logger.info(f'✓ Move line already exists for SN {sn.name}, updating quantity')
+                existing_move_line.write({'quantity': 1.0})
             else:
-                _logger.warning(f'Move line already exists for SN {sn.name}')
+                # Cari move line kosong (tanpa lot_id) yang bisa kita gunakan
+                empty_move_line = self.env['stock.move.line'].search([
+                    ('move_id', '=', stock_move.id),
+                    ('lot_id', '=', False),
+                    ('picking_id', '=', self.picking_id.id),
+                ], limit=1)
+                
+                if empty_move_line:
+                    # Update move line kosong dengan SN kita
+                    _logger.info(f'✓ Using empty move line for SN {sn.name}')
+                    empty_move_line.write({
+                        'lot_id': sn.id,
+                        'lot_name': sn.name,
+                        'quantity': 1.0,
+                    })
+                else:
+                    # Baru buat move line baru kalau benar-benar tidak ada
+                    location_src = self.location_src_id.id if self.location_src_id else stock_move.location_id.id
+                    
+                    move_line_vals = {
+                        'picking_id': self.picking_id.id,
+                        'move_id': stock_move.id,
+                        'product_id': sn.product_id.id,
+                        'product_uom_id': sn.product_id.uom_id.id,
+                        'location_id': location_src,
+                        'location_dest_id': self.location_dest_id.id,
+                        'lot_id': sn.id,
+                        'lot_name': sn.name,
+                        'quantity': 1.0,
+                        'company_id': self.env.company.id,
+                    }
+                    
+                    try:
+                        move_line = self.env['stock.move.line'].create(move_line_vals)
+                        _logger.info(f'✓ New move line created for SN {sn.name}')
+                    except Exception as e:
+                        _logger.error(f'Error creating move line for SN {sn.name}: {str(e)}')
+                        raise UserError(_('Error creating stock move line: %s') % str(e))
         
         _logger.info(f'✓ INCOMING: SN {sn.name} scanned - Status changed to USED')
         
