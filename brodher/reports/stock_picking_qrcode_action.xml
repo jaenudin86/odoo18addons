@@ -20,6 +20,7 @@
         <field name="binding_type">report</field>
     </record>
 
+
     <record id="action_report_stock_picking_qrcode_barcode" model="ir.actions.report">
         <field name="name">QRCode Labels</field>
         <field name="model">stock.picking</field>
