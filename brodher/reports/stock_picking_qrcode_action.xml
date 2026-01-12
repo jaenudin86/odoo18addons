@@ -122,12 +122,14 @@
                             <div class="qrcode_container">
                                 
                                 <div class="product_info">
-                                    <strong><t t-esc="line.product_id.name"/></strong><br/>
+                                    <strong>
+                                        <t t-esc="line.product_id.display_name or line.product_id.name or ''"/>
+                                    </strong><br/>
                                 </div>
                                 <span class="internal_ref">
-                                    <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
+                                    <t t-esc="line.product_id.barcode or ''"/>
                                 </span>
-                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or line.product_id.default_code or '')" 
+                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode  or '')" 
                                      class="qrcode_img"/>
 
 
