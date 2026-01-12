@@ -33,7 +33,7 @@ class ScanSNInWizard(models.TransientModel):
     
     @api.depends('picking_id')
     def _compute_available_sn_ids(self):
-        """Get available SNs for INCOMING - yang BELUM PERNAH masuk gudang"""
+        """Get available SNs for INCOMING - yang BELUM PERNAH masuk gudang dan status masih available"""
         for wizard in self:
             if not wizard.picking_id:
                 wizard.available_sn_ids = [(5, 0, 0)]
@@ -47,7 +47,7 @@ class ScanSNInWizard(models.TransientModel):
                 wizard.available_sn_ids = [(5, 0, 0)]
                 continue
             
-            # INCOMING: Exclude SN yang sudah pernah received
+            # INCOMING: Exclude SN yang sudah pernah received (status = used/sold)
             already_received = self.env['brodher.sn.move'].search([
                 ('move_type', '=', 'in'),
                 ('picking_id.state', '=', 'done')
@@ -55,9 +55,11 @@ class ScanSNInWizard(models.TransientModel):
             
             already_scanned_this = wizard.picking_id.sn_move_ids.mapped('serial_number_id.id')
             
+            # Domain: hanya SN yang belum pernah masuk dan status = available
             domain = [
                 ('product_id', 'in', products.ids),
                 ('sn_type', '!=', False),
+                ('sn_status', '=', 'available'),  # Hanya yang status available
             ]
             
             if already_received:
@@ -128,25 +130,34 @@ class ScanSNInWizard(models.TransientModel):
                 sn = wizard.serial_number_id
             
             if sn:
-                # Check if already received
-                received = self.env['brodher.sn.move'].search([
-                    ('serial_number_id', '=', sn.id),
-                    ('move_type', '=', 'in'),
-                    ('picking_id.state', '=', 'done')
-                ], limit=1)
-                
-                if received:
+                # Check status
+                if sn.sn_status != 'available':
                     wizard.sn_info = f'''<div class="alert alert-danger">
-                        <h5>❌ ALREADY RECEIVED!</h5>
+                        <h5>❌ SN TIDAK AVAILABLE!</h5>
                         <p>SN: <strong>{sn.name}</strong><br/>
-                        Received in: {received.picking_id.name}<br/>
-                        Date: {received.move_date.strftime("%Y-%m-%d %H:%M")}</p></div>'''
+                        Status: <strong>{sn.sn_status.upper()}</strong><br/>
+                        Product: {sn.product_id.name}</p></div>'''
                 else:
-                    wizard.sn_info = f'''<div class="alert alert-success">
-                        <h5>✓ Ready to Receive</h5>
-                        <p>SN: <strong>{sn.name}</strong><br/>
-                        Product: {sn.product_id.name}<br/>
-                        Type: {'Man' if sn.sn_type == 'M' else 'Woman'}</p></div>'''
+                    # Check if already received
+                    received = self.env['brodher.sn.move'].search([
+                        ('serial_number_id', '=', sn.id),
+                        ('move_type', '=', 'in'),
+                        ('picking_id.state', '=', 'done')
+                    ], limit=1)
+                    
+                    if received:
+                        wizard.sn_info = f'''<div class="alert alert-danger">
+                            <h5>❌ ALREADY RECEIVED!</h5>
+                            <p>SN: <strong>{sn.name}</strong><br/>
+                            Received in: {received.picking_id.name}<br/>
+                            Date: {received.move_date.strftime("%Y-%m-%d %H:%M")}</p></div>'''
+                    else:
+                        wizard.sn_info = f'''<div class="alert alert-success">
+                            <h5>✓ Ready to Receive</h5>
+                            <p>SN: <strong>{sn.name}</strong><br/>
+                            Product: {sn.product_id.name}<br/>
+                            Type: {'Man' if sn.sn_type == 'M' else 'Woman'}<br/>
+                            Status: <span class="badge badge-success">AVAILABLE</span></p></div>'''
             elif wizard.input_method == 'scan' and wizard.scanned_sn:
                 wizard.sn_info = f'<div class="alert alert-warning">SN <strong>{wizard.scanned_sn}</strong> not found!</div>'
             else:
@@ -176,6 +187,12 @@ class ScanSNInWizard(models.TransientModel):
                 raise UserError(_('Please select serial number!'))
             sn = self.serial_number_id
         
+        # Validate: Status harus available
+        if sn.sn_status != 'available':
+            raise UserError(_(
+                '❌ SN %s TIDAK AVAILABLE!\n\nStatus saat ini: %s\n\nHanya SN dengan status AVAILABLE yang bisa masuk gudang.'
+            ) % (sn.name, sn.sn_status.upper()))
+        
         # Validate: Already received?
         existing_in = self.env['brodher.sn.move'].search([
             ('serial_number_id', '=', sn.id),
@@ -198,8 +215,11 @@ class ScanSNInWizard(models.TransientModel):
             'notes': self.notes,
         })
         
-        # Update SN
-        sn.write({'sn_status': 'available', 'last_sn_move_date': fields.Datetime.now()})
+        # Update SN - UBAH STATUS JADI 'USED' setelah masuk gudang
+        sn.write({
+            'sn_status': 'used',  # ← Status berubah jadi USED
+            'last_sn_move_date': fields.Datetime.now()
+        })
         
         # Create move line - ODOO 18 VERSION
         stock_move = self.picking_id.move_ids_without_package.filtered(lambda m: m.product_id == sn.product_id)
@@ -241,7 +261,7 @@ class ScanSNInWizard(models.TransientModel):
             else:
                 _logger.warning(f'Move line already exists for SN {sn.name}')
         
-        _logger.info('✓ INCOMING: SN %s scanned' % sn.name)
+        _logger.info(f'✓ INCOMING: SN {sn.name} scanned - Status changed to USED')
         
         # Return for next scan
         return {
