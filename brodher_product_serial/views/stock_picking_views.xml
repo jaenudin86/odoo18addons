@@ -1,66 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="stock_picking_form_view_inherit_sn" model="ir.ui.view">
-        <field name="name">stock.picking.form.brodher.sn</field>
-        <field name="model">stock.picking</field>
-        <field name="inherit_id" ref="stock.view_picking_form"/>
+    <record id="brodher_sn_move_tree_view" model="ir.ui.view">
+        <field name="name">brodher.sn.move.tree</field>
+        <field name="model">brodher.sn.move</field>
         <field name="arch" type="xml">
-            
-            <!-- Add field invisible -->
-            <xpath expr="//sheet" position="before">
-                <field name="has_sn_products" invisible="1"/>
-            </xpath>
-            
-            <!-- Add Stat Button -->
-            <xpath expr="//div[@name='button_box']" position="inside">
-                <button class="oe_stat_button" 
-                        type="object" 
-                        name="action_view_sn_moves" 
-                        icon="fa-barcode"
-                        invisible="not has_sn_products">
-                    <field string="Scanned SN" name="scanned_sn_count" widget="statinfo"/>
-                </button>
-            </xpath>
-            
-            <!-- Add Buttons in Header -->
-            <xpath expr="//header" position="inside">
-                <button name="action_scan_serial_number" 
-                        string="Scan Serial Number" 
-                        type="object" 
-                        class="oe_highlight"
-                        icon="fa-qrcode"
-                        invisible="state not in ['assigned', 'confirmed'] or not has_sn_products"
-                        help="Scan serial numbers for products with SN tracking"/>
-                
-                <button name="action_sync_sn_to_move_lines" 
-                        string="⟳ Sync SN" 
-                        type="object" 
-                        class="btn-info"
-                        icon="fa-refresh"
-                        invisible="state not in ['assigned', 'confirmed'] or not has_sn_products"
-                        confirm="This will sync all scanned serial numbers to detailed operations. Continue?"
-                        help="Sync scanned serial numbers to detailed operations"/>
-            </xpath>
-            
-            <!-- Add Tab for Scanned Serial Numbers -->
-            <xpath expr="//notebook" position="inside">
-                <page string="Scanned Serial Numbers" 
-                      name="scanned_sn"
-                      invisible="not has_sn_products">
-                    <field name="sn_move_ids" readonly="1">
-                        <tree>
-                            <field name="serial_number_name"/>
+            <list string="Serial Number Movements">
+                <field name="serial_number_name"/>
+                <field name="product_tmpl_id"/>
+                <field name="move_type"/>
+                <field name="location_src_id"/>
+                <field name="location_dest_id"/>
+                <field name="move_date"/>
+                <field name="user_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="brodher_sn_move_form_view" model="ir.ui.view">
+        <field name="name">brodher.sn.move.form</field>
+        <field name="model">brodher.sn.move</field>
+        <field name="arch" type="xml">
+            <form string="Serial Number Movement">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="serial_number_id"/>
                             <field name="product_tmpl_id"/>
                             <field name="move_type"/>
+                        </group>
+                        <group>
                             <field name="location_src_id"/>
                             <field name="location_dest_id"/>
                             <field name="move_date"/>
                             <field name="user_id"/>
-                        </tree>
-                    </field>
-                </page>
-            </xpath>
-            
+                        </group>
+                    </group>
+                    <group>
+                        <field name="notes"/>
+                    </group>
+                </sheet>
+            </form>
         </field>
     </record>
+
+    <record id="brodher_sn_move_action" model="ir.actions.act_window">
+        <field name="name">SN Movements</field>
+        <field name="res_model">brodher.sn.move</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <menuitem id="menu_brodher_sn_move"
+              name="SN Movements"
+              parent="stock.menu_stock_root"
+              action="brodher_sn_move_action"
+              sequence="51"/>
 </odoo>

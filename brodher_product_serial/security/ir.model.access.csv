@@ -2,8 +2,8 @@ id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_brodher_product_sn_wizard_user,brodher.product.sn.wizard.user,model_brodher_product_sn_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_product_sn_wizard_manager,brodher.product.sn.wizard.manager,model_brodher_product_sn_wizard,stock.group_stock_manager,1,1,1,1
 access_brodher_message_wizard_user,brodher.message.wizard.user,model_brodher_message_wizard,base.group_user,1,1,1,1
-access_brodher_scan_sn_wizard_user,brodher.scan.sn.wizard.user,model_brodher_scan_sn_wizard,stock.group_stock_user,1,1,1,1
-access_brodher_scan_sn_wizard_manager,brodher.scan.sn.wizard.manager,model_brodher_scan_sn_wizard,stock.group_stock_manager,1,1,1,1
+access_brodher_scan_sn_in_wizard_user,brodher.scan.sn.in.wizard.user,model_brodher_scan_sn_in_wizard,stock.group_stock_user,1,1,1,1
+access_brodher_scan_sn_out_wizard_user,brodher.scan.sn.out.wizard.user,model_brodher_scan_sn_out_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_sn_validation_wizard_user,brodher.sn.validation.wizard.user,model_brodher_sn_validation_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_sn_move_user,brodher.sn.move.user,model_brodher_sn_move,stock.group_stock_user,1,1,1,0
 access_brodher_sn_move_manager,brodher.sn.move.manager,model_brodher_sn_move,stock.group_stock_manager,1,1,1,1
