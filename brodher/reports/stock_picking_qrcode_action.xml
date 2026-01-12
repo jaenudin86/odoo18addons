@@ -3,7 +3,7 @@
     <field name="name">A4 Minimal Margin Label</field>
     <field name="format">A4</field>
     <field name="orientation">Portrait</field>
-    <field name="margin_top">15</field>  
+    <field name="margin_top">25</field>  
     <field name="margin_bottom">15</field>
     <field name="margin_left">3</field>  
     <field name="margin_right">3</field>
@@ -110,7 +110,7 @@
                         display: block;
                         font-weight: bold;
                         margin-top: 2px;
-                        font-size: 13px;
+                        font-size: 14px;
                     }
                 </style>
                 
@@ -123,7 +123,7 @@
                                 
                                 <div class="product_info">
                                     <strong>
-                                        <t t-esc="line.product_id.display_name or line.product_id.name or ''"/>
+                                        <t t-esc="line.product_id.display_name or line.product_id.name or (line.product_id.product_tmpl_id.name if line.product_id.product_tmpl_id else '')"/>
                                     </strong><br/>
                                 </div>
                                 <span class="internal_ref">
