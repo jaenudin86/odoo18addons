@@ -125,7 +125,7 @@
                                     </strong><br/>
                                 </div>
                                 <span class="internal_ref">
-                                    <t t-esc="line.product_id.barcode or ''"/>
+                                    <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
                                 </span>
                                 <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode  or '')" 
                                      class="qrcode_img"/>
