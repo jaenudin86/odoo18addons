@@ -69,24 +69,20 @@
 
     <template id="brodher.stock_picking_qrcode_barcode_report">
         <t t-call="web.basic_layout">
-            
             <div class="page" style="padding: 0;">
-                               <style>
-                    /* Penyesuaian Margin Atas */
+                <style>
                     body {
                         margin-top: 5mm !important; 
                     }
                     .page {
                         padding: 0;
                         margin: 0;
-                        margin-top: -10mm; /* Ditingkatkan menjadi -10mm untuk mengurangi padding atas lebih agresif */
+                        margin-top: -10mm;
                     }
-
-                    /* Tata Letak 5 per Baris */
                     .qrcode_container {
                         width: 30%; 
                         float: left; 
-                        padding: 5px 3px; /* Sedikit padding horisontal */
+                        padding: 5px 3px;
                         box-sizing: border-box;
                         text-align: center;
                         overflow: hidden;
@@ -106,32 +102,25 @@
                         margin-bottom: 2px;
                     }
                     .internal_ref {
-                        /* Kode Internal (Barcode/Default Code) di bawah QR */
                         display: block;
-                        <!-- font-weight: bold; -->
                         margin-top: 2px;
                         font-size: 15px;
                     }
                 </style>
-                
                 <t t-foreach="docs" t-as="picking">
-                    
                     <div style="display: flex; flex-wrap: wrap;">
                         <t t-foreach="picking.move_line_ids" t-as="line">
                             <div class="qrcode_container">
                                 <div class="product_info">
                                     <strong>
                                         <t t-esc="line.product_id.display_name or line.product_id.name or (line.product_id.product_tmpl_id.name if line.product_id.product_tmpl_id else '')"/>
-                                    </strong><br/>
+                                    </strong>
                                 </div>
                                 <span class="internal_ref">
                                     <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
                                 </span>
-                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode  or '')" 
+                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or '')"
                                      class="qrcode_img"/>
-
-
-
                             </div>
                         </t>
                     </div>
