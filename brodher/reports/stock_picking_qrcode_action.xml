@@ -108,7 +108,7 @@
                     .internal_ref {
                         /* Kode Internal (Barcode/Default Code) di bawah QR */
                         display: block;
-                        font-weight: bold;
+                        <!-- font-weight: bold; -->
                         margin-top: 2px;
                         font-size: 14px;
                     }
