@@ -1,7 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Paper Format A4 -->
+    <record id="paperformat_qrcode_label_a4" model="report.paperformat">
+        <field name="name">A4 Minimal Margin Label</field>
+        <field name="format">A4</field>
+        <field name="orientation">Portrait</field>
+        <field name="margin_top">10</field>
+        <field name="margin_bottom">6</field>
+        <field name="margin_left">3</field>
+        <field name="margin_right">3</field>
+        <field name="header_line" eval="False"/>
+        <field name="header_spacing">3</field>
+        <field name="dpi">90</field>
+    </record>
+
     <!-- ========================================== -->
-    <!-- PRODUCT QR CODE REPORT -->
+    <!-- PRODUCT QR CODE REPORT - A4 FORMAT -->
     <!-- ========================================== -->
     
     <!-- Report Action for Product -->
@@ -11,90 +25,74 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">brodher_product_serial.product_qrcode_report</field>
         <field name="report_file">brodher_product_serial.product_qrcode_report</field>
+        <field name="paperformat_id" ref="paperformat_qrcode_label_a4"/>
         <field name="binding_model_id" ref="product.model_product_product"/>
         <field name="binding_type">report</field>
-        <field name="paperformat_id" ref="base.paperformat_euro"/>
     </record>
 
-    <!-- Report Template for Product - All SNs -->
+    <!-- Report Template for Product -->
     <template id="product_qrcode_report">
-        <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="product">
-                <div class="page" style="page-break-after: always;">
-                    <!-- Header -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 10px 0;"><t t-esc="product.display_name"/></h2>
-                        <p style="font-size: 14px; color: #666; margin: 5px 0;">
-                            <strong>Internal Reference:</strong> <t t-esc="product.default_code or 'N/A'"/>
-                            <t t-if="product.product_tmpl_id.sn_product_type">
-                                <span style="margin: 0 15px;">|</span>
-                                <strong>Type:</strong> 
-                                <span t-if="product.product_tmpl_id.sn_product_type == 'M'">Man</span>
-                                <span t-elif="product.product_tmpl_id.sn_product_type == 'W'">Woman</span>
-                                <span t-else=""><t t-esc="product.product_tmpl_id.sn_product_type"/></span>
-                            </t>
-                        </p>
-                    </div>
+        <t t-call="web.basic_layout">
+            <div class="page" style="padding: 0;">
+                <style>
+                    body {
+                        margin-top: 5mm !important;
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                        margin-top: -10mm;
+                    }
+                    .qrcode_container {
+                        width: 33.33%;
+                        float: left;
+                        padding: 5px 3px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        overflow: hidden;
+                        height: 180px;
+                        font-size: 10px;
+                        line-height: 1.2;
+                    }
+                    .qrcode_img {
+                        width: 120px;
+                        height: 120px;
+                        display: block;
+                        margin: 5px auto;
+                    }
+                    .sn_code {
+                        display: block;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-top: 5px;
+                    }
+                </style>
 
+                <t t-foreach="docs" t-as="product">
                     <!-- Get all serial numbers for this product -->
                     <t t-set="serial_numbers" t-value="product.env['stock.lot'].search([('product_id', '=', product.id), ('sn_type', '!=', False)], order='name')"/>
-                    
-                    <!-- Total Count -->
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold; display: inline-block;">
-                            Total Serial Numbers: <t t-esc="len(serial_numbers)"/>
-                        </span>
-                    </div>
 
-                    <!-- No Serial Numbers Message -->
-                    <t t-if="not serial_numbers">
-                        <div style="text-align: center; margin-top: 50px; color: #999;">
-                            <h4>No serial numbers found for this product.</h4>
-                        </div>
-                    </t>
+                    <div style="display: flex; flex-wrap: wrap;">
+                        <t t-foreach="serial_numbers" t-as="sn">
+                            <div class="qrcode_container">
+                                <!-- QR Code -->
+                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                     class="qrcode_img"/>
 
-                    <!-- QR Codes Table - 3 COLUMNS HORIZONTAL, NO BORDERS -->
-                    <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                        <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
-                        <t t-foreach="range(rows)" t-as="row">
-                            <tr>
-                                <t t-foreach="range(3)" t-as="col">
-                                    <t t-set="idx" t-value="row * 3 + col"/>
-                                    <t t-if="idx &lt; len(serial_numbers)">
-                                        <t t-set="sn" t-value="serial_numbers[idx]"/>
-                                        <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
-                                            <!-- QR Code with barcode widget -->
-                                            <div style="margin-bottom: 10px;">
-                                                <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
-                                                     style="width:150px;height:150px;display:block;margin:0 auto;"/>
-
-
-                                            </div>
-                                            <!-- Serial Number -->
-                                            <div style="font-size: 16px; font-weight: bold; color: #000; margin-top: 8px;">
-                                                <t t-esc="sn.name"/>
-                                            </div>
-                                        </td>
-                                    </t>
-                                    <t t-else="">
-                                        <td style="width: 33.33%; padding: 15px;"></td>
-                                    </t>
-                                </t>
-                            </tr>
+                                <!-- Serial Number -->
+                                <span class="sn_code">
+                                    <t t-esc="sn.name"/>
+                                </span>
+                            </div>
                         </t>
-                    </table>
-
-                    <!-- Footer -->
-                    <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
-                        <p style="margin: 5px 0;">Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
                     </div>
-                </div>
-            </t>
+                </t>
+            </div>
         </t>
     </template>
 
     <!-- ========================================== -->
-    <!-- PRODUCT TEMPLATE QR CODE REPORT -->
+    <!-- PRODUCT TEMPLATE QR CODE REPORT - A4 FORMAT -->
     <!-- ========================================== -->
     
     <!-- Report Action for Product Template -->
@@ -104,109 +102,77 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">brodher_product_serial.product_template_qrcode_report</field>
         <field name="report_file">brodher_product_serial.product_template_qrcode_report</field>
+        <field name="paperformat_id" ref="paperformat_qrcode_label_a4"/>
         <field name="binding_model_id" ref="product.model_product_template"/>
         <field name="binding_type">report</field>
-        <field name="paperformat_id" ref="base.paperformat_euro"/>
     </record>
 
     <!-- Report Template for Product Template -->
     <template id="product_template_qrcode_report">
-        <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="product_tmpl">
-                <div class="page" style="page-break-after: always;">
-                    <!-- Header -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 10px 0;"><t t-esc="product_tmpl.name"/></h2>
-                        <p style="font-size: 14px; color: #666; margin: 5px 0;">
-                            <strong>Internal Reference:</strong> <t t-esc="product_tmpl.default_code or 'N/A'"/>
-                            <t t-if="product_tmpl.sn_product_type">
-                                <span style="margin: 0 15px;">|</span>
-                                <strong>Type:</strong> 
-                                <span t-if="product_tmpl.sn_product_type == 'M'">Man</span>
-                                <span t-elif="product_tmpl.sn_product_type == 'W'">Woman</span>
-                                <span t-else=""><t t-esc="product_tmpl.sn_product_type"/></span>
-                            </t>
-                            <span style="margin: 0 15px;">|</span>
-                            <strong>Variants:</strong> <t t-esc="len(product_tmpl.product_variant_ids)"/>
-                        </p>
-                    </div>
+        <t t-call="web.basic_layout">
+            <div class="page" style="padding: 0;">
+                <style>
+                    body {
+                        margin-top: 5mm !important;
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                        margin-top: -10mm;
+                    }
+                    .qrcode_container {
+                        width: 33.33%;
+                        float: left;
+                        padding: 5px 3px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        overflow: hidden;
+                        height: 180px;
+                        font-size: 10px;
+                        line-height: 1.2;
+                    }
+                    .qrcode_img {
+                        width: 120px;
+                        height: 120px;
+                        display: block;
+                        margin: 5px auto;
+                    }
+                    .sn_code {
+                        display: block;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-top: 5px;
+                    }
+                </style>
 
-                    <!-- Count total SNs -->
-                    <t t-set="total_sns" t-value="0"/>
-                    <t t-foreach="product_tmpl.product_variant_ids" t-as="var">
-                        <t t-set="sns" t-value="var.env['stock.lot'].search([('product_id', '=', var.id), ('sn_type', '!=', False)])"/>
-                        <t t-set="total_sns" t-value="total_sns + len(sns)"/>
-                    </t>
-
-                    <!-- Total Count -->
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold; display: inline-block;">
-                            Total Serial Numbers: <t t-esc="total_sns"/>
-                        </span>
-                    </div>
-
-                    <!-- No Serial Numbers Message -->
-                    <t t-if="total_sns == 0">
-                        <div style="text-align: center; margin-top: 50px; color: #999;">
-                            <h4>No serial numbers found for this product template.</h4>
-                        </div>
-                    </t>
-
+                <t t-foreach="docs" t-as="product_tmpl">
                     <!-- Loop through all variants -->
                     <t t-foreach="product_tmpl.product_variant_ids" t-as="variant">
+                        <!-- Get all serial numbers for this variant -->
                         <t t-set="serial_numbers" t-value="variant.env['stock.lot'].search([('product_id', '=', variant.id), ('sn_type', '!=', False)], order='name')"/>
-                        
-                        <t t-if="serial_numbers">
-                            <!-- Variant Header -->
-                            <div style="margin-top: 15px; margin-bottom: 10px; padding: 6px 10px; background: #e9ecef; border-left: 4px solid #007bff;">
-                                <strong style="font-size: 13px;"><t t-esc="variant.display_name"/></strong>
-                                <span style="margin-left: 10px; color: #666; font-size: 12px;">
-                                    (<t t-esc="len(serial_numbers)"/> Serial Numbers)
-                                </span>
-                            </div>
 
-                            <!-- QR Codes Table - 3 COLUMNS HORIZONTAL, NO BORDERS -->
-                            <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                                <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
-                                <t t-foreach="range(rows)" t-as="row">
-                                    <tr>
-                                        <t t-foreach="range(3)" t-as="col">
-                                            <t t-set="idx" t-value="row * 3 + col"/>
-                                            <t t-if="idx &lt; len(serial_numbers)">
-                                                <t t-set="sn" t-value="serial_numbers[idx]"/>
-                                                <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
-                                                    <!-- QR Code with barcode widget -->
-                                                    <div style="margin-bottom: 10px;">
-                                                        <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
-                                                             style="width:150px;height:150px;display:block;margin:0 auto;"/>
-                                                    </div>
-                                                    <!-- Serial Number -->
-                                                    <div style="font-size: 16px; font-weight: bold; color: #000; margin-top: 8px;">
-                                                        <t t-esc="sn.name"/>
-                                                    </div>
-                                                </td>
-                                            </t>
-                                            <t t-else="">
-                                                <td style="width: 33.33%; padding: 15px;"></td>
-                                            </t>
-                                        </t>
-                                    </tr>
-                                </t>
-                            </table>
-                        </t>
+                        <div style="display: flex; flex-wrap: wrap;">
+                            <t t-foreach="serial_numbers" t-as="sn">
+                                <div class="qrcode_container">
+                                    <!-- QR Code -->
+                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                         class="qrcode_img"/>
+
+                                    <!-- Serial Number -->
+                                    <span class="sn_code">
+                                        <t t-esc="sn.name"/>
+                                    </span>
+                                </div>
+                            </t>
+                        </div>
                     </t>
-
-                    <!-- Footer -->
-                    <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
-                        <p style="margin: 5px 0;">Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
-                    </div>
-                </div>
-            </t>
+                </t>
+            </div>
         </t>
     </template>
 
     <!-- ========================================== -->
-    <!-- STOCK PICKING QR CODE REPORT -->
+    <!-- STOCK PICKING QR CODE REPORT - A4 FORMAT -->
     <!-- ========================================== -->
     
     <!-- Report Action for Stock Picking -->
@@ -216,79 +182,67 @@
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">brodher_product_serial.stock_picking_qrcode_report</field>
         <field name="report_file">brodher_product_serial.stock_picking_qrcode_report</field>
+        <field name="paperformat_id" ref="paperformat_qrcode_label_a4"/>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>
-        <field name="paperformat_id" ref="base.paperformat_euro"/>
     </record>
 
     <!-- Report Template for Stock Picking -->
     <template id="stock_picking_qrcode_report">
-        <t t-call="web.html_container">
-            <t t-foreach="docs" t-as="picking">
-                <div class="page" style="page-break-after: always;">
-                    <!-- Header -->
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h2 style="margin: 10px 0;">Stock Picking: <t t-esc="picking.name"/></h2>
-                        <p style="font-size: 14px; color: #666; margin: 5px 0;">
-                            <strong>Type:</strong> <t t-esc="picking.picking_type_id.name"/>
-                            <span style="margin: 0 15px;">|</span>
-                            <strong>Date:</strong> <t t-esc="picking.scheduled_date"/>
-                            <span style="margin: 0 15px;">|</span>
-                            <strong>Status:</strong> <t t-esc="picking.state"/>
-                        </p>
-                    </div>
+        <t t-call="web.basic_layout">
+            <div class="page" style="padding: 0;">
+                <style>
+                    body {
+                        margin-top: 5mm !important;
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                        margin-top: -10mm;
+                    }
+                    .qrcode_container {
+                        width: 33.33%;
+                        float: left;
+                        padding: 5px 3px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        overflow: hidden;
+                        height: 180px;
+                        font-size: 10px;
+                        line-height: 1.2;
+                    }
+                    .qrcode_img {
+                        width: 120px;
+                        height: 120px;
+                        display: block;
+                        margin: 5px auto;
+                    }
+                    .sn_code {
+                        display: block;
+                        font-weight: bold;
+                        font-size: 14px;
+                        margin-top: 5px;
+                    }
+                </style>
 
-                    <!-- Total Count -->
-                    <div style="text-align: center; margin-bottom: 15px;">
-                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold; display: inline-block;">
-                            Total Serial Numbers: <t t-esc="len(picking.sn_move_ids)"/>
-                        </span>
-                    </div>
+                <t t-foreach="docs" t-as="picking">
+                    <div style="display: flex; flex-wrap: wrap;">
+                        <t t-foreach="picking.sn_move_ids" t-as="sn_move">
+                            <t t-set="sn" t-value="sn_move.serial_number_id"/>
+                            <div class="qrcode_container">
+                                <!-- QR Code -->
+                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                     class="qrcode_img"/>
 
-                    <!-- No Serial Numbers Message -->
-                    <t t-if="not picking.sn_move_ids">
-                        <div style="text-align: center; margin-top: 50px; color: #999;">
-                            <h4>No serial numbers scanned for this picking.</h4>
-                        </div>
-                    </t>
-
-                    <!-- QR Codes Table - 3 COLUMNS HORIZONTAL, NO BORDERS -->
-                    <t t-set="serial_numbers" t-value="picking.sn_move_ids"/>
-                    <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                        <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
-                        <t t-foreach="range(rows)" t-as="row">
-                            <tr>
-                                <t t-foreach="range(3)" t-as="col">
-                                    <t t-set="idx" t-value="row * 3 + col"/>
-                                    <t t-if="idx &lt; len(serial_numbers)">
-                                        <t t-set="sn_move" t-value="serial_numbers[idx]"/>
-                                        <t t-set="sn" t-value="sn_move.serial_number_id"/>
-                                        <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
-                                            <!-- QR Code with barcode widget -->
-                                            <div style="margin-bottom: 10px;">
-                                                <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
-                                                     style="width:150px;height:150px;display:block;margin:0 auto;"/>
-                                            </div>
-                                            <!-- Serial Number -->
-                                            <div style="font-size: 16px; font-weight: bold; color: #000; margin-top: 8px;">
-                                                <t t-esc="sn.name"/>
-                                            </div>
-                                        </td>
-                                    </t>
-                                    <t t-else="">
-                                        <td style="width: 33.33%; padding: 15px;"></td>
-                                    </t>
-                                </t>
-                            </tr>
+                                <!-- Serial Number -->
+                                <span class="sn_code">
+                                    <t t-esc="sn.name"/>
+                                </span>
+                            </div>
                         </t>
-                    </table>
-
-                    <!-- Footer -->
-                    <div style="margin-top: 20px; padding-top: 10px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
-                        <p style="margin: 5px 0;">Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
                     </div>
-                </div>
-            </t>
+                </t>
+            </div>
         </t>
     </template>
 
