@@ -119,7 +119,6 @@
                     <div style="display: flex; flex-wrap: wrap;">
                         <t t-foreach="picking.move_line_ids" t-as="line">
                             <div class="qrcode_container">
-                                tess
                                 <div class="product_info">
                                     <strong>
                                         <t t-esc="line.product_id.display_name or line.product_id.name or (line.product_id.product_tmpl_id.name if line.product_id.product_tmpl_id else '')"/>
