@@ -53,49 +53,20 @@
                         </div>
                     </t>
 
-                    <!-- QR Codes Grid - QR ABOVE, SN BELOW -->
+                    <!-- QR Codes Grid - 3 COLUMNS HORIZONTAL, SIMPLE -->
                     <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                         <t t-foreach="serial_numbers" t-as="sn">
-                            <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
-                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                    
-                                    <!-- QR Code - DI ATAS -->
-                                    <div style="margin-bottom: 8px;">
+                            <div style="width: 33.33%; padding: 8px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                <div style="border: 1px solid #ddd; padding: 15px 10px; border-radius: 5px; background: #fff;">
+                                    <!-- QR Code -->
+                                    <div style="margin-bottom: 10px;">
                                         <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                             style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
+                                             style="width: 140px; height: 140px; display: block; margin: 0 auto;"/>
                                     </div>
                                     
-                                    <!-- Serial Number - DI BAWAH QR CODE -->
-                                    <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
+                                    <!-- Serial Number -->
+                                    <div style="font-size: 16px; font-weight: bold; color: #000;">
                                         <t t-esc="sn.name"/>
-                                    </div>
-                                    
-                                    <!-- Status Badge -->
-                                    <div style="margin-top: 5px;">
-                                        <span t-if="sn.sn_status == 'available'" 
-                                              style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                            AVAILABLE
-                                        </span>
-                                        <span t-elif="sn.sn_status == 'used'" 
-                                              style="padding: 2px 8px; background: #ffc107; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                            USED
-                                        </span>
-                                        <span t-elif="sn.sn_status == 'reserved'" 
-                                              style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                            RESERVED
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Type Badge -->
-                                    <div style="margin-top: 3px; font-size: 9px;">
-                                        <span t-if="sn.sn_type == 'M'" 
-                                              style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
-                                            MAN
-                                        </span>
-                                        <span t-elif="sn.sn_type == 'W'" 
-                                              style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
-                                            WOMAN
-                                        </span>
                                     </div>
                                 </div>
                             </div>
@@ -185,49 +156,20 @@
                                 </span>
                             </div>
 
-                            <!-- QR Codes Grid for this variant - QR ABOVE, SN BELOW -->
+                            <!-- QR Codes Grid - 3 COLUMNS HORIZONTAL, SIMPLE -->
                             <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                                 <t t-foreach="serial_numbers" t-as="sn">
-                                    <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
-                                        <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                            
-                                            <!-- QR Code - DI ATAS -->
-                                            <div style="margin-bottom: 8px;">
+                                    <div style="width: 33.33%; padding: 8px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                        <div style="border: 1px solid #ddd; padding: 15px 10px; border-radius: 5px; background: #fff;">
+                                            <!-- QR Code -->
+                                            <div style="margin-bottom: 10px;">
                                                 <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                                     style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
+                                                     style="width: 140px; height: 140px; display: block; margin: 0 auto;"/>
                                             </div>
                                             
-                                            <!-- Serial Number - DI BAWAH QR CODE -->
-                                            <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
+                                            <!-- Serial Number -->
+                                            <div style="font-size: 16px; font-weight: bold; color: #000;">
                                                 <t t-esc="sn.name"/>
-                                            </div>
-                                            
-                                            <!-- Status Badge -->
-                                            <div style="margin-top: 5px;">
-                                                <span t-if="sn.sn_status == 'available'" 
-                                                      style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                                    AVAILABLE
-                                                </span>
-                                                <span t-elif="sn.sn_status == 'used'" 
-                                                      style="padding: 2px 8px; background: #ffc107; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                                    USED
-                                                </span>
-                                                <span t-elif="sn.sn_status == 'reserved'" 
-                                                      style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                                    RESERVED
-                                                </span>
-                                            </div>
-                                            
-                                            <!-- Type Badge -->
-                                            <div style="margin-top: 3px; font-size: 9px;">
-                                                <span t-if="sn.sn_type == 'M'" 
-                                                      style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
-                                                    MAN
-                                                </span>
-                                                <span t-elif="sn.sn_type == 'W'" 
-                                                      style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
-                                                    WOMAN
-                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -292,46 +234,21 @@
                         </div>
                     </t>
 
-                    <!-- QR Codes Grid - QR ABOVE, SN BELOW -->
+                    <!-- QR Codes Grid - 3 COLUMNS HORIZONTAL, SIMPLE -->
                     <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
                         <t t-foreach="picking.sn_move_ids" t-as="sn_move">
                             <t t-set="sn" t-value="sn_move.serial_number_id"/>
-                            <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
-                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
-                                    
-                                    <!-- QR Code - DI ATAS -->
-                                    <div style="margin-bottom: 8px;">
+                            <div style="width: 33.33%; padding: 8px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                <div style="border: 1px solid #ddd; padding: 15px 10px; border-radius: 5px; background: #fff;">
+                                    <!-- QR Code -->
+                                    <div style="margin-bottom: 10px;">
                                         <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                             style="width: 120px; height: 120px; display: block; margin: 0 auto;"/>
+                                             style="width: 140px; height: 140px; display: block; margin: 0 auto;"/>
                                     </div>
                                     
-                                    <!-- Serial Number - DI BAWAH QR CODE -->
-                                    <div style="font-size: 14px; font-weight: bold; color: #000; margin-bottom: 5px;">
+                                    <!-- Serial Number -->
+                                    <div style="font-size: 16px; font-weight: bold; color: #000;">
                                         <t t-esc="sn.name"/>
-                                    </div>
-                                    
-                                    <!-- Move Type Badge -->
-                                    <div style="margin-top: 5px;">
-                                        <span t-if="sn_move.move_type == 'in'" 
-                                              style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                            📥 INCOMING
-                                        </span>
-                                        <span t-elif="sn_move.move_type == 'out'" 
-                                              style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
-                                            📤 OUTGOING
-                                        </span>
-                                    </div>
-                                    
-                                    <!-- Type Badge -->
-                                    <div style="margin-top: 3px; font-size: 9px;">
-                                        <span t-if="sn.sn_type == 'M'" 
-                                              style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
-                                            MAN
-                                        </span>
-                                        <span t-elif="sn.sn_type == 'W'" 
-                                              style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
-                                            WOMAN
-                                        </span>
                                     </div>
                                 </div>
                             </div>
