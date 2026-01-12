@@ -56,34 +56,34 @@
                     <!-- QR Codes Table - 3 COLUMNS HORIZONTAL -->
                     <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
                         <t t-foreach="serial_numbers" t-as="sn">
-                            <!-- Start new row every 3 items -->
                             <t t-if="sn_index % 3 == 0">
                                 <tr>
+                                    <t t-set="row_start" t-value="sn_index"/>
+                                </tr>
                             </t>
-                            
-                            <!-- QR Code Cell -->
-                            <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
-                                <!-- QR Code -->
-                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                     style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
-                                
-                                <!-- Serial Number -->
-                                <div style="font-size: 14px; font-weight: bold; color: #000;">
-                                    <t t-esc="sn.name"/>
-                                </div>
-                            </td>
-                            
-                            <!-- Close row after 3 items or at the end -->
-                            <t t-if="(sn_index + 1) % 3 == 0 or sn_index == len(serial_numbers) - 1">
-                                <!-- Fill empty cells if last row is incomplete -->
-                                <t t-if="sn_index == len(serial_numbers) - 1 and (sn_index + 1) % 3 != 0">
-                                    <t t-set="remaining" t-value="3 - ((sn_index + 1) % 3)"/>
-                                    <t t-foreach="range(remaining)" t-as="empty">
+                        </t>
+                        
+                        <!-- Generate rows with 3 columns each -->
+                        <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
+                        <t t-foreach="range(rows)" t-as="row">
+                            <tr>
+                                <t t-foreach="range(3)" t-as="col">
+                                    <t t-set="idx" t-value="row * 3 + col"/>
+                                    <t t-if="idx &lt; len(serial_numbers)">
+                                        <t t-set="sn" t-value="serial_numbers[idx]"/>
+                                        <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
+                                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                                 style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
+                                            <div style="font-size: 14px; font-weight: bold; color: #000;">
+                                                <t t-esc="sn.name"/>
+                                            </div>
+                                        </td>
+                                    </t>
+                                    <t t-else="">
                                         <td style="width: 33.33%; padding: 8px; border: 1px solid #ddd;"></td>
                                     </t>
                                 </t>
-                                </tr>
-                            </t>
+                            </tr>
                         </t>
                     </table>
 
@@ -170,35 +170,26 @@
 
                             <!-- QR Codes Table - 3 COLUMNS HORIZONTAL -->
                             <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                                <t t-foreach="serial_numbers" t-as="sn">
-                                    <!-- Start new row every 3 items -->
-                                    <t t-if="sn_index % 3 == 0">
-                                        <tr>
-                                    </t>
-                                    
-                                    <!-- QR Code Cell -->
-                                    <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
-                                        <!-- QR Code -->
-                                        <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                             style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
-                                        
-                                        <!-- Serial Number -->
-                                        <div style="font-size: 14px; font-weight: bold; color: #000;">
-                                            <t t-esc="sn.name"/>
-                                        </div>
-                                    </td>
-                                    
-                                    <!-- Close row after 3 items or at the end -->
-                                    <t t-if="(sn_index + 1) % 3 == 0 or sn_index == len(serial_numbers) - 1">
-                                        <!-- Fill empty cells if last row is incomplete -->
-                                        <t t-if="sn_index == len(serial_numbers) - 1 and (sn_index + 1) % 3 != 0">
-                                            <t t-set="remaining" t-value="3 - ((sn_index + 1) % 3)"/>
-                                            <t t-foreach="range(remaining)" t-as="empty">
+                                <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
+                                <t t-foreach="range(rows)" t-as="row">
+                                    <tr>
+                                        <t t-foreach="range(3)" t-as="col">
+                                            <t t-set="idx" t-value="row * 3 + col"/>
+                                            <t t-if="idx &lt; len(serial_numbers)">
+                                                <t t-set="sn" t-value="serial_numbers[idx]"/>
+                                                <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
+                                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                                         style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
+                                                    <div style="font-size: 14px; font-weight: bold; color: #000;">
+                                                        <t t-esc="sn.name"/>
+                                                    </div>
+                                                </td>
+                                            </t>
+                                            <t t-else="">
                                                 <td style="width: 33.33%; padding: 8px; border: 1px solid #ddd;"></td>
                                             </t>
                                         </t>
-                                        </tr>
-                                    </t>
+                                    </tr>
                                 </t>
                             </table>
                         </t>
@@ -263,37 +254,27 @@
                     <!-- QR Codes Table - 3 COLUMNS HORIZONTAL -->
                     <t t-set="serial_numbers" t-value="picking.sn_move_ids"/>
                     <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
-                        <t t-foreach="serial_numbers" t-as="sn_move">
-                            <t t-set="sn" t-value="sn_move.serial_number_id"/>
-                            
-                            <!-- Start new row every 3 items -->
-                            <t t-if="sn_move_index % 3 == 0">
-                                <tr>
-                            </t>
-                            
-                            <!-- QR Code Cell -->
-                            <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
-                                <!-- QR Code -->
-                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                     style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
-                                
-                                <!-- Serial Number -->
-                                <div style="font-size: 14px; font-weight: bold; color: #000;">
-                                    <t t-esc="sn.name"/>
-                                </div>
-                            </td>
-                            
-                            <!-- Close row after 3 items or at the end -->
-                            <t t-if="(sn_move_index + 1) % 3 == 0 or sn_move_index == len(serial_numbers) - 1">
-                                <!-- Fill empty cells if last row is incomplete -->
-                                <t t-if="sn_move_index == len(serial_numbers) - 1 and (sn_move_index + 1) % 3 != 0">
-                                    <t t-set="remaining" t-value="3 - ((sn_move_index + 1) % 3)"/>
-                                    <t t-foreach="range(remaining)" t-as="empty">
+                        <t t-set="rows" t-value="(len(serial_numbers) + 2) // 3"/>
+                        <t t-foreach="range(rows)" t-as="row">
+                            <tr>
+                                <t t-foreach="range(3)" t-as="col">
+                                    <t t-set="idx" t-value="row * 3 + col"/>
+                                    <t t-if="idx &lt; len(serial_numbers)">
+                                        <t t-set="sn_move" t-value="serial_numbers[idx]"/>
+                                        <t t-set="sn" t-value="sn_move.serial_number_id"/>
+                                        <td style="width: 33.33%; padding: 8px; text-align: center; vertical-align: middle; border: 1px solid #ddd;">
+                                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                                 style="width: 130px; height: 130px; display: block; margin: 0 auto 8px auto;"/>
+                                            <div style="font-size: 14px; font-weight: bold; color: #000;">
+                                                <t t-esc="sn.name"/>
+                                            </div>
+                                        </td>
+                                    </t>
+                                    <t t-else="">
                                         <td style="width: 33.33%; padding: 8px; border: 1px solid #ddd;"></td>
                                     </t>
                                 </t>
-                                </tr>
-                            </t>
+                            </tr>
                         </t>
                     </table>
 
