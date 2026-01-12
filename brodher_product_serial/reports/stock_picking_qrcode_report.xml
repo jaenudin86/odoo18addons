@@ -65,8 +65,8 @@
                                         <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                             <!-- QR Code with barcode widget -->
                                             <div style="margin-bottom: 10px;">
-<img t-att-src="'/report/barcode/QR/%s' % sn.name"
-     style="width:150px;height:150px;display:block;margin:0 auto;"/>
+                                                <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
+                                                     style="width:150px;height:150px;display:block;margin:0 auto;"/>
 
 
                                             </div>
@@ -177,10 +177,8 @@
                                                 <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                                     <!-- QR Code with barcode widget -->
                                                     <div style="margin-bottom: 10px;">
-<img t-att-src="'/report/barcode/QR/%s' % sn.name"
-     style="width:150px;height:150px;display:block;margin:0 auto;"/>
-
-
+                                                        <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
+                                                             style="width:150px;height:150px;display:block;margin:0 auto;"/>
                                                     </div>
                                                     <!-- Serial Number -->
                                                     <div style="font-size: 16px; font-weight: bold; color: #000; margin-top: 8px;">
@@ -268,10 +266,8 @@
                                         <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                             <!-- QR Code with barcode widget -->
                                             <div style="margin-bottom: 10px;">
-<img t-att-src="'/report/barcode/QR/%s' % sn.name"
-     style="width:150px;height:150px;display:block;margin:0 auto;"/>
-
-
+                                                <img t-att-src="'/report/barcode/QR/%s' % (sn.name or '')"
+                                                     style="width:150px;height:150px;display:block;margin:0 auto;"/>
                                             </div>
                                             <!-- Serial Number -->
                                             <div style="font-size: 16px; font-weight: bold; color: #000; margin-top: 8px;">

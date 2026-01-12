@@ -1,109 +1,141 @@
 <odoo>
+<record id="paperformat_qrcode_label_a4" model="report.paperformat">
+    <field name="name">A4 Minimal Margin Label</field>
+    <field name="format">A4</field>
+    <field name="orientation">Portrait</field>
+    <field name="margin_top">10</field>  
+    <field name="margin_bottom">6</field>
+    <field name="margin_left">3</field>  
+    <field name="margin_right">3</field>
+    <field name="header_line" eval="False"/>
+    <field name="header_spacing">3</field>
+    <field name="dpi">90</field>
+</record>
     <record id="action_report_stock_picking_qrcode" model="ir.actions.report">
         <field name="name">Lot/SN QRCode Labels</field>
         <field name="model">stock.picking</field>
         <field name="report_type">qweb-pdf</field>
-        <field name="report_name">brodher.stock_picking_qrcode_report</field>
-        <field name="report_file">brodher.stock_picking_qrcode_report</field>
+        <field name="report_name">brodher.stock_picking_qrcode_report</field> <field name="report_file">brodher.stock_picking_qrcode_report</field>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>
     </record>
+
     <record id="action_report_stock_picking_qrcode_barcode" model="ir.actions.report">
         <field name="name">QRCode Labels</field>
         <field name="model">stock.picking</field>
         <field name="report_type">qweb-pdf</field>
         <field name="report_name">brodher.stock_picking_qrcode_barcode_report</field>
         <field name="report_file">brodher.stock_picking_qrcode_barcode_report</field>
+        <field name="paperformat_id" ref="brodher.paperformat_qrcode_label_a4"/>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>
     </record>
 
-    <!-- QR Code untuk Lot/SN -->
-    <template id="brodher.stock_picking_qrcode_report">
+    <template id="brodher.stock_picking_qrcode_report1">
         <t t-call="web.basic_layout">
-            <style>
-                .label-container {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 12mm; /* jarak antar label */
-                }
-                .label {
-                    width: 45mm;
-                    height: 30mm;
-                    
-                    text-align: center;
-                    padding: 2mm;
-                    box-sizing: border-box;
-                    page-break-inside: avoid;
-                }
-                .label img {
-                    width: 20mm;
-                    height: 20mm;
-                }
-                .page-break {
-                    page-break-after: always;
-                }
-            </style>
-
-
             <t t-foreach="docs" t-as="picking">
-                <div class="label-container">
+                <div style="display: flex; flex-wrap: wrap;">
                     <t t-foreach="picking.move_line_ids" t-as="line">
                         <t t-if="line.lot_id">
-                            <div class="label">
+                            <div style="width: 33%; text-align: center; margin-bottom: 10px;">
                                 <strong><t t-esc="line.product_id.display_name"/></strong><br/>
                                 <span><t t-esc="line.lot_id.name"/></span><br/>
-                                <img t-att-src="'/report/barcode/QR/%s' % line.lot_id.name"/>
+                                <img t-att-src="'/report/barcode/QR/%s' % line.lot_id.name" style="width:100px;height:100px;"/>
                             </div>
                         </t>
                     </t>
                 </div>
-                <div class="page-break"></div>
             </t>
         </t>
     </template>
 
-    <!-- QR Code untuk Barcode Produk -->
-    <template id="brodher.stock_picking_qrcode_barcode_report">
+    <template id="brodher.stock_picking_qrcode_report">
         <t t-call="web.basic_layout">
-            <style>
-                .label-container {
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 12mm; /* jarak antar label */
-                }
-                .label {
-                    width: 45mm;
-                    height: 30mm;
-                    
-                    text-align: center;
-                    padding: 2mm;
-                    box-sizing: border-box;
-                    page-break-inside: avoid;
-                }
-                .label img {
-                    width: 20mm;
-                    height: 20mm;
-                }
-                .page-break {
-                    page-break-after: always;
-                }
-            </style>
-
             <t t-foreach="docs" t-as="picking">
-                <div class="label-container">
-                    <t t-foreach="picking.move_line_ids" t-as="line">
-                        <t t-if="line.lot_id">
-                            <div class="label">
-                                <strong><t t-esc="line.product_id.display_name"/></strong><br/>
-                                <span><t t-esc="line.product_id.barcode"/></span><br/>
-                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or line.product_id.default_code or '')"/>
-                            </div>
-                        </t>
+                <div style="display: flex; flex-wrap: wrap;">
+                    <t t-foreach="picking.sn_move_ids" t-as="sn_move">
+                        <t t-set="sn" t-value="sn_move.serial_number_id"/>
+                        <div style="width: 33%; text-align: center; margin-bottom: 10px;">
+                            <strong><t t-esc="sn.product_id.display_name if sn.product_id else sn.product_tmpl_id.name"/></strong><br/>
+                            <span><t t-esc="sn.name"/></span><br/>
+                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" style="width:100px;height:100px;"/>
+                        </div>
                     </t>
                 </div>
-                <div class="page-break"></div>
             </t>
+        </t>
+    </template>
+
+    <template id="brodher.stock_picking_qrcode_barcode_report">
+        <t t-call="web.basic_layout">
+            
+            <div class="page" style="padding: 0;">
+                <style>
+                    /* Penyesuaian Margin Atas */
+                    body {
+                        margin-top: 5mm !important; 
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                        margin-top: -10mm; /* Ditingkatkan menjadi -10mm untuk mengurangi padding atas lebih agresif */
+                    }
+
+                    /* Tata Letak 5 per Baris */
+                    .qrcode_container {
+                        width: 20%; 
+                        float: left; 
+                        padding: 5px 3px; /* Sedikit padding horisontal */
+                        box-sizing: border-box;
+                        text-align: center;
+                        overflow: hidden;
+                        height: 140px; 
+                        font-size: 8px; 
+                        line-height: 1.1; 
+                    }
+                    .qrcode_img {
+                        width: 90px; 
+                        height: 90px;
+                        display: block; 
+                        margin: 2px auto; 
+                    }
+                    .product_info {
+                        height: 30px; 
+                        overflow: hidden;
+                        margin-bottom: 2px;
+                    }
+                    .internal_ref {
+                        /* Kode Internal (Barcode/Default Code) di bawah QR */
+                        display: block;
+                        font-weight: bold;
+                        margin-top: 2px;
+                    }
+                </style>
+                
+                <t t-foreach="docs" t-as="picking">
+                    
+                    <div style="display: flex; flex-wrap: wrap;">
+                        <t t-foreach="picking.move_line_ids" t-as="line">
+                            
+                            <div class="qrcode_container">
+                                
+                                <div class="product_info">
+                                    <strong>[<t t-esc="line.product_id.default_code"/>] <t t-esc="line.product_id.name"/></strong><br/>
+                                    <span><t t-esc="line.product_id.product_tmpl_id.attribute_line_ids and line.product_id.product_tmpl_id.attribute_line_ids[0].value_ids and line.product_id.product_tmpl_id.attribute_line_ids[0].value_ids[0].name or ''"/></span>
+                                </div>
+
+                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or line.product_id.default_code or '')" 
+                                     class="qrcode_img"/>
+
+                                <span class="internal_ref" style="font-size: 12px;">
+                                    <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
+                                </span>
+
+                            </div>
+                        </t>
+                    </div>
+                </t>
+            </div>
         </t>
     </template>
 </odoo>
