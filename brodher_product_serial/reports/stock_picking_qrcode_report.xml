@@ -65,8 +65,9 @@
                                         <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                             <!-- QR Code with barcode widget -->
                                             <div style="margin-bottom: 10px;">
-                                              <img t-attf-src="/report/barcode/?barcode_type=QR&amp;value=#{sn.name}&amp;width=150&amp;height=150"
+<img t-att-src="'/report/barcode/QR/%s' % sn.name"
      style="width:150px;height:150px;display:block;margin:0 auto;"/>
+
 
                                             </div>
                                             <!-- Serial Number -->
@@ -176,8 +177,9 @@
                                                 <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                                     <!-- QR Code with barcode widget -->
                                                     <div style="margin-bottom: 10px;">
-     <img t-attf-src="/report/barcode/?barcode_type=QR&amp;value=#{sn.name}&amp;width=150&amp;height=150"
+<img t-att-src="'/report/barcode/QR/%s' % sn.name"
      style="width:150px;height:150px;display:block;margin:0 auto;"/>
+
 
                                                     </div>
                                                     <!-- Serial Number -->
@@ -266,8 +268,9 @@
                                         <td style="width: 33.33%; padding: 15px; text-align: center; vertical-align: middle;">
                                             <!-- QR Code with barcode widget -->
                                             <div style="margin-bottom: 10px;">
-<img t-attf-src="/report/barcode/?barcode_type=QR&amp;value=#{sn.name}&amp;width=150&amp;height=150"
+<img t-att-src="'/report/barcode/QR/%s' % sn.name"
      style="width:150px;height:150px;display:block;margin:0 auto;"/>
+
 
                                             </div>
                                             <!-- Serial Number -->
