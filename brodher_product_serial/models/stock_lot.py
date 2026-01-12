@@ -57,60 +57,67 @@ class StockLot(models.Model):
                 record.qr_code = False
     
     @api.model
-    def _get_next_sequence(self, sn_type, year_code, product_id):
-        last_sn = self.search([
-            ('sn_type', '=', sn_type),
-            ('year_code', '=', year_code),
-            ('name', 'like', f'PF{year_code}{sn_type}%'),
-            ('product_id', '=', product_id)
-        ], order='sequence_number desc', limit=1)
-        return (last_sn.sequence_number + 1) if last_sn and last_sn.sequence_number else 1
-    
-    @api.model
-    def generate_serial_numbers(self, product_tmpl_id, product_id, sn_type, quantity=1):
-        _logger.info('=== Brodher: Generate Serial Numbers ===')
-        product_tmpl = self.env['product.template'].browse(product_tmpl_id)
-        if not product_tmpl:
-            raise ValidationError(_('Product not found!'))
+    def _get_next_sequence_global(self, sn_type, year):
+        """
+        Get next GLOBAL sequence number across ALL products
+        Only resets when:
+        - Different type (M/W)
+        - Different year
         
-        if product_id:
-            product = self.env['product.product'].browse(product_id)
+        Continues for different products/variants
+        """
+        # Search for ANY product with this year and type
+        domain = [
+            ('name', 'like', f'PF{year}{sn_type}%')
+            # NO product_id filter - GLOBAL across all products
+        ]
+        
+        last_sn = self.search(domain, order='name desc', limit=1)
+        
+        if last_sn:
+            # Extract sequence from last SN (PFYYTXXXXXXX -> XXXXXXX)
+            sequence_str = last_sn.name[-7:]
+            next_sequence = int(sequence_str) + 1
+            _logger.info(f'GLOBAL sequence for {year}{sn_type}: continuing from {sequence_str} to {next_sequence}')
+            return next_sequence
         else:
-            product = product_tmpl.product_variant_ids[0] if product_tmpl.product_variant_ids else False
+            _logger.info(f'GLOBAL sequence for {year}{sn_type}: starting from 1')
+            return 1
+
+
+    def generate_serial_numbers(self, product_tmpl_id, product_id, sn_type, quantity):
+        """
+        Generate serial numbers with GLOBAL sequence
+        """
+        if quantity <= 0:
+            raise UserError(_('Quantity must be greater than 0'))
         
-        if not product:
-            raise ValidationError(_('Product variant not found!'))
-        if product.tracking != 'serial':
-            raise ValidationError(_('Product must have tracking by Serial Number!'))
-        
-        current_year = datetime.now().strftime('%y')
+        year = datetime.now().strftime('%y')
         serial_numbers = []
         
+        # Get starting sequence GLOBALLY
+        next_seq = self._get_next_sequence_global(sn_type, year)
+        
+        _logger.info(f'Generating {quantity} SNs for product_id={product_id}, type={sn_type}, starting from seq={next_seq}')
+        
         for i in range(quantity):
-            next_seq = self._get_next_sequence(sn_type, current_year, product.id)
-            sn_name = f"PF{current_year}{sn_type}{next_seq:07d}"
+            current_seq = next_seq + i
+            sn_name = f"PF{year}{sn_type}{current_seq:07d}"
             
-            if self.search([('name', '=', sn_name), ('product_id', '=', product.id)], limit=1):
-                _logger.warning('SN %s exists! Skipping...' % sn_name)
+            # Check if SN already exists
+            existing = self.search([('name', '=', sn_name)], limit=1)
+            if existing:
+                _logger.warning(f'SN {sn_name} already exists, skipping...')
                 continue
             
-            try:
-                sn_record = self.create({
-                    'name': sn_name,
-                    'product_id': product.id,
-                    'company_id': self.env.company.id,
-                    'sn_type': sn_type,
-                    'year_code': current_year,
-                    'sequence_number': next_seq,
-                    'sn_status': 'available',
-                    'qc_passed': True,
-                    'sn_generated_date': fields.Datetime.now(),
-                })
-                serial_numbers.append(sn_record)
-                _logger.info('✓ Created: %s' % sn_name)
-            except Exception as e:
-                _logger.error('✗ Failed %s: %s' % (sn_name, str(e)))
-                continue
+            # Create new serial number
+            sn = self.create({
+                'name': sn_name,
+                'product_id': product_id,
+                'company_id': self.env.company.id,
+            })
+            serial_numbers.append(sn)
+            _logger.info(f'Created SN: {sn_name} for product_id={product_id}')
         
         return serial_numbers
     

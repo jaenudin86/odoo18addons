@@ -23,42 +23,68 @@ class ProductSNWizard(models.TransientModel):
                 try:
                     year = datetime.now().strftime('%y')
                     StockLot = self.env['stock.lot']
-                    product = record.product_id if record.product_id else (
-                        record.product_tmpl_id.product_variant_ids[0] 
-                        if record.product_tmpl_id.product_variant_ids else False
-                    )
-                    if product:
-                        next_seq = StockLot._get_next_sequence(record.sn_type, year, product.id)
-                        preview = f"PF{year}{record.sn_type}{next_seq:07d}"
-                        if record.quantity > 1:
-                            last_seq = next_seq + record.quantity - 1
-                            preview += f" ... PF{year}{record.sn_type}{last_seq:07d}"
-                        record.preview_sn = preview
-                    else:
-                        record.preview_sn = 'Preview not available'
-                except:
+                    
+                    # Get next sequence GLOBALLY (not per product)
+                    next_seq = StockLot._get_next_sequence_global(record.sn_type, year)
+                    preview = f"PF{year}{record.sn_type}{next_seq:07d}"
+                    
+                    if record.quantity > 1:
+                        last_seq = next_seq + record.quantity - 1
+                        preview += f" ... PF{year}{record.sn_type}{last_seq:07d}"
+                    
+                    record.preview_sn = preview
+                except Exception as e:
+                    _logger.warning('Preview computation error: %s' % str(e))
                     record.preview_sn = 'Preview not available'
             else:
                 record.preview_sn = ''
     
+    @api.onchange('product_tmpl_id')
+    def _onchange_product_tmpl_id(self):
+        """Reset product_id when template changes"""
+        if self.product_tmpl_id:
+            # Auto-select first variant if only one exists
+            variants = self.product_tmpl_id.product_variant_ids
+            if len(variants) == 1:
+                self.product_id = variants[0]
+            else:
+                self.product_id = False
+    
     def action_generate(self):
+        """Generate serial numbers with GLOBAL sequencing"""
         _logger.info('=== ACTION GENERATE STARTED ===')
+        
         for wizard in self:
+            # Validations
             if wizard.quantity <= 0:
                 raise UserError(_('Quantity must be greater than 0!'))
+            
             if wizard.quantity > 1000:
                 raise UserError(_('Cannot generate more than 1000 serial numbers at once!'))
             
+            # Determine the actual product to use
+            if wizard.product_id:
+                product = wizard.product_id
+            elif wizard.product_tmpl_id.product_variant_ids:
+                product = wizard.product_tmpl_id.product_variant_ids[0]
+            else:
+                raise UserError(_('No product variant found for the selected template!'))
+            
             try:
                 StockLot = self.env['stock.lot']
+                
+                # Generate serial numbers with GLOBAL sequence
                 serial_numbers = StockLot.generate_serial_numbers(
                     wizard.product_tmpl_id.id,
-                    wizard.product_id.id if wizard.product_id else False,
+                    product.id,
                     wizard.sn_type,
                     wizard.quantity
                 )
                 
-                _logger.info('Generated %d serial numbers' % len(serial_numbers))
+                _logger.info('Generated %d serial numbers for product %s (ID: %d), Type: %s' % 
+                           (len(serial_numbers), product.name, product.id, wizard.sn_type))
+                
+                # Prepare success message
                 sn_names = [sn.name for sn in serial_numbers]
                 
                 if len(serial_numbers) <= 10:
@@ -66,8 +92,10 @@ class ProductSNWizard(models.TransientModel):
                 else:
                     sn_list = '\n'.join(sn_names[:10]) + f'\n... and {len(serial_numbers) - 10} more'
                 
+                # Create message wizard
                 message_id = self.env['brodher.message.wizard'].create({
-                    'message': _('Successfully generated %d serial numbers:\n\n%s') % (len(serial_numbers), sn_list)
+                    'message': _('Successfully generated %d serial numbers for %s:\n\nType: %s\n\n%s') % 
+                              (len(serial_numbers), product.display_name, wizard.sn_type, sn_list)
                 })
                 
                 return {
@@ -78,6 +106,7 @@ class ProductSNWizard(models.TransientModel):
                     'view_mode': 'form',
                     'target': 'new',
                 }
+                
             except Exception as e:
-                _logger.error('ERROR: %s' % str(e))
+                _logger.error('ERROR generating serial numbers: %s' % str(e), exc_info=True)
                 raise UserError(_('Error generating serial numbers:\n%s') % str(e))
