@@ -47,7 +47,7 @@ class ScanSNOutWizard(models.TransientModel):
                 wizard.available_sn_ids = [(5, 0, 0)]
                 continue
             
-            # OUTGOING: Hanya SN yang SUDAH masuk (status = used) tapi BELUM keluar (status != sold)
+            # OUTGOING: Hanya SN yang SUDAH masuk (status = used) tapi BELUM keluar (status != reserved)
             received_sns = self.env['brodher.sn.move'].search([
                 ('move_type', '=', 'in'),
                 ('picking_id.state', '=', 'done')
@@ -148,11 +148,11 @@ class ScanSNOutWizard(models.TransientModel):
                         <p>SN: <strong>{sn.name}</strong><br/>
                         Status: <strong>AVAILABLE</strong><br/>
                         SN ini belum pernah masuk gudang. Tidak bisa keluar!</p></div>'''
-                elif sn.sn_status == 'sold':
+                elif sn.sn_status == 'reserved':
                     wizard.sn_info = f'''<div class="alert alert-danger">
-                        <h5>❌ ALREADY SOLD!</h5>
+                        <h5>❌ ALREADY SHIPPED!</h5>
                         <p>SN: <strong>{sn.name}</strong><br/>
-                        Status: <strong>SOLD</strong><br/>
+                        Status: <strong>RESERVED</strong><br/>
                         SN ini sudah keluar dari gudang!</p></div>'''
                 elif sn.sn_status == 'used':
                     # Check if already shipped
@@ -222,9 +222,9 @@ class ScanSNOutWizard(models.TransientModel):
                 raise UserError(_(
                     '❌ SN %s BELUM MASUK GUDANG!\n\nStatus: AVAILABLE\n\nSN ini belum pernah masuk gudang, tidak bisa keluar!'
                 ) % sn.name)
-            elif sn.sn_status == 'sold':
+            elif sn.sn_status == 'reserved':
                 raise UserError(_(
-                    '❌ SN %s SUDAH KELUAR!\n\nStatus: SOLD\n\nSN ini sudah keluar dari gudang!'
+                    '❌ SN %s SUDAH KELUAR!\n\nStatus: RESERVED\n\nSN ini sudah keluar dari gudang!'
                 ) % sn.name)
             else:
                 raise UserError(_(
@@ -262,9 +262,9 @@ class ScanSNOutWizard(models.TransientModel):
             'notes': self.notes,
         })
         
-        # Update SN - UBAH STATUS JADI 'SOLD' setelah keluar gudang
+        # Update SN - UBAH STATUS JADI 'RESERVED' setelah keluar gudang
         sn.write({
-            'sn_status': 'sold',  # ← Status berubah jadi SOLD
+            'sn_status': 'reserved',  # ← Status berubah jadi RESERVED
             'last_sn_move_date': fields.Datetime.now()
         })
         
@@ -334,7 +334,7 @@ class ScanSNOutWizard(models.TransientModel):
             except:
                 pass  # Not critical if recompute fails
         
-        _logger.info(f'✓ OUTGOING: SN {sn.name} scanned - Status changed to SOLD')
+        _logger.info(f'✓ OUTGOING: SN {sn.name} scanned - Status changed to RESERVED')
         
         # Return for next scan
         return {
