@@ -1,6 +1,216 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Report Action -->
+    <!-- ========================================== -->
+    <!-- PRODUCT QR CODE REPORT -->
+    <!-- ========================================== -->
+    
+    <!-- Report Action for Product -->
+    <record id="action_report_product_qrcode" model="ir.actions.report">
+        <field name="name">Product QR Code - All Serial Numbers</field>
+        <field name="model">product.product</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.product_qrcode_report</field>
+        <field name="report_file">brodher_product_serial.product_qrcode_report</field>
+        <field name="binding_model_id" ref="product.model_product_product"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <!-- Report Template for Product - All SNs -->
+    <template id="product_qrcode_report">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="product">
+                <div class="page">
+                    <!-- Header -->
+                    <div class="text-center" style="margin-bottom: 20px;">
+                        <h2><t t-esc="product.display_name"/></h2>
+                        <p style="font-size: 14px; color: #666;">
+                            <strong>Internal Reference:</strong> <t t-esc="product.default_code or 'N/A'"/>
+                            <span style="margin: 0 15px;">|</span>
+                            <strong>Type:</strong> <t t-esc="product.product_tmpl_id.sn_product_type_display or 'N/A'"/>
+                        </p>
+                    </div>
+
+                    <!-- Get all serial numbers for this product -->
+                    <t t-set="serial_numbers" t-value="product.env['stock.lot'].search([('product_id', '=', product.id), ('sn_type', '!=', False)], order='name')"/>
+                    
+                    <!-- Total Count -->
+                    <div class="text-center" style="margin-bottom: 15px;">
+                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold;">
+                            Total Serial Numbers: <t t-esc="len(serial_numbers)"/>
+                        </span>
+                    </div>
+
+                    <!-- QR Codes Grid -->
+                    <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
+                        <t t-foreach="serial_numbers" t-as="sn">
+                            <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
+                                    <!-- Product Name -->
+                                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; min-height: 30px;">
+                                        <t t-esc="sn.product_id.display_name"/>
+                                    </div>
+                                    
+                                    <!-- Serial Number -->
+                                    <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                        <t t-esc="sn.name"/>
+                                    </div>
+                                    
+                                    <!-- QR Code -->
+                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                         style="width: 100px; height: 100px; margin: 5px auto;"/>
+                                    
+                                    <!-- Status Badge -->
+                                    <div style="margin-top: 5px;">
+                                        <span t-if="sn.sn_status == 'available'" 
+                                              style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                            AVAILABLE
+                                        </span>
+                                        <span t-elif="sn.sn_status == 'used'" 
+                                              style="padding: 2px 8px; background: #ffc107; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                            USED
+                                        </span>
+                                        <span t-elif="sn.sn_status == 'reserved'" 
+                                              style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                            RESERVED
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Type Badge -->
+                                    <div style="margin-top: 3px; font-size: 9px;">
+                                        <span t-if="sn.sn_type == 'M'" 
+                                              style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
+                                            MAN
+                                        </span>
+                                        <span t-elif="sn.sn_type == 'W'" 
+                                              style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
+                                            WOMAN
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
+                        <p>Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- ========================================== -->
+    <!-- PRODUCT TEMPLATE QR CODE REPORT -->
+    <!-- ========================================== -->
+    
+    <!-- Report Action for Product Template -->
+    <record id="action_report_product_template_qrcode" model="ir.actions.report">
+        <field name="name">Product QR Code - All Variants</field>
+        <field name="model">product.template</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.product_template_qrcode_report</field>
+        <field name="report_file">brodher_product_serial.product_template_qrcode_report</field>
+        <field name="binding_model_id" ref="product.model_product_template"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <!-- Report Template for Product Template -->
+    <template id="product_template_qrcode_report">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="product_tmpl">
+                <div class="page">
+                    <!-- Header -->
+                    <div class="text-center" style="margin-bottom: 20px;">
+                        <h2><t t-esc="product_tmpl.name"/></h2>
+                        <p style="font-size: 14px; color: #666;">
+                            <strong>Internal Reference:</strong> <t t-esc="product_tmpl.default_code or 'N/A'"/>
+                            <span style="margin: 0 15px;">|</span>
+                            <strong>Type:</strong> <t t-esc="product_tmpl.sn_product_type_display or 'N/A'"/>
+                            <span style="margin: 0 15px;">|</span>
+                            <strong>Variants:</strong> <t t-esc="len(product_tmpl.product_variant_ids)"/>
+                        </p>
+                    </div>
+
+                    <!-- Loop through all variants -->
+                    <t t-foreach="product_tmpl.product_variant_ids" t-as="variant">
+                        <t t-set="serial_numbers" t-value="variant.env['stock.lot'].search([('product_id', '=', variant.id), ('sn_type', '!=', False)], order='name')"/>
+                        
+                        <t t-if="serial_numbers">
+                            <!-- Variant Header -->
+                            <div style="margin-top: 20px; margin-bottom: 10px; padding: 8px; background: #e9ecef; border-left: 4px solid #007bff;">
+                                <strong style="font-size: 13px;">
+                                    <t t-esc="variant.display_name"/>
+                                </strong>
+                                <span style="margin-left: 10px; color: #666; font-size: 12px;">
+                                    (<t t-esc="len(serial_numbers)"/> Serial Numbers)
+                                </span>
+                            </div>
+
+                            <!-- QR Codes Grid for this variant -->
+                            <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
+                                <t t-foreach="serial_numbers" t-as="sn">
+                                    <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                        <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
+                                            <!-- Serial Number -->
+                                            <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                                <t t-esc="sn.name"/>
+                                            </div>
+                                            
+                                            <!-- QR Code -->
+                                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                                 style="width: 100px; height: 100px; margin: 5px auto;"/>
+                                            
+                                            <!-- Status Badge -->
+                                            <div style="margin-top: 5px;">
+                                                <span t-if="sn.sn_status == 'available'" 
+                                                      style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                                    AVAILABLE
+                                                </span>
+                                                <span t-elif="sn.sn_status == 'used'" 
+                                                      style="padding: 2px 8px; background: #ffc107; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                                    USED
+                                                </span>
+                                                <span t-elif="sn.sn_status == 'reserved'" 
+                                                      style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                                    RESERVED
+                                                </span>
+                                            </div>
+                                            
+                                            <!-- Type Badge -->
+                                            <div style="margin-top: 3px; font-size: 9px;">
+                                                <span t-if="sn.sn_type == 'M'" 
+                                                      style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
+                                                    MAN
+                                                </span>
+                                                <span t-elif="sn.sn_type == 'W'" 
+                                                      style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
+                                                    WOMAN
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </t>
+                            </div>
+                        </t>
+                    </t>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
+                        <p>Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
+                    </div>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- ========================================== -->
+    <!-- STOCK PICKING QR CODE REPORT (UPDATED) -->
+    <!-- ========================================== -->
+    
+    <!-- Report Action for Stock Picking -->
     <record id="action_report_stock_picking_qrcode" model="ir.actions.report">
         <field name="name">Stock Picking QR Code</field>
         <field name="model">stock.picking</field>
@@ -9,23 +219,88 @@
         <field name="report_file">brodher_product_serial.stock_picking_qrcode_report</field>
         <field name="binding_model_id" ref="stock.model_stock_picking"/>
         <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
     </record>
 
-    <!-- Report Template -->
+    <!-- Report Template for Stock Picking -->
     <template id="stock_picking_qrcode_report">
         <t t-call="web.basic_layout">
             <t t-foreach="docs" t-as="picking">
-                <div style="display: flex; flex-wrap: wrap;">
-                    <t t-foreach="picking.sn_move_ids" t-as="sn_move">
-                        <t t-set="sn" t-value="sn_move.serial_number_id"/>
-                        <div style="width: 33%; text-align: center; margin-bottom: 10px;">
-                            <strong><t t-esc="sn.product_id.display_name if sn.product_id else sn.product_id.name"/></strong><br/>
-                            <span><t t-esc="sn.name"/></span><br/>
-                            <img t-att-src="'/report/barcode/QR/%s' % sn.name" style="width:100px;height:100px;"/>
-                        </div>
-                    </t>
+                <div class="page">
+                    <!-- Header -->
+                    <div class="text-center" style="margin-bottom: 20px;">
+                        <h2>Stock Picking: <t t-esc="picking.name"/></h2>
+                        <p style="font-size: 14px; color: #666;">
+                            <strong>Type:</strong> <t t-esc="picking.picking_type_id.name"/>
+                            <span style="margin: 0 15px;">|</span>
+                            <strong>Date:</strong> <t t-esc="picking.scheduled_date"/>
+                            <span style="margin: 0 15px;">|</span>
+                            <strong>Status:</strong> <t t-esc="picking.state"/>
+                        </p>
+                    </div>
+
+                    <!-- Total Count -->
+                    <div class="text-center" style="margin-bottom: 15px;">
+                        <span style="padding: 5px 15px; background: #17a2b8; color: white; border-radius: 4px; font-weight: bold;">
+                            Total Serial Numbers: <t t-esc="len(picking.sn_move_ids)"/>
+                        </span>
+                    </div>
+
+                    <!-- QR Codes Grid -->
+                    <div style="display: flex; flex-wrap: wrap; justify-content: flex-start;">
+                        <t t-foreach="picking.sn_move_ids" t-as="sn_move">
+                            <t t-set="sn" t-value="sn_move.serial_number_id"/>
+                            <div style="width: 33.33%; padding: 10px; box-sizing: border-box; text-align: center; page-break-inside: avoid;">
+                                <div style="border: 1px solid #ddd; padding: 10px; border-radius: 5px; background: #f8f9fa;">
+                                    <!-- Product Name -->
+                                    <div style="font-weight: bold; font-size: 11px; margin-bottom: 5px; min-height: 30px;">
+                                        <t t-esc="sn.product_id.display_name"/>
+                                    </div>
+                                    
+                                    <!-- Serial Number -->
+                                    <div style="font-size: 13px; font-weight: bold; color: #007bff; margin-bottom: 5px;">
+                                        <t t-esc="sn.name"/>
+                                    </div>
+                                    
+                                    <!-- QR Code -->
+                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                         style="width: 100px; height: 100px; margin: 5px auto;"/>
+                                    
+                                    <!-- Move Type Badge -->
+                                    <div style="margin-top: 5px;">
+                                        <span t-if="sn_move.move_type == 'in'" 
+                                              style="padding: 2px 8px; background: #28a745; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                            📥 INCOMING
+                                        </span>
+                                        <span t-elif="sn_move.move_type == 'out'" 
+                                              style="padding: 2px 8px; background: #dc3545; color: white; border-radius: 3px; font-size: 9px; font-weight: bold;">
+                                            📤 OUTGOING
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Type Badge -->
+                                    <div style="margin-top: 3px; font-size: 9px;">
+                                        <span t-if="sn.sn_type == 'M'" 
+                                              style="padding: 2px 6px; background: #007bff; color: white; border-radius: 3px;">
+                                            MAN
+                                        </span>
+                                        <span t-elif="sn.sn_type == 'W'" 
+                                              style="padding: 2px 6px; background: #e83e8c; color: white; border-radius: 3px;">
+                                            WOMAN
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Footer -->
+                    <div style="margin-top: 30px; padding-top: 15px; border-top: 1px solid #ddd; text-align: center; font-size: 10px; color: #666;">
+                        <p>Generated on: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')"/></p>
+                    </div>
                 </div>
             </t>
         </t>
     </template>
+
 </odoo>
