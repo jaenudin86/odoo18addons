@@ -110,6 +110,7 @@
                         display: block;
                         font-weight: bold;
                         margin-top: 2px;
+                        font-size: 14px;
                     }
                 </style>
                 
@@ -128,7 +129,7 @@
                                 <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or line.product_id.default_code or '')" 
                                      class="qrcode_img"/>
 
-                                <span class="internal_ref" style="font-size: 14px;">
+                                <span class="internal_ref">
                                     <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
                                 </span>
 
