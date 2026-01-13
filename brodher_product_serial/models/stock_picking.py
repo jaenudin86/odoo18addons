@@ -19,6 +19,22 @@ class StockPicking(models.Model):
     generated_sn_count = fields.Integer('Generated SNs', compute='_compute_generated_sn_count', store=True)
     sn_generation_summary = fields.Text('SN Generation Summary', compute='_compute_sn_generation_summary')
     
+    sn_remaining = fields.Integer(
+        'Remaining SNs to Scan',
+        compute='_compute_sn_remaining'
+    )
+    
+    sn_scan_complete = fields.Boolean(
+        'All SNs Scanned',
+        compute='_compute_sn_remaining'
+    )
+    
+    @api.depends('generated_sn_count', 'scanned_sn_count')
+    def _compute_sn_remaining(self):
+        for picking in self:
+            remaining = picking.generated_sn_count - picking.scanned_sn_count
+            picking.sn_remaining = max(0, remaining)
+            picking.sn_scan_complete = (remaining <= 0 and picking.generated_sn_count > 0)
     # ========== EXISTING COMPUTES (SCAN SN) ==========
     @api.depends('sn_move_ids')
     def _compute_scanned_sn_count(self):

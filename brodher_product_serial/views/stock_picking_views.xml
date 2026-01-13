@@ -64,12 +64,12 @@
                 
                 <!-- Banner: SN Generated, Need to Scan -->
                 <div class="alert alert-info" role="alert" 
-                     invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting'] or scanned_sn_count &gt;= generated_sn_count">
+                     invisible="not serial_numbers_generated or sn_scan_complete or state not in ['confirmed', 'assigned', 'waiting']">
                     <i class="fa fa-info-circle"/> 
                     <strong>Step 2:</strong> 
-                    <field name="generated_sn_count"/> serial numbers generated. 
-                    <field name="scanned_sn_count"/> scanned.
-                    Please scan remaining <span class="fw-bold"><t t-esc="generated_sn_count - scanned_sn_count"/> SNs</span>.
+                    <field name="generated_sn_count" class="fw-bold"/> serial numbers generated. 
+                    <field name="scanned_sn_count" class="fw-bold"/> scanned.
+                    Please scan remaining <field name="sn_remaining" class="fw-bold text-danger"/> SNs.
                     <button name="action_scan_serial_number" 
                             string="Start Scanning" 
                             type="object" 
@@ -79,10 +79,10 @@
                 
                 <!-- Banner: All Scanned, Ready to Validate -->
                 <div class="alert alert-success" role="alert" 
-                     invisible="scanned_sn_count == 0 or scanned_sn_count &lt; generated_sn_count or state not in ['confirmed', 'assigned', 'waiting']">
+                     invisible="not sn_scan_complete or state not in ['confirmed', 'assigned', 'waiting']">
                     <i class="fa fa-check-circle"/> 
                     <strong>Step 3:</strong> 
-                    All serial numbers scanned! You can now validate the transfer.
+                    All <field name="scanned_sn_count"/> serial numbers scanned! You can now validate the transfer.
                 </div>
             </xpath>
             
@@ -91,6 +91,8 @@
                 <field name="serial_numbers_generated" invisible="1"/>
                 <field name="generated_sn_count" invisible="1"/>
                 <field name="scanned_sn_count" invisible="1"/>
+                <field name="sn_remaining" invisible="1"/>
+                <field name="sn_scan_complete" invisible="1"/>
                 <field name="has_sn_products" invisible="1"/>
                 <field name="require_sn_scan" invisible="1"/>
             </xpath>
@@ -108,7 +110,8 @@
                         </group>
                         <group string="Scan Status">
                             <field name="scanned_sn_count" readonly="1" string="SNs Scanned"/>
-                            <field name="require_sn_scan" readonly="1" widget="boolean" string="Scan Required"/>
+                            <field name="sn_remaining" readonly="1" string="Remaining"/>
+                            <field name="sn_scan_complete" readonly="1" widget="boolean" string="Scan Complete"/>
                         </group>
                     </group>
                     
@@ -128,7 +131,7 @@
                     <group string="Generated Serial Numbers" invisible="generated_sn_count == 0">
                         <div class="alert alert-info">
                             <i class="fa fa-info-circle"/> 
-                            <strong><field name="generated_sn_count"/> serial numbers</strong> have been generated and are ready for scanning.
+                            <field name="generated_sn_count" class="fw-bold"/> serial numbers have been generated and are ready for scanning.
                             <button name="action_view_generated_sns" 
                                     type="object" 
                                     string="View All" 
@@ -150,13 +153,13 @@
                     
                     <!-- Warning if not all scanned -->
                     <div class="alert alert-warning" 
-                         invisible="scanned_sn_count &gt;= generated_sn_count or generated_sn_count == 0">
+                         invisible="sn_scan_complete or generated_sn_count == 0">
                         <i class="fa fa-exclamation-triangle"/> 
                         <strong>Warning:</strong> Not all serial numbers have been scanned yet.
                         <br/>
                         Generated: <field name="generated_sn_count"/> | 
                         Scanned: <field name="scanned_sn_count"/> | 
-                        Remaining: <span class="fw-bold text-danger"><t t-esc="generated_sn_count - scanned_sn_count"/></span>
+                        Remaining: <field name="sn_remaining" class="fw-bold text-danger"/>
                     </div>
                 </page>
             </xpath>
