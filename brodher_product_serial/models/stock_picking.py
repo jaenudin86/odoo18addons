@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+python# -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError, ValidationError
 import logging
@@ -263,30 +263,49 @@ class StockPicking(models.Model):
 class StockMove(models.Model):
     _inherit = 'stock.move'
     
-    sn_needed = fields.Integer('SN Needed', compute='_compute_sn_status')
-    sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status')
+    sn_needed = fields.Integer('SN Needed', compute='_compute_sn_status', store=True)
+    sn_generated = fields.Integer('SN Generated', compute='_compute_sn_status', store=True)
+    sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status', store=True)
     sn_status = fields.Char('SN Status', compute='_compute_sn_status')
     
-    @api.depends('product_uom_qty', 'picking_id.sn_move_ids')
+    @api.depends('product_uom_qty', 'product_id', 'picking_id.sn_move_ids')
     def _compute_sn_status(self):
         for move in self:
-            if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
+            product_tmpl = move.product_id.product_tmpl_id
+            
+            if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
                 move.sn_needed = int(move.product_uom_qty)
                 
+                # Count GENERATED SNs (available in stock.lot but not assigned)
                 if move.picking_id:
+                    generated_lots = self.env['stock.lot'].search([
+                        ('product_id', '=', move.product_id.id),
+                        ('generated_by_picking_id', '=', move.picking_id.id)
+                    ])
+                    move.sn_generated = len(generated_lots)
+                    
+                    # Count SCANNED SNs (in brodher.sn.move)
                     move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
-                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == move.product_id.product_tmpl_id
+                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
                     ))
                 else:
+                    move.sn_generated = 0
                     move.sn_scanned = 0
                 
+                # Status based on scan, not generation
                 if move.sn_scanned >= move.sn_needed:
-                    move.sn_status = '✓ Complete'
-                elif move.sn_scanned > 0:
-                    move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed}'
+                    move.sn_status = '✓ Scanned Complete'
+                elif move.sn_generated >= move.sn_needed:
+                    if move.sn_scanned > 0:
+                        move.sn_status = f'⚠ Scanned {move.sn_scanned}/{move.sn_needed} (Generated: {move.sn_generated})'
+                    else:
+                        move.sn_status = f'⚠ Generated ({move.sn_generated}) - Not Scanned Yet'
+                elif move.sn_generated > 0:
+                    move.sn_status = f'⚠ Partial Generated ({move.sn_generated}/{move.sn_needed})'
                 else:
-                    move.sn_status = '✗ Not Scanned'
+                    move.sn_status = '✗ Not Generated'
             else:
                 move.sn_needed = 0
+                move.sn_generated = 0
                 move.sn_scanned = 0
                 move.sn_status = 'N/A'
