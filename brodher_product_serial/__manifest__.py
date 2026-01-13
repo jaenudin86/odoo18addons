@@ -42,7 +42,7 @@
         'reports/paperformat.xml',
         'reports/product_qrcode_label_report.xml',
         'reports/product_qrcode_label_template.xml',
-        'wizard/stock_picking_sn_wizard_views.xml',  # NEW
+        # 'wizard/stock_picking_sn_wizard_views.xml',  # NEW
         'wizard/brodher_stock_picking_sn_wizard_views.xml',  # NEW
 
     ],
