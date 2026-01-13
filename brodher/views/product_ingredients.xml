@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
   <record id="view_product_form_ingredients" model="ir.ui.view">
     <field name="name">product.template.ingredients.form</field>
@@ -6,6 +7,7 @@
     <field name="arch" type="xml">
       <!-- Letakkan setelah field 'type' di tab General -->
       <xpath expr="//field[@name='type']" position="after">
+        <field name="is_article"/>
         <field name="brand"/>
         <field name="size"/>
         <field name="ingredients"/>
@@ -13,19 +15,11 @@
         <field name="net_weight"/>
         <field name="net_net_weight"/>
         <field name="base_colour"/>
+        <field name="text_colour"/>
       </xpath>
-                  <!-- Tambahkan checkbox dan field berat -->
-            <xpath expr="//field[@name='default_code']" position="after">
-                <field name="is_article"/>
-                <field name="text_colour"/>
-            </xpath>
-
-            <!-- <xpath expr="//group[@name='group_weight']" position="inside">
-   
-            </xpath> -->
-
     </field>
   </record>
+
   <record id="view_product_tree_ingredients" model="ir.ui.view">
     <field name="name">product.template.ingredients.tree</field>
     <field name="model">product.template</field>
@@ -33,27 +27,16 @@
     <field name="arch" type="xml">
       <!-- Sisipkan setelah 'name' di tree view -->
       <xpath expr="//field[@name='name']" position="after">
-        <field name="brand"/>
-        <field name="size"/>
-        <field name="ingredients"/>
-                     <field name="gross_weight"/>
-                <field name="net_weight"/>
-                <field name="net_net_weight"/>
-                <field name="base_colour"/>
+        <field name="is_article" optional="show"/>
+        <field name="brand" optional="show"/>
+        <field name="size" optional="show"/>
+        <field name="ingredients" optional="hide"/>
+        <field name="gross_weight" optional="hide"/>
+        <field name="net_weight" optional="hide"/>
+        <field name="net_net_weight" optional="hide"/>
+        <field name="base_colour" optional="hide"/>
+        <field name="text_colour" optional="hide"/>
       </xpath>
-                  <!-- Tambahkan checkbox dan field berat -->
-            <xpath expr="//field[@name='default_code']" position="after">
-                <field name="is_article"/>
-                   <field name="text_colour"/>
-            </xpath>
-
-            <!-- <xpath expr="//group[@name='group_weight']" position="inside">
-                <field name="gross_weight"/>
-                <field name="net_weight"/>
-                <field name="net_net_weight"/>
-            </xpath> -->
     </field>
   </record>
-
 </odoo>
-
