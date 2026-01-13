@@ -64,17 +64,22 @@ class ProductTemplate(models.Model):
             
         return f"{prefix}{year_str}{sequence}"
     
-    def create_variant_ids(self):
+    def _create_variant_ids(self):
         """Override untuk set default_code dan barcode pada variant yang baru dibuat"""
-        result = super(ProductTemplate, self).create_variant_ids()
+        result = super(ProductTemplate, self)._create_variant_ids()
         
         for template in self:
             for variant in template.product_variant_ids:
-                # Jika variant belum punya default_code, generate
-                if not variant.default_code:
+                # Generate kode untuk variant
+                if not variant.default_code or variant.default_code == template.default_code:
                     variant_code = self._generate_variant_code(template, variant)
-                    variant.default_code = variant_code
-                    variant.barcode = variant_code
+                    variant.write({
+                        'default_code': variant_code,
+                        'barcode': variant_code
+                    })
+                elif variant.default_code and not variant.barcode:
+                    # Jika sudah ada default_code tapi belum ada barcode
+                    variant.barcode = variant.default_code
                     
         return result
     
@@ -84,12 +89,18 @@ class ProductTemplate(models.Model):
         
         # Ambil nilai attribute untuk variant
         variant_suffix = ""
-        for value in variant.product_template_attribute_value_ids:
+        attribute_values = variant.product_template_attribute_value_ids.sorted(
+            key=lambda x: x.attribute_id.sequence
+        )
+        
+        for value in attribute_values:
             # Ambil 2-3 karakter pertama dari attribute value
             attr_code = value.name[:3].upper().replace(" ", "")
+            if variant_suffix:
+                variant_suffix += "-"
             variant_suffix += attr_code
             
-        if variant_suffix:
+        if variant_suffix and len(template.product_variant_ids) > 1:
             return f"{base_code}-{variant_suffix}"
         else:
             return base_code
@@ -97,6 +108,17 @@ class ProductTemplate(models.Model):
 
 class ProductProduct(models.Model):
     _inherit = 'product.product'
+    
+    # Inherit fields dari template agar bisa diakses di variant
+    ingredients = fields.Text(related='product_tmpl_id.ingredients', string="Ingredients", readonly=False, store=True)
+    brand = fields.Char(related='product_tmpl_id.brand', string="Brand", readonly=False, store=True)
+    size = fields.Char(related='product_tmpl_id.size', string="Size", readonly=False, store=True)
+    is_article = fields.Boolean(related='product_tmpl_id.is_article', string='Is Article', readonly=False, store=True)
+    gross_weight = fields.Float(related='product_tmpl_id.gross_weight', string='Gross Weight', readonly=False, store=True)
+    net_weight = fields.Float(related='product_tmpl_id.net_weight', string='Net Weight', readonly=False, store=True)
+    net_net_weight = fields.Float(related='product_tmpl_id.net_net_weight', string='Net Net Weight', readonly=False, store=True)
+    base_colour = fields.Char(related='product_tmpl_id.base_colour', string='Base Colour', readonly=False, store=True)
+    text_colour = fields.Char(related='product_tmpl_id.text_colour', string='Text Colour', readonly=False, store=True)
     
     @api.model
     def create(self, vals):
@@ -116,7 +138,7 @@ class ProductProduct(models.Model):
         # Jika default_code diubah, update barcode juga
         if 'default_code' in vals:
             for record in self:
-                if record.default_code:
+                if record.default_code and record.default_code != record.barcode:
                     record.barcode = record.default_code
                     
         return result
