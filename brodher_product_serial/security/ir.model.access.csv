@@ -10,4 +10,3 @@ access_brodher_sn_move_manager,brodher.sn.move.manager,model_brodher_sn_move,sto
 access_product_qrcode_label_wizard_user,access.product.qrcode.label.wizard.user,model_product_qrcode_label_wizard,stock.group_stock_user,1,1,1,1
 access_product_qrcode_label_wizard_manager,access.product.qrcode.label.wizard.manager,model_product_qrcode_label_wizard,stock.group_stock_manager,1,1,1,1
 access_brodher_stock_picking_sn_wizard,brodher.stock.picking.sn.wizard,model_brodher_stock_picking_sn_wizard,stock.group_stock_user,1,1,1,1
-access_brodher_stock_picking_sn_wizard_line,brodher.stock.picking.sn.wizard.line,model_brodher_stock_picking_sn_wizard_line,stock.group_stock_user,1,1,1,1
