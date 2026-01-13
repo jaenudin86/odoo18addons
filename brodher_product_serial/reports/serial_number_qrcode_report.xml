@@ -126,12 +126,12 @@
                                     <!-- Serial Number -->
                                     <span class="sn_code" t-esc="sn.name"/>
                                     
-                                    <!-- SN Type Badge -->
+                                    <!-- SN Type Badge
                                     <span t-if="sn.sn_type" 
                                           t-att-style="'display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-top: 2px; background-color: %s; color: white;' % ('#3498db' if sn.sn_type == 'M' else '#e74c3c')">
                                         <t t-if="sn.sn_type == 'M'">MAN</t>
                                         <t t-if="sn.sn_type == 'W'">WOMAN</t>
-                                    </span>
+                                    </span> -->
                                 </div>
 
                                 <t t-set="counter" t-value="counter + 1"/>
