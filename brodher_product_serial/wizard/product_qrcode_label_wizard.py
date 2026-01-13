@@ -52,4 +52,4 @@ class ProductQrcodeLabelWizard(models.TransientModel):
             'label_data': label_data,
         }
         
-        return self.env.ref('product_qrcode_label.action_report_product_qrcode_label').report_action(self, data=data)
+        return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(self, data=data)
