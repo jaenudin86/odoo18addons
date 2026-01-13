@@ -110,8 +110,8 @@
                             <list>
                                 <field name="serial_number_id"/>
                                                                <field name="product_tmpl_id"/> 
-                                <field name="scan_date"/>
-                                <field name="scanned_by"/>
+                                <field name="move_date"/>
+                                <field name="user_id"/>
                             </list>
                         </field>
                     </group>
