@@ -11,12 +11,12 @@
             <xpath expr="//button[@name='action_assign']" position="after">
                 
                 <!-- Generate Serial Numbers Button -->
-                <button name="action_generate_serial_numbers" 
-                        string="Generate SN" 
-                        type="object" 
-                        class="btn-primary"
-                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products"
-                        help="Generate serial numbers (must scan after generation)"/>
+<button name="action_generate_serial_numbers" 
+        string="Generate SN" 
+        type="object" 
+        class="btn-primary"
+        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products"
+        help="Generate serial numbers (transfer must be confirmed first)"/>
                 
                 <!-- Quick Generate All Button -->
                 <button name="action_bulk_generate_all" 
