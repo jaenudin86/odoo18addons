@@ -68,7 +68,8 @@
     </template>
 
     <template id="brodher.stock_picking_qrcode_barcode_report">
-        <t t-call="web.basic_layout">
+               <t t-call="web.basic_layout">
+            
             <div class="page" style="padding: 0;">
                 <style>
                     body {
@@ -102,8 +103,9 @@
                         margin-bottom: 2px;
                     }
                     .internal_ref {
+                        height: 30px; 
                         display: block;
-                        margin-top: 2px;
+                        margin-top: 10px;
                         font-size: 15px;
                     }
                 </style>
@@ -111,16 +113,14 @@
                     <div style="display: flex; flex-wrap: wrap;">
                         <t t-foreach="picking.move_line_ids" t-as="line">
                             <div class="qrcode_container">
-                                <div class="product_info">
-                                    <strong>
-                                        <t t-esc="line.product_id.display_name or line.product_id.name or (line.product_id.product_tmpl_id.name if line.product_id.product_tmpl_id else '')"/>
-                                    </strong>
-                                </div>
+                             
                                 <span class="internal_ref">
-                                    <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/>
+                                <strong>
+                                        <t t-esc="line.product_id.display_name or line.product_id.name or (line.product_id.product_tmpl_id.name if line.product_id.product_tmpl_id else '')"/>
+                                    </strong><br>
+                                    <t t-esc="line.product_id.barcode or line.product_id.default_code or ''"/></br>
                                 </span>
-                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or '')"
-                                     class="qrcode_img"/>
+                                <img t-att-src="'/report/barcode/QR/%s' % (line.product_id.barcode or '')" class="qrcode_img"/>
                             </div>
                         </t>
                     </div>

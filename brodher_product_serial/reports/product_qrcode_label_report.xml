@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_product_qrcode_label" model="ir.actions.report">
+        <field name="name">Product QR Code Labels</field>
+        <field name="model">product.qrcode.label.wizard</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">product_qrcode_label.product_qrcode_label_template</field>
+        <field name="report_file">product_qrcode_label.product_qrcode_label_template</field>
+        <field name="paperformat_id" ref="product_qrcode_label.paperformat_product_qrcode_label_a4"/>
+        <field name="print_report_name">'QR_Labels_%s' % (time.strftime('%Y%m%d_%H%M%S'))</field>
+    </record>
+</odoo>

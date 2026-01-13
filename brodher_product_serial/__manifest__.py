@@ -38,6 +38,10 @@
         'views/sn_move_views.xml',
         'reports/sn_qr_label_report.xml',
         'reports/stock_picking_qrcode_report.xml',
+        'wizard/product_qrcode_label_wizard_view.xml',
+        'report/paperformat.xml',
+        'report/product_qrcode_label_report.xml',
+        'report/product_qrcode_label_template.xml',
         
     ],
     'installable': True,

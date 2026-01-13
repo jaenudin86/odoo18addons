@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="product_qrcode_label_template">
+        <t t-call="web.basic_layout">
+            <div class="page" style="padding: 0;">
+                <style>
+                    body {
+                        margin-top: 5mm !important;
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                        margin-top: -10mm;
+                    }
+                    .qrcode_container {
+                        width: 33.33%;
+                        float: left;
+                        padding: 5px 3px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        overflow: hidden;
+                        height: 140px;
+                        font-size: 13px;
+                        line-height: 1.1;
+                    }
+                    .qrcode_img {
+                        width: 85px;
+                        height: 85px;
+                        display: block;
+                        margin: 2px auto;
+                    }
+                    .product_info {
+                        height: 30px;
+                        overflow: hidden;
+                        margin-bottom: 2px;
+                    }
+                    .internal_ref {
+                        height: 30px;
+                        display: block;
+                        margin-top: 10px;
+                        font-size: 15px;
+                    }
+                    .clearfix::after {
+                        content: "";
+                        display: table;
+                        clear: both;
+                    }
+                </style>
+
+                <div class="clearfix">
+                    <t t-set="label_data" t-value="data.get('label_data', [])"/>
+                    <t t-foreach="label_data" t-as="label">
+                        <div class="qrcode_container">
+                            <span class="internal_ref">
+                                <strong>
+                                    <t t-esc="label['name']"/>
+                                </strong>
+                                <br/>
+                                <t t-esc="label['barcode']"/>
+                            </span>
+                            <img t-if="label['barcode']" 
+                                 t-att-src="'/report/barcode/QR/%s' % label['barcode']" 
+                                 class="qrcode_img"/>
+                            <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
+                                No Barcode
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>
