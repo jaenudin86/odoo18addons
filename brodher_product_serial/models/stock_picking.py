@@ -61,46 +61,37 @@ class StockPicking(models.Model):
             )
     
     # ========== NEW COMPUTES (GENERATE SN) ==========
-    @api.depends('move_line_ids.lot_id', 'move_ids')
+    @api.depends('move_ids_without_package', 'serial_numbers_generated')
     def _compute_generated_sn_count(self):
-        """Count how many serial numbers are AVAILABLE (not necessarily assigned)"""
+        """Simple count based on flag and expected qty"""
         for picking in self:
-            # Count stock.lot records that were generated for this picking
-            # But NOT assigned to move_line yet
-            if picking.has_sn_products:
-                # Get all products in this picking that need SN
-                product_ids = picking.move_ids_without_package.filtered(
+            if picking.serial_numbers_generated and picking.has_sn_products:
+                # Sum all qty for products that need SN
+                total = sum(picking.move_ids_without_package.filtered(
                     lambda m: m.product_id.tracking == 'serial' and 
                             m.product_id.product_tmpl_id.sn_product_type
-                ).mapped('product_id').ids
-                
-                # Count generated SNs for these products
-                lots = self.env['stock.lot'].search([
-                    ('product_id', 'in', product_ids),
-                    ('generated_by_picking_id', '=', picking.id)
-                ])
-                
-                picking.generated_sn_count = len(lots)
+                ).mapped('product_uom_qty'))
+                picking.generated_sn_count = int(total)
             else:
                 picking.generated_sn_count = 0
-    @api.depends('move_ids', 'move_line_ids.lot_id')
-    def _compute_sn_generation_summary(self):
-        """Generate summary of SN status per product"""
-        for picking in self:
-            summary_lines = []
+    # @api.depends('move_ids', 'move_line_ids.lot_id')
+    # def _compute_sn_generation_summary(self):
+    #     """Generate summary of SN status per product"""
+    #     for picking in self:
+    #         summary_lines = []
             
-            for move in picking.move_ids_without_package.filtered(
-                lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
-            ):
-                qty_needed = int(move.product_uom_qty)
-                qty_ready = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
+    #         for move in picking.move_ids_without_package.filtered(
+    #             lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
+    #         ):
+    #             qty_needed = int(move.product_uom_qty)
+    #             qty_ready = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
                 
-                status = '✓' if qty_ready >= qty_needed else '✗'
-                summary_lines.append(
-                    f"{status} {move.product_id.display_name}: {qty_ready}/{qty_needed} SN"
-                )
+    #             status = '✓' if qty_ready >= qty_needed else '✗'
+    #             summary_lines.append(
+    #                 f"{status} {move.product_id.display_name}: {qty_ready}/{qty_needed} SN"
+    #             )
             
-            picking.sn_generation_summary = '\n'.join(summary_lines) if summary_lines else 'No serial products'
+    #         picking.sn_generation_summary = '\n'.join(summary_lines) if summary_lines else 'No serial products'
     
     # ========== EXISTING ACTIONS (SCAN SN - TIDAK DIUBAH) ==========
     def action_scan_serial_number(self):
@@ -182,86 +173,86 @@ class StockPicking(models.Model):
             }
         }
     
-    def action_bulk_generate_all(self):
-        """Quick action: generate all serial numbers automatically"""
-        self.ensure_one()
+    # def action_bulk_generate_all(self):
+    #     """Quick action: generate all serial numbers automatically"""
+    #     self.ensure_one()
         
-        if self.state not in ['confirmed', 'assigned', 'waiting']:
-            raise UserError(_('Picking must be in Confirmed, Waiting, or Ready state!'))
+    #     if self.state not in ['confirmed', 'assigned', 'waiting']:
+    #         raise UserError(_('Picking must be in Confirmed, Waiting, or Ready state!'))
         
-        if not self.has_sn_products:
-            raise UserError(_('This picking has no products with serial number tracking!'))
+    #     if not self.has_sn_products:
+    #         raise UserError(_('This picking has no products with serial number tracking!'))
         
-        generated_count = 0
-        generated_details = []
-        StockLot = self.env['stock.lot']
+    #     generated_count = 0
+    #     generated_details = []
+    #     StockLot = self.env['stock.lot']
         
-        for move in self.move_ids_without_package.filtered(
-            lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
-        ):
-            # Calculate how many SNs are still needed
-            qty_needed = int(move.product_uom_qty)
-            qty_existing = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
-            qty_to_generate = max(0, qty_needed - qty_existing)
+    #     for move in self.move_ids_without_package.filtered(
+    #         lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
+    #     ):
+    #         # Calculate how many SNs are still needed
+    #         qty_needed = int(move.product_uom_qty)
+    #         qty_existing = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
+    #         qty_to_generate = max(0, qty_needed - qty_existing)
             
-            if qty_to_generate <= 0:
-                continue
+    #         if qty_to_generate <= 0:
+    #             continue
             
-            # Get SN type from product template
-            product_tmpl = move.product_id.product_tmpl_id
-            sn_type = product_tmpl.sn_product_type or 'M'
+    #         # Get SN type from product template
+    #         product_tmpl = move.product_id.product_tmpl_id
+    #         sn_type = product_tmpl.sn_product_type or 'M'
             
-            try:
-                # Generate serial numbers
-                serial_numbers = StockLot.generate_serial_numbers(
-                    product_tmpl.id,
-                    move.product_id.id,
-                    sn_type,
-                    qty_to_generate
-                )
+    #         try:
+    #             # Generate serial numbers
+    #             serial_numbers = StockLot.generate_serial_numbers(
+    #                 product_tmpl.id,
+    #                 move.product_id.id,
+    #                 sn_type,
+    #                 qty_to_generate
+    #             )
                 
-                # Create move lines for each SN
-                for sn in serial_numbers:
-                    self.env['stock.move.line'].create({
-                        'move_id': move.id,
-                        'product_id': move.product_id.id,
-                        'product_uom_id': move.product_id.uom_id.id,
-                        'location_id': self.location_id.id,
-                        'location_dest_id': self.location_dest_id.id,
-                        'picking_id': self.id,
-                        'lot_id': sn.id,
-                        'quantity': 1,
-                    })
-                    generated_count += 1
+    #             # Create move lines for each SN
+    #             for sn in serial_numbers:
+    #                 self.env['stock.move.line'].create({
+    #                     'move_id': move.id,
+    #                     'product_id': move.product_id.id,
+    #                     'product_uom_id': move.product_id.uom_id.id,
+    #                     'location_id': self.location_id.id,
+    #                     'location_dest_id': self.location_dest_id.id,
+    #                     'picking_id': self.id,
+    #                     'lot_id': sn.id,
+    #                     'quantity': 1,
+    #                 })
+    #                 generated_count += 1
                 
-                generated_details.append(
-                    f"✓ {move.product_id.display_name}: {qty_to_generate} SNs (Type: {sn_type})"
-                )
+    #             generated_details.append(
+    #                 f"✓ {move.product_id.display_name}: {qty_to_generate} SNs (Type: {sn_type})"
+    #             )
                 
-                _logger.info(f'Generated {qty_to_generate} SNs for {move.product_id.name} in picking {self.name}')
+    #             _logger.info(f'Generated {qty_to_generate} SNs for {move.product_id.name} in picking {self.name}')
                 
-            except Exception as e:
-                _logger.error(f'Error generating SNs for {move.product_id.name}: {str(e)}')
-                generated_details.append(
-                    f"✗ {move.product_id.display_name}: Failed - {str(e)}"
-                )
+    #         except Exception as e:
+    #             _logger.error(f'Error generating SNs for {move.product_id.name}: {str(e)}')
+    #             generated_details.append(
+    #                 f"✗ {move.product_id.display_name}: Failed - {str(e)}"
+    #             )
         
-        if generated_count > 0:
-            self.serial_numbers_generated = True
+    #     if generated_count > 0:
+    #         self.serial_numbers_generated = True
         
-        # Create detailed message
-        details_message = '\n'.join(generated_details)
+    #     # Create detailed message
+    #     details_message = '\n'.join(generated_details)
         
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Generation Complete'),
-                'message': _('Generated %s serial numbers:\n\n%s') % (generated_count, details_message),
-                'type': 'success' if generated_count > 0 else 'warning',
-                'sticky': True,
-            }
-        }
+    #     return {
+    #         'type': 'ir.actions.client',
+    #         'tag': 'display_notification',
+    #         'params': {
+    #             'title': _('Generation Complete'),
+    #             'message': _('Generated %s serial numbers:\n\n%s') % (generated_count, details_message),
+    #             'type': 'success' if generated_count > 0 else 'warning',
+    #             'sticky': True,
+    #         }
+    #     }
     
     def action_view_generated_sns(self):
         """View all generated serial numbers for this picking"""
@@ -352,44 +343,41 @@ class StockMove(models.Model):
     sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status', store=True)
     sn_status = fields.Char('SN Status', compute='_compute_sn_status')
     
-    @api.depends('product_uom_qty', 'product_id', 'picking_id.sn_move_ids')
-    def _compute_sn_status(self):
-        for move in self:
-            product_tmpl = move.product_id.product_tmpl_id
+@api.depends('product_uom_qty', 'picking_id.sn_move_ids', 'picking_id.serial_numbers_generated')
+def _compute_sn_status(self):
+    for move in self:
+        product_tmpl = move.product_id.product_tmpl_id
+        
+        if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
+            move.sn_needed = int(move.product_uom_qty)
             
-            if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
-                move.sn_needed = int(move.product_uom_qty)
+            # Count SCANNED only (no need to check generated)
+            if move.picking_id:
+                move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
+                    lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
+                ))
                 
-                # Count GENERATED SNs (available in stock.lot but not assigned)
-                if move.picking_id:
-                    generated_lots = self.env['stock.lot'].search([
-                        ('product_id', '=', move.product_id.id),
-                        ('generated_by_picking_id', '=', move.picking_id.id)
-                    ])
-                    move.sn_generated = len(generated_lots)
-                    
-                    # Count SCANNED SNs (in brodher.sn.move)
-                    move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
-                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
-                    ))
+                # Simple generated check from flag
+                if move.picking_id.serial_numbers_generated:
+                    move.sn_generated = move.sn_needed
                 else:
                     move.sn_generated = 0
-                    move.sn_scanned = 0
-                
-                # Status based on scan, not generation
-                if move.sn_scanned >= move.sn_needed:
-                    move.sn_status = '✓ Scanned Complete'
-                elif move.sn_generated >= move.sn_needed:
-                    if move.sn_scanned > 0:
-                        move.sn_status = f'⚠ Scanned {move.sn_scanned}/{move.sn_needed} (Generated: {move.sn_generated})'
-                    else:
-                        move.sn_status = f'⚠ Generated ({move.sn_generated}) - Not Scanned Yet'
-                elif move.sn_generated > 0:
-                    move.sn_status = f'⚠ Partial Generated ({move.sn_generated}/{move.sn_needed})'
-                else:
-                    move.sn_status = '✗ Not Generated'
             else:
-                move.sn_needed = 0
-                move.sn_generated = 0
                 move.sn_scanned = 0
-                move.sn_status = 'N/A'
+                move.sn_generated = 0
+            
+            # Status
+            if move.sn_scanned >= move.sn_needed:
+                move.sn_status = '✓ Complete'
+            elif move.sn_generated > 0:
+                if move.sn_scanned > 0:
+                    move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed}'
+                else:
+                    move.sn_status = f'⚠ Generated - Scan Required'
+            else:
+                move.sn_status = '✗ Not Generated'
+        else:
+            move.sn_needed = 0
+            move.sn_generated = 0
+            move.sn_scanned = 0
+            move.sn_status = 'N/A'
