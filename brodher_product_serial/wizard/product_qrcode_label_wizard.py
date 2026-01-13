@@ -26,7 +26,6 @@ class ProductQrcodeLabelWizard(models.TransientModel):
         if active_model == 'product.product' and active_ids:
             res['product_ids'] = [(6, 0, active_ids)]
         elif active_model == 'product.template' and active_ids:
-            # Get all variants from selected templates
             templates = self.env['product.template'].browse(active_ids)
             variant_ids = templates.mapped('product_variant_ids').ids
             res['product_ids'] = [(6, 0, variant_ids)]
@@ -36,21 +35,4 @@ class ProductQrcodeLabelWizard(models.TransientModel):
     def action_print_labels(self):
         """Generate and print QR code labels"""
         self.ensure_one()
-        
-        # Create temporary data structure for report
-        label_data = []
-        for product in self.product_ids:
-            for i in range(self.quantity):
-                label_data.append({
-                    'product': product,
-                    'barcode': product.barcode or product.default_code or '',
-                    'name': product.display_name or product.name,
-                })
-        
-        # Pass data to report
-        return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(
-            self, 
-            data={'label_data': label_data}
-        )
-        
-        # return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(self, data=data)
+        return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(self)
