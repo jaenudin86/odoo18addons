@@ -47,11 +47,26 @@ class StockPicking(models.Model):
     # ========== NEW COMPUTES (GENERATE SN) ==========
     @api.depends('move_line_ids.lot_id', 'move_ids')
     def _compute_generated_sn_count(self):
-        """Count how many serial numbers are assigned to move lines"""
+        """Count how many serial numbers are AVAILABLE (not necessarily assigned)"""
         for picking in self:
-            # Count move lines that have lot_id (SN assigned)
-            picking.generated_sn_count = len(picking.move_line_ids.filtered(lambda ml: ml.lot_id))
-    
+            # Count stock.lot records that were generated for this picking
+            # But NOT assigned to move_line yet
+            if picking.has_sn_products:
+                # Get all products in this picking that need SN
+                product_ids = picking.move_ids_without_package.filtered(
+                    lambda m: m.product_id.tracking == 'serial' and 
+                            m.product_id.product_tmpl_id.sn_product_type
+                ).mapped('product_id').ids
+                
+                # Count generated SNs for these products
+                lots = self.env['stock.lot'].search([
+                    ('product_id', 'in', product_ids),
+                    ('generated_by_picking_id', '=', picking.id)
+                ])
+                
+                picking.generated_sn_count = len(lots)
+            else:
+                picking.generated_sn_count = 0
     @api.depends('move_ids', 'move_line_ids.lot_id')
     def _compute_sn_generation_summary(self):
         """Generate summary of SN status per product"""
@@ -321,7 +336,7 @@ class StockMove(models.Model):
     sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status', store=True)
     sn_status = fields.Char('SN Status', compute='_compute_sn_status')
     
-    @api.depends('product_uom_qty', 'move_line_ids.lot_id', 'picking_id.sn_move_ids')
+    @api.depends('product_uom_qty', 'product_id', 'picking_id.sn_move_ids')
     def _compute_sn_status(self):
         for move in self:
             product_tmpl = move.product_id.product_tmpl_id
@@ -329,22 +344,30 @@ class StockMove(models.Model):
             if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
                 move.sn_needed = int(move.product_uom_qty)
                 
-                # Count generated SNs (from move lines)
-                move.sn_generated = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
-                
-                # Count scanned SNs (from sn_move_ids)
+                # Count GENERATED SNs (available in stock.lot but not assigned)
                 if move.picking_id:
+                    generated_lots = self.env['stock.lot'].search([
+                        ('product_id', '=', move.product_id.id),
+                        ('generated_by_picking_id', '=', move.picking_id.id)
+                    ])
+                    move.sn_generated = len(generated_lots)
+                    
+                    # Count SCANNED SNs (in brodher.sn.move)
                     move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
                         lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
                     ))
                 else:
+                    move.sn_generated = 0
                     move.sn_scanned = 0
                 
-                # Status
+                # Status based on scan, not generation
                 if move.sn_scanned >= move.sn_needed:
                     move.sn_status = '✓ Scanned Complete'
                 elif move.sn_generated >= move.sn_needed:
-                    move.sn_status = '⚠ Generated (Not Scanned)'
+                    if move.sn_scanned > 0:
+                        move.sn_status = f'⚠ Scanned {move.sn_scanned}/{move.sn_needed} (Generated: {move.sn_generated})'
+                    else:
+                        move.sn_status = f'⚠ Generated ({move.sn_generated}) - Not Scanned Yet'
                 elif move.sn_generated > 0:
                     move.sn_status = f'⚠ Partial Generated ({move.sn_generated}/{move.sn_needed})'
                 else:
