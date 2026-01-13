@@ -48,23 +48,27 @@
                 </style>
 
                 <div class="clearfix">
-                    <t t-set="label_data" t-value="data.get('label_data', [])"/>
-                    <t t-foreach="label_data" t-as="label">
-                        <div class="qrcode_container">
-                            <span class="internal_ref">
-                                <strong>
-                                    <t t-esc="label['name']"/>
-                                </strong>
-                                <br/>
-                                <t t-esc="label['barcode']"/>
-                            </span>
-                            <img t-if="label['barcode']" 
-                                 t-att-src="'/report/barcode/QR/%s' % label['barcode']" 
-                                 class="qrcode_img"/>
-                            <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
-                                No Barcode
-                            </div>
-                        </div>
+                    <!-- Access wizard object directly -->
+                    <t t-foreach="docs" t-as="doc">
+                        <t t-foreach="doc.product_ids" t-as="product">
+                            <t t-foreach="range(doc.quantity)" t-as="qty_index">
+                                <div class="qrcode_container">
+                                    <span class="internal_ref">
+                                        <strong>
+                                            <t t-esc="product.display_name or product.name"/>
+                                        </strong>
+                                        <br/>
+                                        <t t-esc="product.barcode or product.default_code or ''"/>
+                                    </span>
+                                    <img t-if="product.barcode or product.default_code" 
+                                         t-att-src="'/report/barcode/QR/%s' % (product.barcode or product.default_code)" 
+                                         class="qrcode_img"/>
+                                    <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
+                                        No Barcode
+                                    </div>
+                                </div>
+                            </t>
+                        </t>
                     </t>
                 </div>
             </div>

@@ -47,9 +47,10 @@ class ProductQrcodeLabelWizard(models.TransientModel):
                     'name': product.display_name or product.name,
                 })
         
-        # Store data in context for report
-        data = {
-            'label_data': label_data,
-        }
+        # Pass data to report
+        return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(
+            self, 
+            data={'label_data': label_data}
+        )
         
-        return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(self, data=data)
+        # return self.env.ref('brodher_product_serial.action_report_product_qrcode_label').report_action(self, data=data)
