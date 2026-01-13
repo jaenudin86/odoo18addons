@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             
-            <!-- Add Generate SN buttons -->
+            <!-- Add Generate SN buttons BEFORE action_assign -->
             <xpath expr="//button[@name='action_assign']" position="after">
                 
                 <!-- Generate Serial Numbers Button -->
@@ -105,14 +105,13 @@
                         </field>
                     </group>
                     
-                    <!-- FIX: Change product_id to product_tmpl_id -->
                     <group string="Scanned Serial Numbers" invisible="scanned_sn_count == 0">
                         <field name="sn_move_ids" nolabel="1">
                             <list>
                                 <field name="serial_number_id"/>
-                                <field name="product_tmpl_id"/>  <!-- CHANGED FROM product_id -->
-                                <field name="move_date"/>
-                                <field name="user_id"/>
+                                                               <field name="product_tmpl_id"/> 
+                                <field name="scan_date"/>
+                                <field name="scanned_by"/>
                             </list>
                         </field>
                     </group>
