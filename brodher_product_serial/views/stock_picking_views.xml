@@ -26,6 +26,13 @@
                         invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated"
                         confirm="This will automatically generate serial numbers for all products. Continue?"
                         help="Auto-generate all SNs"/>
+        <button name="action_print_sn_qrcode" 
+            string="Print SN QR" 
+            type="object" 
+            class="btn-info"
+            icon="fa-print"
+            invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting']"
+            help="Print QR code labels for generated serial numbers"/>
             </xpath>
             
             <!-- Add stat buttons -->

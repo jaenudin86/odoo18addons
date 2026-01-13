@@ -44,6 +44,7 @@
         'reports/product_qrcode_label_template.xml',
         # 'wizard/stock_picking_sn_wizard_views.xml',  # NEW
         'wizard/brodher_stock_picking_sn_wizard_views.xml',  # NEW
+         'report/serial_number_qrcode_report.xml',  # ← TAMBAHKAN INI
 
     ],
     'installable': True,

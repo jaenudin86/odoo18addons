@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Report Action -->
+    <record id="action_report_serial_number_qrcode" model="ir.actions.report">
+        <field name="name">Serial Number QR Labels</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.serial_number_qrcode_template</field>
+        <field name="report_file">brodher_product_serial.serial_number_qrcode_template</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <!-- Report Template -->
+    <template id="serial_number_qrcode_template">
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="picking">
+                <div class="page" style="padding: 0;">
+                    <style>
+                        body {
+                            margin-top: 5mm !important;
+                        }
+                        .page {
+                            padding: 0;
+                            margin: 0;
+                            margin-top: -10mm;
+                        }
+                        .header-section {
+                            text-align: center;
+                            margin-bottom: 10px;
+                            padding: 10px;
+                            background-color: #f5f5f5;
+                            border-bottom: 2px solid #333;
+                        }
+                        .qrcode_container {
+                            width: 33.33%;
+                            float: left;
+                            padding: 5px 3px;
+                            box-sizing: border-box;
+                            text-align: center;
+                            overflow: hidden;
+                            height: 140px;
+                            font-size: 13px;
+                            line-height: 1.1;
+                        }
+                        .qrcode_img {
+                            width: 85px;
+                            height: 85px;
+                            display: block;
+                            margin: 2px auto;
+                        }
+                        .sn_code {
+                            font-weight: bold;
+                            font-size: 14px;
+                            margin-top: 5px;
+                            display: block;
+                        }
+                        .product_info {
+                            font-size: 11px;
+                            color: #666;
+                            margin-top: 3px;
+                            display: block;
+                            white-space: nowrap;
+                            overflow: hidden;
+                            text-overflow: ellipsis;
+                        }
+                        .clearfix::after {
+                            content: "";
+                            display: table;
+                            clear: both;
+                        }
+                        .page-break {
+                            page-break-after: always;
+                        }
+                    </style>
+
+                    <!-- Header -->
+                    <div class="header-section">
+                        <h2 style="margin: 0;">Serial Number QR Labels</h2>
+                        <p style="margin: 5px 0;">
+                            <strong>Transfer:</strong> <t t-esc="picking.name"/> | 
+                            <strong>Date:</strong> <t t-esc="picking.scheduled_date.strftime('%Y-%m-%d') if picking.scheduled_date else 'N/A'"/>
+                        </p>
+                    </div>
+
+                    <!-- Get generated serial numbers -->
+                    <t t-set="serial_numbers" t-value="picking._get_generated_serial_numbers()"/>
+
+                    <!-- Check if any serial numbers -->
+                    <t t-if="not serial_numbers">
+                        <div style="text-align: center; padding: 50px; color: #999;">
+                            <h3>No Serial Numbers Generated</h3>
+                            <p>Please generate serial numbers first before printing labels.</p>
+                        </div>
+                    </t>
+
+                    <!-- Print QR codes -->
+                    <t t-if="serial_numbers">
+                        <div class="clearfix">
+                            <t t-set="counter" t-value="0"/>
+                            <t t-foreach="serial_numbers" t-as="sn">
+                                <!-- Add page break every 21 items (7 rows x 3 columns) -->
+                                <t t-if="counter > 0 and counter % 21 == 0">
+                                    <div class="clearfix"></div>
+                                    <div class="page-break"></div>
+                                    
+                                    <!-- Repeat header on new page -->
+                                    <div class="header-section">
+                                        <h2 style="margin: 0;">Serial Number QR Labels (continued)</h2>
+                                        <p style="margin: 5px 0;">
+                                            <strong>Transfer:</strong> <t t-esc="picking.name"/>
+                                        </p>
+                                    </div>
+                                </t>
+
+                                <div class="qrcode_container">
+                                    <!-- Product Name -->
+                                    <span class="product_info" t-esc="sn.product_id.display_name"/>
+                                    
+                                    <!-- QR Code -->
+                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                         class="qrcode_img"
+                                         alt="QR Code"/>
+                                    
+                                    <!-- Serial Number -->
+                                    <span class="sn_code" t-esc="sn.name"/>
+                                    
+                                    <!-- SN Type Badge -->
+                                    <span t-if="sn.sn_type" 
+                                          t-att-style="'display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-top: 2px; background-color: %s; color: white;' % ('#3498db' if sn.sn_type == 'M' else '#e74c3c')">
+                                        <t t-if="sn.sn_type == 'M'">MAN</t>
+                                        <t t-if="sn.sn_type == 'W'">WOMAN</t>
+                                    </span>
+                                </div>
+
+                                <t t-set="counter" t-value="counter + 1"/>
+                            </t>
+                        </div>
+
+                        <!-- Summary at bottom -->
+                        <div class="clearfix"></div>
+                        <div style="margin-top: 20px; padding: 10px; background-color: #f5f5f5; text-align: center; border-top: 2px solid #333;">
+                            <strong>Total Serial Numbers: <t t-esc="len(serial_numbers)"/></strong>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+</odoo>

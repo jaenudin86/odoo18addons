@@ -343,6 +343,46 @@ class StockPicking(models.Model):
         
         # Continue with normal validation
         return super(StockPicking, self).button_validate()
+    def _get_generated_serial_numbers(self):
+        """Get all generated serial numbers for this picking (not yet scanned)"""
+        self.ensure_one()
+        
+        # Get all products in this picking that need SN
+        product_ids = self.move_ids_without_package.filtered(
+            lambda m: m.product_id.tracking == 'serial' and 
+                    m.product_id.product_tmpl_id.sn_product_type
+        ).mapped('product_id').ids
+        
+        if not product_ids:
+            return self.env['stock.lot']
+        
+        # Get serial numbers generated for this picking
+        serial_numbers = self.env['stock.lot'].search([
+            ('product_id', 'in', product_ids),
+            ('generated_by_picking_id', '=', self.id)
+        ], order='name asc')
+        
+        return serial_numbers
+
+    def action_print_sn_qrcode(self):
+        """Print QR code labels for generated serial numbers"""
+        self.ensure_one()
+        
+        if not self.serial_numbers_generated:
+            raise UserError(_(
+                '❌ No serial numbers to print!\n\n'
+                'Please generate serial numbers first.'
+            ))
+        
+        serial_numbers = self._get_generated_serial_numbers()
+        
+        if not serial_numbers:
+            raise UserError(_(
+                '❌ No serial numbers found!\n\n'
+                'Serial numbers may have been generated but not tracked properly.'
+            ))
+        
+        return self.env.ref('brodher_product_serial.action_report_serial_number_qrcode').report_action(self)
 
 
 class StockMove(models.Model):
