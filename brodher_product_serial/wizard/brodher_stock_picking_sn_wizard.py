@@ -143,7 +143,7 @@ class BrodherStockPickingSNWizard(models.TransientModel):
             _logger.info(f'Wizard ready with {len(lines)} lines')
             
             return res
-        def action_generate_and_close(self):
+    def action_generate_and_close(self):
             """Generate serial numbers WITHOUT creating move lines"""
             self.ensure_one()
             
