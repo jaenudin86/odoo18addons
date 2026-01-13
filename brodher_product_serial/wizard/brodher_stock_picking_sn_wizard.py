@@ -35,151 +35,98 @@ class BrodherStockPickingSNWizard(models.TransientModel):
     
     @api.model
     def default_get(self, fields_list):
-        """Override default_get to populate lines"""
+        """Override default_get - ONLY show products with serial tracking AND sn_product_type"""
         res = super(BrodherStockPickingSNWizard, self).default_get(fields_list)
         
         picking_id = self.env.context.get('default_picking_id') or self.env.context.get('active_id')
         
         if not picking_id:
-            raise UserError(_('No transfer specified!\n\nPlease open this wizard from a receipt.'))
+            raise UserError(_('No transfer ID provided!'))
         
         picking = self.env['stock.picking'].browse(picking_id)
         
         if not picking.exists():
             raise UserError(_('Transfer not found!'))
         
-        # ======================================
-        # CRITICAL: Must be confirmed to have real move IDs
-        # ======================================
-        if picking.state == 'draft':
+        _logger.info(f'[WIZARD] Opening for: {picking.name}, state: {picking.state}')
+        
+        # ============================================
+        # CRITICAL FILTER: ONLY serial + sn_product_type
+        # ============================================
+        all_moves = self.env['stock.move'].search([
+            ('picking_id', '=', picking.id),
+            ('product_id', '!=', False),
+            ('product_id.tracking', '=', 'serial'),  # Must have serial tracking
+            ('product_id.product_tmpl_id.sn_product_type', '!=', False),  # Must have SN type (M/W)
+        ])
+        
+        _logger.info(f'[WIZARD] Found {len(all_moves)} products with serial tracking + SN type')
+        
+        # Debug: Log all moves in picking
+        all_picking_moves = picking.move_ids
+        _logger.info(f'[WIZARD] Total moves in picking: {len(all_picking_moves)}')
+        
+        for move in all_picking_moves:
+            tracking = move.product_id.tracking if move.product_id else 'N/A'
+            sn_type = move.product_id.product_tmpl_id.sn_product_type if move.product_id and move.product_id.product_tmpl_id else None
+            _logger.info(f'  - {move.product_id.display_name if move.product_id else "NO PRODUCT"}: tracking={tracking}, sn_type={sn_type}')
+        
+        if not all_moves:
             raise UserError(_(
-                '❌ Cannot generate serial numbers!\n\n'
-                'Transfer "%s" is still in DRAFT state.\n\n'
-                '📋 Required Actions:\n'
-                '1. Click "Mark as Todo" or "Check Availability" button\n'
-                '2. Wait for transfer to be confirmed\n'
-                '3. Then try Generate SN again\n\n'
-                'Why? Draft transfers don\'t have real stock moves yet.'
-            ) % picking.name)
-        
-        if picking.state not in ['confirmed', 'assigned', 'waiting']:
-            raise UserError(_(
-                '❌ Cannot generate serial numbers!\n\n'
-                'Transfer state: %s\n\n'
-                'Please confirm the transfer first.'
-            ) % picking.state)
-        
-        _logger.info(f'Opening wizard for: {picking.name} (state: {picking.state})')
-        
-        # Get moves - MUST use move_ids to get saved records
-        moves = picking.move_ids.filtered(lambda m: m.id)  # Filter out NewId
-        
-        if not moves:
-            # Try move_ids_without_package as fallback
-            moves = picking.move_ids_without_package.filtered(lambda m: m.id)
-        
-        _logger.info(f'Total saved moves found: {len(moves)}')
-        
-        if not moves:
-            raise UserError(_(
-                '❌ No stock moves found!\n\n'
+                '❌ No products with SN tracking found!\n\n'
                 'Transfer: %s\n'
-                'State: %s\n\n'
-                'This usually means:\n'
-                '1. No products added to transfer, or\n'
-                '2. Transfer not confirmed yet\n\n'
-                'Please add products and confirm transfer first.'
-            ) % (picking.name, picking.state))
-        
-        # DEBUG: Check move IDs
-        for move in moves:
-            _logger.info(f'Move ID: {move.id} ({type(move.id)}), Product: {move.product_id.display_name if move.product_id else "NO PRODUCT"}')
-            
-            # Validate move ID is real
-            if isinstance(move.id, models.NewId):
-                _logger.error(f'Found NewId in moves! This should not happen in confirmed picking.')
-        
-        # Filter serial products
-        serial_moves = moves.filtered(
-            lambda m: m.product_id and 
-                     m.product_id.tracking == 'serial'
-        )
-        
-        _logger.info(f'Serial tracking moves found: {len(serial_moves)}')
-        
-        if not serial_moves:
-            raise UserError(_(
-                '❌ No products with serial tracking!\n\n'
                 'Total products: %s\n\n'
-                'Please check:\n'
-                '✓ Products have tracking = "By Unique Serial Number"\n'
-                '✓ Products are added to the transfer'
-            ) % len(moves))
+                'Requirements for SN generation:\n'
+                '✓ Product tracking = "By Unique Serial Number"\n'
+                '✓ Product has SN Type (M/W) configured\n\n'
+                'Please check product configuration in:\n'
+                'Product → General Information Tab'
+            ) % (picking.name, len(all_picking_moves)))
         
         # Build lines
         lines = []
-        skipped = []
         
-        for move in serial_moves:
-            # CRITICAL: Validate move has real ID
-            if not move.id:
-                skipped.append(f'{move.product_id.display_name} - No ID')
-                _logger.warning(f'Skipping move without ID: {move}')
+        for move in all_moves:
+            # Validate move ID
+            if not move.id or isinstance(move.id, models.NewId):
+                _logger.warning(f'[WIZARD] Skipping NewId move')
                 continue
             
-            if isinstance(move.id, models.NewId):
-                skipped.append(f'{move.product_id.display_name} - NewId (not saved)')
-                _logger.error(f'Skipping NewId move: {move.id}')
+            qty = int(move.product_uom_qty)
+            if qty <= 0:
+                _logger.info(f'[WIZARD] Skipping {move.product_id.display_name} - qty=0')
                 continue
             
-            if not move.product_id:
-                skipped.append('Unknown product - No product_id')
-                continue
+            # Get SN type (guaranteed to exist due to filter)
+            sn_type = move.product_id.product_tmpl_id.sn_product_type
             
-            qty_needed = int(move.product_uom_qty)
-            
-            if qty_needed <= 0:
-                skipped.append(f'{move.product_id.display_name} - Qty is 0')
-                _logger.info(f'Skipping {move.product_id.display_name} - qty=0')
-                continue
-            
-            # Get SN type with fallback
-            sn_type = 'M'  # Default
-            if move.product_id.product_tmpl_id:
-                if hasattr(move.product_id.product_tmpl_id, 'sn_product_type'):
-                    sn_type = move.product_id.product_tmpl_id.sn_product_type or 'M'
-            
-            line_vals = {
-                'move_id': move.id,  # MUST be real integer ID
+            lines.append((0, 0, {
+                'move_id': move.id,
                 'product_id': move.product_id.id,
                 'product_name': move.product_id.display_name,
-                'quantity_in_picking': qty_needed,
+                'quantity_in_picking': qty,
                 'quantity_existing': 0,
-                'quantity': qty_needed,
+                'quantity': qty,
                 'sn_type': sn_type,
                 'generate': True,
-            }
+            }))
             
-            lines.append((0, 0, line_vals))
-            _logger.info(f'✓ Added line: move_id={move.id}, product={move.product_id.display_name}, qty={qty_needed}')
-        
-        if skipped:
-            skip_msg = '\n'.join(skipped)
-            _logger.warning(f'Skipped items:\n{skip_msg}')
+            _logger.info(f'[WIZARD] ✓ Added: {move.product_id.display_name}, type={sn_type}, qty={qty}')
         
         if not lines:
-            skip_details = '\n'.join(skipped) if skipped else 'All have qty=0'
             raise UserError(_(
                 '❌ No products to generate!\n\n'
-                'Checked %s serial products.\n\n'
-                'Skipped:\n%s'
-            ) % (len(serial_moves), skip_details))
+                'Found %s products with SN tracking, but:\n'
+                '• All have quantity = 0, or\n'
+                '• Already have SNs generated\n\n'
+                'Please check product quantities.'
+            ) % len(all_moves))
         
         res['line_ids'] = lines
-        _logger.info(f'✅ Wizard ready with {len(lines)} lines')
+        
+        _logger.info(f'[WIZARD] ✅ Ready with {len(lines)} lines')
         
         return res
-    
     def action_generate_and_close(self):
         """Generate serial numbers WITHOUT creating move lines"""
         self.ensure_one()

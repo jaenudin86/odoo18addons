@@ -53,10 +53,11 @@ class StockPicking(models.Model):
     
     @api.depends('move_ids_without_package')
     def _compute_has_sn_products(self):
-        """Check if picking has products with SN tracking"""
+        """Check if picking has products that NEED SN generation"""
         for picking in self:
             picking.has_sn_products = any(
-                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
+                move.product_id.tracking == 'serial' and 
+                move.product_id.product_tmpl_id.sn_product_type  # Must have SN type
                 for move in picking.move_ids_without_package
             )
     
@@ -144,22 +145,49 @@ class StockPicking(models.Model):
     
     # ========== NEW ACTIONS (GENERATE SN) ==========
     def action_generate_serial_numbers(self):
-        """Open wizard to generate serial numbers for this picking"""
+        """Open wizard - ONLY for products with serial tracking + SN type"""
         self.ensure_one()
         
+        # Validate state
+        if self.state == 'draft':
+            raise UserError(_(
+                '❌ Cannot generate serial numbers!\n\n'
+                'Transfer is in DRAFT state.\n\n'
+                '📋 Action: Click "Mark as Todo" first'
+            ) % self.name)
+        
         if self.state not in ['confirmed', 'assigned', 'waiting']:
-            raise UserError(_('Picking must be in Confirmed, Waiting, or Ready state to generate serial numbers!'))
+            raise UserError(_('Transfer must be confirmed! Current state: %s') % self.state)
         
-        if not self.has_sn_products:
-            raise UserError(_('This picking has no products with serial number tracking!'))
-        
-        # Get moves that need serial numbers
-        serial_moves = self.move_ids_without_package.filtered(
-            lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
+        # ============================================
+        # Check if ANY products need SN
+        # ============================================
+        sn_products = self.move_ids.filtered(
+            lambda m: m.product_id and
+                    m.product_id.tracking == 'serial' and
+                    m.product_id.product_tmpl_id.sn_product_type
         )
         
-        if not serial_moves:
-            raise UserError(_('No products with serial tracking found in this transfer!'))
+        if not sn_products:
+            # Get stats for error message
+            total_products = len(self.move_ids)
+            serial_products = len(self.move_ids.filtered(
+                lambda m: m.product_id and m.product_id.tracking == 'serial'
+            ))
+            
+            raise UserError(_(
+                '❌ No products require SN generation!\n\n'
+                'Transfer: %s\n'
+                'Total products: %s\n'
+                'Products with serial tracking: %s\n'
+                'Products with SN Type (M/W): 0\n\n'
+                '📋 To use SN generation:\n'
+                '1. Go to Product → General Information\n'
+                '2. Set Tracking = "By Unique Serial Number"\n'
+                '3. Set SN Product Type = M (Man) or W (Woman)'
+            ) % (self.name, total_products, serial_products))
+        
+        _logger.info(f'Opening SN wizard for {self.name}: {len(sn_products)} products need SN')
         
         return {
             'name': _('Generate Serial Numbers - %s') % self.name,
@@ -172,69 +200,70 @@ class StockPicking(models.Model):
                 'default_operation_type': self.picking_type_code,
             }
         }
-    
+
     def action_bulk_generate_all(self):
-        """Quick generate all - NO move_line creation"""
-        self.ensure_one()
-        
-        if self.state not in ['confirmed', 'assigned', 'waiting']:
-            raise UserError(_('Transfer must be confirmed!'))
-        
-        if not self.has_sn_products:
-            raise UserError(_('No serial products!'))
-        
-        StockLot = self.env['stock.lot']
-        total_generated = 0
-        generated_details = []
-        
-        for move in self.move_ids_without_package.filtered(
-            lambda m: m.product_id.tracking == 'serial'
-        ):
-            qty = int(move.product_uom_qty)
-            if qty <= 0:
-                continue
+            """Quick generate - ONLY for products with serial + SN type"""
+            self.ensure_one()
             
-            # Get SN type
-            sn_type = 'M'
-            if move.product_id.product_tmpl_id and hasattr(move.product_id.product_tmpl_id, 'sn_product_type'):
-                sn_type = move.product_id.product_tmpl_id.sn_product_type or 'M'
+            if self.state not in ['confirmed', 'assigned', 'waiting']:
+                raise UserError(_('Transfer must be confirmed!'))
             
-            try:
-                # Generate SNs ONLY
-                serial_numbers = StockLot.generate_serial_numbers(
-                    move.product_id.product_tmpl_id.id,
-                    move.product_id.id,
-                    sn_type,
-                    qty,
-                    picking_id=self.id
-                )
+            StockLot = self.env['stock.lot']
+            total_generated = 0
+            generated_details = []
+            
+            # Filter: serial tracking + sn_product_type
+            sn_moves = self.move_ids_without_package.filtered(
+                lambda m: m.product_id.tracking == 'serial' and
+                        m.product_id.product_tmpl_id.sn_product_type
+            )
+            
+            if not sn_moves:
+                raise UserError(_(
+                    '❌ No products require SN generation!\n\n'
+                    'Please ensure products have:\n'
+                    '✓ Tracking = "By Unique Serial Number"\n'
+                    '✓ SN Product Type (M/W) configured'
+                ))
+            
+            for move in sn_moves:
+                qty = int(move.product_uom_qty)
+                if qty <= 0:
+                    continue
                 
-                # ======================================
-                # DO NOT CREATE stock.move.line HERE
-                # ======================================
+                sn_type = move.product_id.product_tmpl_id.sn_product_type
                 
-                total_generated += len(serial_numbers)
-                generated_details.append(f"✓ {move.product_id.display_name}: {len(serial_numbers)} SNs")
-                
-            except Exception as e:
-                _logger.error(f'Error: {str(e)}')
-                generated_details.append(f"✗ {move.product_id.display_name}: Failed")
-        
-        if total_generated > 0:
-            self.serial_numbers_generated = True
-        
-        details = '\n'.join(generated_details)
-        
-        return {
-            'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _('Success'),
-                'message': _('Generated %s SNs!\n\n%s\n\n⚠️ Please SCAN to assign.') % (total_generated, details),
-                'type': 'success',
-                'sticky': True,
+                try:
+                    serial_numbers = StockLot.generate_serial_numbers(
+                        move.product_id.product_tmpl_id.id,
+                        move.product_id.id,
+                        sn_type,
+                        qty,
+                        picking_id=self.id
+                    )
+                    
+                    total_generated += len(serial_numbers)
+                    generated_details.append(f"✓ {move.product_id.display_name}: {len(serial_numbers)} SNs (Type: {sn_type})")
+                    
+                except Exception as e:
+                    _logger.error(f'Error: {str(e)}')
+                    generated_details.append(f"✗ {move.product_id.display_name}: Failed")
+            
+            if total_generated > 0:
+                self.serial_numbers_generated = True
+            
+            details = '\n'.join(generated_details)
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Success'),
+                    'message': _('Generated %s SNs!\n\n%s\n\n⚠️ Please SCAN to assign.') % (total_generated, details),
+                    'type': 'success',
+                    'sticky': True,
+                }
             }
-        }
     def action_view_generated_sns(self):
         """View all generated serial numbers for this picking"""
         self.ensure_one()
