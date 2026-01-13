@@ -7,7 +7,7 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             
-            <!-- Add Generate SN buttons BEFORE Scan SN button -->
+            <!-- Add Generate SN buttons BEFORE action_assign -->
             <xpath expr="//button[@name='action_assign']" position="after">
                 
                 <!-- Generate Serial Numbers Button -->
@@ -40,7 +40,7 @@
                 </button>
             </xpath>
             
-            <!-- Add info banner for SN status -->
+            <!-- Add info banners -->
             <xpath expr="//sheet" position="before">
                 <!-- Banner: Need to Generate SN -->
                 <div class="alert alert-warning" role="alert" 
@@ -69,143 +69,55 @@
                 </div>
             </xpath>
             
-            <!-- Add fields for tracking -->
+            <!-- Add tracking fields -->
             <xpath expr="//field[@name='state']" position="after">
                 <field name="serial_numbers_generated" invisible="1"/>
                 <field name="generated_sn_count" invisible="1"/>
+                <field name="has_sn_products" invisible="1"/>
+                <field name="require_sn_scan" invisible="1"/>
             </xpath>
             
-        </field>
-    </record>
-    
-    <!-- Wizard View - FIXED -->
-    <record id="view_brodher_stock_picking_sn_wizard_form" model="ir.ui.view">
-        <field name="name">brodher.stock.picking.sn.wizard.form</field>
-        <field name="model">brodher.stock.picking.sn.wizard</field>
-        <field name="arch" type="xml">
-            <form string="Generate Serial Numbers">
-                <sheet>
-                    <div class="oe_title">
-                        <h1>
-                            <i class="fa fa-barcode"/> Generate Serial Numbers
-                        </h1>
-                        <h2>
-                            <field name="picking_name" readonly="1" class="oe_inline"/>
-                        </h2>
-                    </div>
-                    
+            <!-- Add SN Info in notebook -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Serial Numbers" 
+                      name="serial_numbers"
+                      invisible="not has_sn_products">
                     <group>
-                        <group>
-                            <field name="operation_type" readonly="1" widget="badge"/>
-                            <field name="total_products" readonly="1"/>
+                        <group string="Generation Status">
+                            <field name="serial_numbers_generated" readonly="1"/>
+                            <field name="generated_sn_count" readonly="1"/>
                         </group>
-                        <group>
-                            <label for="total_to_generate" class="fw-bold"/>
-                            <div>
-                                <field name="total_to_generate" class="oe_inline fw-bold text-success"/> 
-                                <span class="text-muted"> serial numbers will be generated</span>
-                            </div>
+                        <group string="Scan Status">
+                            <field name="scanned_sn_count" readonly="1"/>
                         </group>
                     </group>
                     
-                    <!-- Invisible fields needed for compute -->
-                    <field name="can_generate" invisible="1"/>
-                    <field name="picking_id" invisible="1"/>
+                    <group string="Products with Serial Numbers">
+                        <field name="move_ids_without_package" nolabel="1">
+                            <list>
+                                <field name="product_id"/>
+                                <field name="product_uom_qty" string="Quantity"/>
+                                <field name="sn_needed" string="SN Needed"/>
+                                <field name="sn_generated" string="SN Generated"/>
+                                <field name="sn_scanned" string="SN Scanned"/>
+                                <field name="sn_status" string="Status"/>
+                            </list>
+                        </field>
+                    </group>
                     
-                    <notebook>
-                        <page string="Products" name="products">
-                            <field name="line_ids">
-                                <list editable="bottom">
-                                    <!-- Generate checkbox -->
-                                    <field name="generate" widget="boolean_toggle"/>
-                                    
-                                    <!-- Product info -->
-                                    <field name="product_id" readonly="1"/>
-                                    
-                                    <!-- Quantities -->
-                                    <field name="quantity_in_picking" readonly="1" string="Qty in Transfer"/>
-                                    <field name="quantity_existing" readonly="1" string="Already Assigned"/>
-                                    <field name="quantity" string="Qty to Generate" sum="Total"/>
-                                    
-                                    <!-- SN Type -->
-                                    <field name="sn_type" widget="badge" 
-                                           decoration-info="sn_type == 'M'" 
-                                           decoration-warning="sn_type == 'W'"/>
-                                    
-                                    <!-- Preview -->
-                                    <field name="preview_sn" readonly="1" string="Preview"/>
-                                    
-                                    <!-- Hidden fields -->
-                                    <field name="move_id" column_invisible="1"/>
-                                    <field name="product_name" column_invisible="1"/>
-                                    <field name="wizard_id" column_invisible="1"/>
-                                    
-                                    <!-- Row decoration based on generate field -->
-                                    <decoration-muted>not generate</decoration-muted>
-                                    <decoration-bf>generate</decoration-bf>
-                                </list>
-                            </field>
-                            
-                            <div class="alert alert-info mt-3" role="alert">
-                                <i class="fa fa-info-circle"/> 
-                                <strong>Note:</strong> Only products from this transfer are shown. 
-                                Serial numbers will be created specifically for these products and quantities.
-                            </div>
-                        </page>
-                        
-                        <page string="Instructions" name="instructions">
-                            <div class="alert alert-info">
-                                <h4><i class="fa fa-lightbulb-o"/> How to Generate Serial Numbers</h4>
-                                <ol>
-                                    <li><strong>Review Products:</strong> The table shows only products from this transfer that need serial numbers</li>
-                                    <li><strong>Check Quantities:</strong>
-                                        <ul>
-                                            <li><em>Qty in Transfer:</em> Total quantity ordered</li>
-                                            <li><em>Already Assigned:</em> Serial numbers already created</li>
-                                            <li><em>Qty to Generate:</em> How many new SNs to create</li>
-                                        </ul>
-                                    </li>
-                                    <li><strong>Select SN Type:</strong> Choose M (Man) or W (Woman) for each product</li>
-                                    <li><strong>Preview:</strong> Check the SN range that will be generated</li>
-                                    <li><strong>Uncheck "Generate?"</strong> if you want to skip a product</li>
-                                    <li><strong>Generate:</strong> Click the button below to create the serial numbers</li>
-                                </ol>
-                                
-                                <div class="mt-3">
-                                    <h5>Serial Number Format:</h5>
-                                    <p><code>PF + Year(2) + Type(M/W) + Sequence(7 digits)</code></p>
-                                    <p><strong>Example:</strong> <code>PF25M0001234</code></p>
-                                    <ul>
-                                        <li>PF = Product Finished</li>
-                                        <li>25 = Year 2025</li>
-                                        <li>M = Man</li>
-                                        <li>0001234 = Sequence number</li>
-                                    </ul>
-                                </div>
-                                
-                                <div class="alert alert-warning mt-3">
-                                    <strong><i class="fa fa-exclamation-triangle"/> Important:</strong> 
-                                    Serial numbers use a <strong>GLOBAL sequence</strong>. 
-                                    The sequence continues across all products of the same type (M or W) and year.
-                                    <br/>
-                                    <strong>Example:</strong> If last SN was PF25M0000050, next will be PF25M0000051 regardless of product.
-                                </div>
-                            </div>
-                        </page>
-                    </notebook>
-                </sheet>
-                
-                <footer>
-                    <button string="Generate Serial Numbers" 
-                            name="action_generate_and_close" 
-                            type="object" 
-                            class="btn-primary"
-                            invisible="not can_generate"/>
-                    <button string="Cancel" 
-                            class="btn-secondary" 
-                            special="cancel"/>
-                </footer>
-            </form>
+                    <group string="Scanned Serial Numbers" invisible="scanned_sn_count == 0">
+                        <field name="sn_move_ids" nolabel="1">
+                            <list>
+                                <field name="serial_number_id"/>
+                                <field name="product_id"/>
+                                <field name="scan_date"/>
+                                <field name="scanned_by"/>
+                            </list>
+                        </field>
+                    </group>
+                </page>
+            </xpath>
+            
         </field>
     </record>
 </odoo>
