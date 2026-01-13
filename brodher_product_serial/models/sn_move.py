@@ -21,9 +21,34 @@ class BrodherSNMove(models.Model):
     user_id = fields.Many2one('res.users', string='User', default=lambda self: self.env.user)
     notes = fields.Text(string='Notes')
     picking_id = fields.Many2one('stock.picking', string='Stock Picking')
+    
+    # Related fields
     product_tmpl_id = fields.Many2one(
         related='serial_number_id.product_id.product_tmpl_id',
-        string='Product', store=True
+        string='Product Template', 
+        store=True
+    )
+    
+    # ADD THIS - Product Variant field
+    product_id = fields.Many2one(
+        related='serial_number_id.product_id',
+        string='Product',
+        store=True,
+        readonly=True
+    )
+    
+    # ADD THIS - For better display
+    scanned_by = fields.Many2one(
+        'res.users',
+        string='Scanned By',
+        related='user_id',
+        store=True
+    )
+    
+    scan_date = fields.Datetime(
+        string='Scan Date',
+        related='move_date',
+        store=True
     )
     
     _sql_constraints = [
