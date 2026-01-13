@@ -1,57 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="brodher_sn_move_tree_view" model="ir.ui.view">
-        <field name="name">brodher.sn.move.tree</field>
-        <field name="model">brodher.sn.move</field>
+    <!-- Inherit Stock Picking Form View - Add Generate SN Buttons -->
+    <record id="view_picking_form_generate_sn_buttons" model="ir.ui.view">
+        <field name="name">stock.picking.form.generate.sn.buttons</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
-            <list string="Serial Number Movements">
-                <field name="serial_number_name"/>
-                <field name="product_tmpl_id"/>
-                <field name="move_type"/>
-                <field name="location_src_id"/>
-                <field name="location_dest_id"/>
-                <field name="move_date"/>
-                <field name="user_id"/>
-            </list>
+            
+            <!-- Add Generate SN buttons BEFORE Scan SN button -->
+            <xpath expr="//button[@name='action_assign']" position="after">
+                
+                <!-- Generate Serial Numbers Button -->
+                <button name="action_generate_serial_numbers" 
+                        string="Generate SN" 
+                        type="object" 
+                        class="btn-primary"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or picking_type_code != 'incoming'"
+                        help="Generate serial numbers before scanning"/>
+                
+                <!-- Quick Generate All Button -->
+                <button name="action_bulk_generate_all" 
+                        string="Quick Generate All" 
+                        type="object" 
+                        class="btn-success"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or picking_type_code != 'incoming' or serial_numbers_generated"
+                        confirm="This will automatically generate serial numbers for all products. Continue?"
+                        help="Auto-generate all SNs"/>
+            </xpath>
+            
+            <!-- Add stat buttons -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <!-- Generated SNs Button -->
+                <button name="action_view_generated_sns" 
+                        type="object" 
+                        class="oe_stat_button" 
+                        icon="fa-barcode"
+                        invisible="generated_sn_count == 0">
+                    <field name="generated_sn_count" widget="statinfo" string="Generated SNs"/>
+                </button>
+            </xpath>
+            
+            <!-- Add info banner for SN status -->
+            <xpath expr="//sheet" position="before">
+                <!-- Banner: Need to Generate SN -->
+                <div class="alert alert-warning" role="alert" 
+                     invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated or picking_type_code != 'incoming'">
+                    <i class="fa fa-exclamation-triangle"/> 
+                    <strong>Action Required:</strong> 
+                    Generate serial numbers before scanning.
+                    <button name="action_generate_serial_numbers" 
+                            string="Generate Now" 
+                            type="object" 
+                            class="btn btn-sm btn-primary ms-2"/>
+                </div>
+                
+                <!-- Banner: SN Generated, Ready to Scan -->
+                <div class="alert alert-info" role="alert" 
+                     invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting'] or picking_type_code != 'incoming'">
+                    <i class="fa fa-check-circle"/> 
+                    <strong>Serial Numbers Generated:</strong> 
+                    <field name="generated_sn_count"/> SNs ready. 
+                    You can now scan them.
+                    <button name="action_scan_serial_number" 
+                            string="Start Scanning" 
+                            type="object" 
+                            class="btn btn-sm btn-success ms-2"
+                            invisible="not require_sn_scan"/>
+                </div>
+            </xpath>
+            
+            <!-- Add fields for tracking -->
+            <xpath expr="//field[@name='state']" position="after">
+                <field name="serial_numbers_generated" invisible="1"/>
+                <field name="generated_sn_count" invisible="1"/>
+            </xpath>
+            
         </field>
     </record>
-
-    <record id="brodher_sn_move_form_view" model="ir.ui.view">
-        <field name="name">brodher.sn.move.form</field>
-        <field name="model">brodher.sn.move</field>
+    
+    <!-- Wizard View -->
+    <record id="view_brodher_stock_picking_sn_wizard_form" model="ir.ui.view">
+        <field name="name">brodher.stock.picking.sn.wizard.form</field>
+        <field name="model">brodher.stock.picking.sn.wizard</field>
         <field name="arch" type="xml">
-            <form string="Serial Number Movement">
+            <form string="Generate Serial Numbers">
                 <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <i class="fa fa-barcode"/> Generate Serial Numbers
+                        </h1>
+                        <h2>
+                            <field name="picking_name" readonly="1" class="oe_inline"/>
+                        </h2>
+                    </div>
+                    
                     <group>
                         <group>
-                            <field name="serial_number_id"/>
-                            <field name="product_tmpl_id"/>
-                            <field name="move_type"/>
+                            <field name="operation_type" readonly="1" widget="badge"/>
+                            <field name="total_products" readonly="1"/>
                         </group>
                         <group>
-                            <field name="location_src_id"/>
-                            <field name="location_dest_id"/>
-                            <field name="move_date"/>
-                            <field name="user_id"/>
+                            <label for="total_to_generate" class="fw-bold"/>
+                            <div>
+                                <field name="total_to_generate" class="oe_inline fw-bold text-success"/> 
+                                <span class="text-muted"> serial numbers will be generated</span>
+                            </div>
+                            <field name="can_generate" invisible="1"/>
                         </group>
                     </group>
-                    <group>
-                        <field name="notes"/>
-                    </group>
+                    
+                    <notebook>
+                        <page string="Products" name="products">
+                            <field name="line_ids">
+                                <tree editable="bottom" decoration-muted="not generate">
+                                    <field name="generate" widget="boolean_toggle"/>
+                                    <field name="product_id" readonly="1"/>
+                                    <field name="quantity_in_picking" readonly="1"/>
+                                    <field name="quantity_existing" readonly="1"/>
+                                    <field name="quantity" sum="Total"/>
+                                    <field name="sn_type" widget="badge"/>
+                                    <field name="preview_sn" readonly="1"/>
+                                    <field name="move_id" column_invisible="1"/>
+                                    <field name="product_name" column_invisible="1"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
                 </sheet>
+                
+                <footer>
+                    <button string="Generate" 
+                            name="action_generate_and_close" 
+                            type="object" 
+                            class="btn-primary"
+                            invisible="not can_generate"/>
+                    <button string="Cancel" special="cancel"/>
+                </footer>
             </form>
         </field>
     </record>
-
-    <record id="brodher_sn_move_action" model="ir.actions.act_window">
-        <field name="name">SN Movements</field>
-        <field name="res_model">brodher.sn.move</field>
-        <field name="view_mode">list,form</field>
-    </record>
-
-    <menuitem id="menu_brodher_sn_move"
-              name="SN Movements"
-              parent="stock.menu_stock_root"
-              action="brodher_sn_move_action"
-              sequence="51"/>
 </odoo>
