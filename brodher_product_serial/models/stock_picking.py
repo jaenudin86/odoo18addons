@@ -174,86 +174,67 @@ class StockPicking(models.Model):
         }
     
     def action_bulk_generate_all(self):
-        """Quick action: generate all serial numbers automatically"""
+        """Quick generate all - NO move_line creation"""
         self.ensure_one()
         
         if self.state not in ['confirmed', 'assigned', 'waiting']:
-            raise UserError(_('Picking must be in Confirmed, Waiting, or Ready state!'))
+            raise UserError(_('Transfer must be confirmed!'))
         
         if not self.has_sn_products:
-            raise UserError(_('This picking has no products with serial number tracking!'))
+            raise UserError(_('No serial products!'))
         
-        generated_count = 0
-        generated_details = []
         StockLot = self.env['stock.lot']
+        total_generated = 0
+        generated_details = []
         
         for move in self.move_ids_without_package.filtered(
-            lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
+            lambda m: m.product_id.tracking == 'serial'
         ):
-            # Calculate how many SNs are still needed
-            qty_needed = int(move.product_uom_qty)
-            qty_existing = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
-            qty_to_generate = max(0, qty_needed - qty_existing)
-            
-            if qty_to_generate <= 0:
+            qty = int(move.product_uom_qty)
+            if qty <= 0:
                 continue
             
-            # Get SN type from product template
-            product_tmpl = move.product_id.product_tmpl_id
-            sn_type = product_tmpl.sn_product_type or 'M'
+            # Get SN type
+            sn_type = 'M'
+            if move.product_id.product_tmpl_id and hasattr(move.product_id.product_tmpl_id, 'sn_product_type'):
+                sn_type = move.product_id.product_tmpl_id.sn_product_type or 'M'
             
             try:
-                # Generate serial numbers
+                # Generate SNs ONLY
                 serial_numbers = StockLot.generate_serial_numbers(
-                    product_tmpl.id,
+                    move.product_id.product_tmpl_id.id,
                     move.product_id.id,
                     sn_type,
-                    qty_to_generate
+                    qty,
+                    picking_id=self.id
                 )
                 
-                # Create move lines for each SN
-                for sn in serial_numbers:
-                    self.env['stock.move.line'].create({
-                        'move_id': move.id,
-                        'product_id': move.product_id.id,
-                        'product_uom_id': move.product_id.uom_id.id,
-                        'location_id': self.location_id.id,
-                        'location_dest_id': self.location_dest_id.id,
-                        'picking_id': self.id,
-                        'lot_id': sn.id,
-                        'quantity': 1,
-                    })
-                    generated_count += 1
+                # ======================================
+                # DO NOT CREATE stock.move.line HERE
+                # ======================================
                 
-                generated_details.append(
-                    f"✓ {move.product_id.display_name}: {qty_to_generate} SNs (Type: {sn_type})"
-                )
-                
-                _logger.info(f'Generated {qty_to_generate} SNs for {move.product_id.name} in picking {self.name}')
+                total_generated += len(serial_numbers)
+                generated_details.append(f"✓ {move.product_id.display_name}: {len(serial_numbers)} SNs")
                 
             except Exception as e:
-                _logger.error(f'Error generating SNs for {move.product_id.name}: {str(e)}')
-                generated_details.append(
-                    f"✗ {move.product_id.display_name}: Failed - {str(e)}"
-                )
+                _logger.error(f'Error: {str(e)}')
+                generated_details.append(f"✗ {move.product_id.display_name}: Failed")
         
-        if generated_count > 0:
+        if total_generated > 0:
             self.serial_numbers_generated = True
         
-        # Create detailed message
-        details_message = '\n'.join(generated_details)
+        details = '\n'.join(generated_details)
         
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': _('Generation Complete'),
-                'message': _('Generated %s serial numbers:\n\n%s') % (generated_count, details_message),
-                'type': 'success' if generated_count > 0 else 'warning',
+                'title': _('Success'),
+                'message': _('Generated %s SNs!\n\n%s\n\n⚠️ Please SCAN to assign.') % (total_generated, details),
+                'type': 'success',
                 'sticky': True,
             }
         }
-    
     def action_view_generated_sns(self):
         """View all generated serial numbers for this picking"""
         self.ensure_one()

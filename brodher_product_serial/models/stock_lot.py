@@ -99,7 +99,7 @@ class StockLot(models.Model):
 
 
     def generate_serial_numbers(self, product_tmpl_id, product_id, sn_type, quantity, picking_id=None):
-        """Generate serial numbers with optional picking tracking"""
+        """Generate serial numbers - ONLY create stock.lot records"""
         if quantity <= 0:
             raise UserError(_('Quantity must be greater than 0'))
         
@@ -108,7 +108,7 @@ class StockLot(models.Model):
         
         next_seq = self._get_next_sequence_global(sn_type, year)
         
-        _logger.info(f'Generating {quantity} SNs for product_id={product_id}, type={sn_type}')
+        _logger.info(f'Generating {quantity} SNs: product_id={product_id}, type={sn_type}, seq={next_seq}')
         
         for i in range(quantity):
             current_seq = next_seq + i
@@ -116,7 +116,7 @@ class StockLot(models.Model):
             
             existing = self.search([('name', '=', sn_name)], limit=1)
             if existing:
-                _logger.warning(f'SN {sn_name} already exists, skipping...')
+                _logger.warning(f'SN {sn_name} already exists, skipping')
                 continue
             
             vals = {
@@ -130,16 +130,16 @@ class StockLot(models.Model):
                 'sn_status': 'available',
             }
             
-            # Add picking tracking if provided
             if picking_id:
-                vals.update({
-                    'generated_by_picking_id': picking_id,
-                    'auto_generated': True,
-                })
+                vals['generated_by_picking_id'] = picking_id
             
             sn = self.create(vals)
             serial_numbers.append(sn)
             _logger.info(f'Created SN: {sn_name}')
+        
+        # ======================================
+        # DO NOT CREATE stock.move.line HERE
+        # ======================================
         
         return serial_numbers
     
