@@ -70,9 +70,10 @@ class ProductTemplate(models.Model):
         
         for template in self:
             for variant in template.product_variant_ids:
-                # Generate kode untuk variant
+                # Jika variant belum punya default_code atau masih sama dengan template
                 if not variant.default_code or variant.default_code == template.default_code:
-                    variant_code = self._generate_variant_code(template, variant)
+                    # Generate sequence baru untuk variant ini
+                    variant_code = self._generate_article_number(template.is_article)
                     variant.write({
                         'default_code': variant_code,
                         'barcode': variant_code
@@ -82,28 +83,6 @@ class ProductTemplate(models.Model):
                     variant.barcode = variant.default_code
                     
         return result
-    
-    def _generate_variant_code(self, template, variant):
-        """Generate kode untuk variant berdasarkan attribute"""
-        base_code = template.default_code or self._generate_article_number(template.is_article)
-        
-        # Ambil nilai attribute untuk variant
-        variant_suffix = ""
-        attribute_values = variant.product_template_attribute_value_ids.sorted(
-            key=lambda x: x.attribute_id.sequence
-        )
-        
-        for value in attribute_values:
-            # Ambil 2-3 karakter pertama dari attribute value
-            attr_code = value.name[:3].upper().replace(" ", "")
-            if variant_suffix:
-                variant_suffix += "-"
-            variant_suffix += attr_code
-            
-        if variant_suffix and len(template.product_variant_ids) > 1:
-            return f"{base_code}-{variant_suffix}"
-        else:
-            return base_code
 
 
 class ProductProduct(models.Model):
@@ -122,10 +101,25 @@ class ProductProduct(models.Model):
     
     @api.model
     def create(self, vals):
-        """Override create untuk set barcode = default_code"""
+        """Override create untuk set default_code dan barcode"""
+        # Jika belum ada default_code, generate dari sequence
+        if not vals.get('default_code'):
+            # Cek is_article dari template atau vals
+            is_article = False
+            if 'product_tmpl_id' in vals:
+                template = self.env['product.template'].browse(vals['product_tmpl_id'])
+                is_article = template.is_article
+            elif 'is_article' in vals:
+                is_article = vals['is_article']
+                
+            # Generate code baru
+            new_code = self.env['product.template']._generate_article_number(is_article)
+            vals['default_code'] = new_code
+            vals['barcode'] = new_code
+            
         result = super(ProductProduct, self).create(vals)
         
-        # Set barcode sama dengan default_code
+        # Set barcode sama dengan default_code jika belum ada
         if result.default_code and not result.barcode:
             result.barcode = result.default_code
             
