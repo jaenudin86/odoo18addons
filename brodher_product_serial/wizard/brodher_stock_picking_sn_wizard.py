@@ -46,18 +46,15 @@ class BrodherStockPickingSNWizard(models.TransientModel):
         if not picking.exists():
             raise UserError(_('Picking not found!'))
         
-        # Get ONLY products from this picking's moves that need serial tracking
         lines = []
         for move in picking.move_ids_without_package.filtered(
             lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
         ):
-            # Calculate how many SNs are needed for THIS move
             qty_needed = int(move.product_uom_qty)
             qty_existing = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
             qty_to_generate = max(0, qty_needed - qty_existing)
             
             if qty_to_generate > 0:
-                # Get SN type from product template
                 product_tmpl = move.product_id.product_tmpl_id
                 sn_type = product_tmpl.sn_product_type or 'M'
                 
@@ -79,17 +76,14 @@ class BrodherStockPickingSNWizard(models.TransientModel):
             ))
         
         res['line_ids'] = lines
-        
         return res
     
     def action_generate_and_close(self):
-        """Generate serial numbers and close wizard"""
         self.ensure_one()
         
         if not self.can_generate:
             raise UserError(_('No products selected for generation!'))
         
-        # Validate picking is still in correct state
         if self.picking_id.state not in ['confirmed', 'assigned', 'waiting']:
             raise UserError(_('Transfer state has changed. Please refresh and try again.'))
         
@@ -100,11 +94,9 @@ class BrodherStockPickingSNWizard(models.TransientModel):
         
         for line in self.line_ids.filtered(lambda l: l.generate and l.quantity > 0):
             try:
-                # Validate that the move still exists and belongs to this picking
                 if line.move_id.picking_id != self.picking_id:
                     raise ValidationError(_('Move does not belong to this picking!'))
                 
-                # Double-check quantity needed
                 qty_needed = int(line.move_id.product_uom_qty)
                 qty_existing = len(line.move_id.move_line_ids.filtered(lambda ml: ml.lot_id))
                 qty_to_generate = max(0, qty_needed - qty_existing)
@@ -115,20 +107,18 @@ class BrodherStockPickingSNWizard(models.TransientModel):
                     )
                     continue
                 
-                # Use the requested quantity, but not more than needed
                 actual_qty = min(line.quantity, qty_to_generate)
                 
-                # Generate serial numbers
                 serial_numbers = StockLot.generate_serial_numbers(
                     line.product_id.product_tmpl_id.id,
                     line.product_id.id,
                     line.sn_type,
-                    actual_qty
+                    actual_qty,
+                    picking_id=self.picking_id.id
                 )
                 
                 _logger.info(f'Generated {len(serial_numbers)} SNs for {line.product_name} in picking {self.picking_id.name}')
                 
-                # Create move lines for each SN
                 for sn in serial_numbers:
                     self.env['stock.move.line'].create({
                         'move_id': line.move_id.id,
@@ -146,7 +136,6 @@ class BrodherStockPickingSNWizard(models.TransientModel):
                     f"✓ {line.product_name}: {actual_qty} SNs generated (Type: {line.sn_type})"
                 )
                 
-                # Get sample SN range
                 first_sn = serial_numbers[0].name
                 last_sn = serial_numbers[-1].name if len(serial_numbers) > 1 else first_sn
                 
@@ -160,17 +149,14 @@ class BrodherStockPickingSNWizard(models.TransientModel):
                 _logger.error(f'Error generating SNs for {line.product_name}: {error_msg}', exc_info=True)
                 errors.append(f"✗ {line.product_name}: {error_msg}")
         
-        # Mark as generated if at least one SN was created
         if total_generated > 0:
             self.picking_id.serial_numbers_generated = True
         
-        # Prepare result message
         details_message = '\n'.join(generated_details)
         
         if errors:
             details_message += '\n\nErrors:\n' + '\n'.join(errors)
         
-        # Return notification
         if total_generated > 0:
             message = _(
                 'Successfully generated %s serial numbers!\n\n%s\n\n'
@@ -202,8 +188,8 @@ class BrodherStockPickingSNWizardLine(models.TransientModel):
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True)
     product_name = fields.Char('Product Name', readonly=True)
     
-    quantity_in_picking = fields.Integer('Qty in Transfer', readonly=True, help="Total quantity in the transfer")
-    quantity_existing = fields.Integer('Already Assigned', readonly=True, help="Serial numbers already assigned")
+    quantity_in_picking = fields.Integer('Qty in Transfer', readonly=True)
+    quantity_existing = fields.Integer('Already Assigned', readonly=True)
     quantity = fields.Integer('Qty to Generate', required=True, default=1)
     
     sn_type = fields.Selection([
@@ -244,9 +230,5 @@ class BrodherStockPickingSNWizardLine(models.TransientModel):
             max_qty = line.quantity_in_picking - line.quantity_existing
             if line.quantity > max_qty:
                 raise ValidationError(_(
-                    'Cannot generate more than %s serial numbers for %s!\n\n'
-                    'Transfer quantity: %s\n'
-                    'Already assigned: %s\n'
-                    'Maximum to generate: %s'
-                ) % (max_qty, line.product_name, line.quantity_in_picking, 
-                     line.quantity_existing, max_qty))
+                    'Cannot generate more than %s serial numbers for %s!'
+                ) % (max_qty, line.product_name))
