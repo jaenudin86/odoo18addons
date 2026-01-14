@@ -132,110 +132,92 @@ class BrodherSNValidationWizard(models.TransientModel):
         
     def _process_partial_receipt(self):
         """
-        Process partial receipt - CRITICAL: Set quantity_done properly
+        Odoo 18 compatible partial receipt
+        - quantity_done TIDAK dipakai
+        - Backorder otomatis dari move_line.quantity
         """
         self.ensure_one()
         picking = self.picking_id
-        
+
         import logging
         _logger = logging.getLogger(__name__)
-        
-        _logger.info(f'[PARTIAL] Starting partial receipt for {picking.name}')
-        
+
         StockMoveLine = self.env['stock.move.line']
-        
+
+        _logger.warning(f'[PARTIAL] Start partial receipt for {picking.name}')
+
+        # ===============================
+        # BUILD MOVE LINES FROM SCANNED SN
+        # ===============================
         for move in picking.move_ids_without_package:
             if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
                 continue
-            
-            # Get scanned SNs for this product
+
             scanned_sns = picking.sn_move_ids.filtered(
                 lambda sm: sm.serial_number_id.product_id == move.product_id
             ).mapped('serial_number_id')
-            
+
             scanned_count = len(scanned_sns)
-            demand = move.product_uom_qty
-            
-            _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand} scanned')
-            
-            if scanned_count == 0:
-                _logger.warning(f'[PARTIAL] No SNs scanned for {move.product_id.display_name}')
-                move.move_line_ids.unlink()
+            demand = int(move.product_uom_qty)
+
+            _logger.warning(
+                f'[PARTIAL] {move.product_id.display_name}: '
+                f'scanned={scanned_count}, demand={demand}'
+            )
+
+            if not scanned_sns:
                 continue
-            
-            # Clear existing move_lines
-            move.move_line_ids.unlink()
-            
-            # Create move_lines ONLY for scanned SNs
+
+            # 🔥 HAPUS move_line lama
+            if move.move_line_ids:
+                move.move_line_ids.unlink()
+
+            # 🔥 BUAT move_line SESUAI SCAN
             for lot in scanned_sns:
                 StockMoveLine.create({
                     'picking_id': picking.id,
                     'move_id': move.id,
                     'product_id': move.product_id.id,
-                    'product_uom_id': move.product_id.uom_id.id,
-                    'lot_id': lot.id,
-                    'lot_name': lot.name,
+                    'product_uom_id': move.product_uom_id.id,
+                    'lot_id': lot.id,                    # ✅ PAKAI lot_id
+                    # ❌ JANGAN lot_name
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,  # Done qty (the only qty field in Odoo 18)
-                    'company_id': self.env.company.id,
+                    'quantity': 1.0,                     # ✅ Odoo 18 qty done
+                    'company_id': picking.company_id.id,
                 })
-            
-            # ==========================================
-            # CRITICAL: Set quantity_done on move
-            # ==========================================
-            move.quantity_done = float(scanned_count)
-            
-            _logger.info(f'[PARTIAL] Set {move.product_id.display_name} quantity_done = {scanned_count}')
-            _logger.info(f'[PARTIAL] Move lines created: {len(move.move_line_ids)}')
-        
-        # Log all moves before validation
+
+        # ===============================
+        # FORCE ASSIGN (WAJIB DI ODOO 18)
+        # ===============================
+        if picking.state in ('confirmed', 'waiting'):
+            _logger.warning('[ASSIGN] Force assign before validate')
+            picking.action_assign()
+
+        # ===============================
+        # DEBUG FINAL CHECK
+        # ===============================
         for move in picking.move_ids_without_package:
-            _logger.info(f'[PARTIAL PRE-VALIDATE] {move.product_id.display_name}: '
-                        f'demand={move.product_uom_qty}, done={move.quantity_done}, '
-                        f'lines={len(move.move_line_ids)}')
-        
-        # ==========================================
-        # Validate - Odoo will create backorder
-        # ==========================================
-        _logger.info(f'[PARTIAL] Calling button_validate()')
-        
-        result = picking.with_context(
-            from_sn_partial=True,
+            done_qty = sum(move.move_line_ids.mapped('quantity'))
+            _logger.warning(
+                f'[CHECK] {move.product_id.display_name}: '
+                f'demand={move.product_uom_qty}, done={done_qty}'
+            )
+
+        # ===============================
+        # VALIDATE → BACKORDER AUTO
+        # ===============================
+        _logger.warning('[VALIDATE] button_validate (partial mode)')
+
+        picking.with_context(
             skip_sms=True,
+            cancel_backorder=False,     # 🔥 WAJIB
+            skip_sn_wizard=True,        # 🔥 BIAR TIDAK BALIK KE WIZARD
         ).button_validate()
-        
-        _logger.info(f'[PARTIAL] Validation result: {result}')
-        
-        # Check if backorder was created
-        backorder = self.env['stock.picking'].search([
-            ('backorder_id', '=', picking.id)
-        ], limit=1)
-        
-        if backorder:
-            _logger.info(f'[PARTIAL] ✓ Backorder created: {backorder.name}')
-            
-            # Show success notification with backorder info
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Partial Receipt Complete'),
-                    'message': _(
-                        'Receipt completed with scanned items.\n\n'
-                        '✓ Current receipt: %s (Done)\n'
-                        '✓ Backorder created: %s (Ready)\n\n'
-                        'You can receive the remaining items later.'
-                    ) % (picking.name, backorder.name),
-                    'type': 'success',
-                    'sticky': True,
-                }
-            }
-        else:
-            _logger.warning(f'[PARTIAL] No backorder created!')
-            return {'type': 'ir.actions.act_window_close'}
 
+        _logger.warning('[PARTIAL] DONE')
 
+        return {'type': 'ir.actions.act_window_close'}
 
     
     def _force_validate(self):
