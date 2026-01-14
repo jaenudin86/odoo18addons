@@ -137,6 +137,8 @@ class BrodherSNValidationWizard(models.TransientModel):
         import logging
         _logger = logging.getLogger(__name__)
 
+        StockMoveLine = self.env['stock.move.line']
+
         for move in picking.move_ids_without_package:
             if move.product_id.tracking != 'serial':
                 continue
@@ -148,14 +150,14 @@ class BrodherSNValidationWizard(models.TransientModel):
             if not scanned_sns:
                 continue
 
-            # HAPUS SEMUA move_line lama
+            # reset move lines
             move.move_line_ids.unlink()
 
-            # BUAT move_line BARU dari SN scan
+            # create move lines from scanned SN
             for lot in scanned_sns:
-                self.env['stock.move.line'].create({
-                    'move_id': move.id,
+                StockMoveLine.create({
                     'picking_id': picking.id,
+                    'move_id': move.id,
                     'product_id': move.product_id.id,
                     'lot_id': lot.id,
                     'location_id': move.location_id.id,
@@ -168,7 +170,12 @@ class BrodherSNValidationWizard(models.TransientModel):
                 f'done={len(scanned_sns)} demand={move.product_uom_qty}'
             )
 
-        # VALIDATE → Odoo bikin backorder
+        # 🔥 WAJIB: assign dulu
+        if picking.state in ('confirmed', 'waiting'):
+            _logger.info('[ASSIGN] Re-assign picking before validate')
+            picking.action_assign()
+
+        # VALIDATE
         picking.with_context(
             skip_sms=True,
             cancel_backorder=False,
@@ -176,7 +183,6 @@ class BrodherSNValidationWizard(models.TransientModel):
         ).button_validate()
 
         return {'type': 'ir.actions.act_window_close'}
-
 
 
     
