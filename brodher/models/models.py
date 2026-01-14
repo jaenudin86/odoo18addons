@@ -66,7 +66,7 @@ class ProductTemplate(models.Model):
         """
         year = datetime.today().strftime('%y')
         prefix = 'ATC' if is_article else 'PSIT'
-        seq_code = 'article.number.sequence' if is_article else 'psit.number.sequence'
+        seq_code = 'article.number.sequence' if is_article else 'pist.number.sequence'
 
         seq = self.env['ir.sequence'].next_by_code(seq_code) or '001'
         return f"{prefix}{year}{seq}"
