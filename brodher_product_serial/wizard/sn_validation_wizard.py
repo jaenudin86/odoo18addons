@@ -129,7 +129,7 @@ class BrodherSNValidationWizard(models.TransientModel):
         elif self.action_type == 'force':
             # Force validate (dangerous!)
             return self._force_validate()
-    
+        
     def _process_partial_receipt(self):
         self.ensure_one()
         picking = self.picking_id
@@ -149,24 +149,25 @@ class BrodherSNValidationWizard(models.TransientModel):
 
                 _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand}')
 
-                # RESET semua qty_done
+                # RESET quantity
                 for ml in move.move_line_ids:
-                    ml.qty_done = 0
+                    ml.quantity = 0
 
-                # SET qty_done hanya untuk SN yang discan
+                # SET quantity = 1 hanya untuk SN yang discan
                 for ml in move.move_line_ids:
                     if ml.lot_id and ml.lot_id in scanned_sns:
-                        ml.qty_done = 1
+                        ml.quantity = 1
 
-                # OPTIONAL: hapus move_line tanpa lot (auto generated)
+                # Optional: hapus move_line auto tanpa lot
                 move.move_line_ids.filtered(lambda l: not l.lot_id).unlink()
 
         _logger.info('[PARTIAL] Validate with backorder')
 
         return picking.with_context(
             skip_sms=True,
-            cancel_backorder=False  # WAJIB false
+            cancel_backorder=False
         ).button_validate()
+
 
     
     def _force_validate(self):
