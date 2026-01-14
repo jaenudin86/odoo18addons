@@ -138,35 +138,45 @@ class BrodherSNValidationWizard(models.TransientModel):
         _logger = logging.getLogger(__name__)
 
         for move in picking.move_ids_without_package:
-            if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
+            if move.product_id.tracking != 'serial':
+                continue
 
-                scanned_sns = picking.sn_move_ids.filtered(
-                    lambda sm: sm.serial_number_id.product_id == move.product_id
-                ).mapped('serial_number_id')
+            scanned_sns = picking.sn_move_ids.filtered(
+                lambda sm: sm.serial_number_id.product_id == move.product_id
+            ).mapped('serial_number_id')
 
-                scanned_count = len(scanned_sns)
-                demand = int(move.product_uom_qty)
+            if not scanned_sns:
+                continue
 
-                _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand}')
+            # HAPUS SEMUA move_line lama
+            move.move_line_ids.unlink()
 
-                # RESET quantity
-                for ml in move.move_line_ids:
-                    ml.quantity = 0
+            # BUAT move_line BARU dari SN scan
+            for lot in scanned_sns:
+                self.env['stock.move.line'].create({
+                    'move_id': move.id,
+                    'picking_id': picking.id,
+                    'product_id': move.product_id.id,
+                    'lot_id': lot.id,
+                    'location_id': move.location_id.id,
+                    'location_dest_id': move.location_dest_id.id,
+                    'quantity': 1,
+                })
 
-                # SET quantity = 1 hanya untuk SN yang discan
-                for ml in move.move_line_ids:
-                    if ml.lot_id and ml.lot_id in scanned_sns:
-                        ml.quantity = 1
+            _logger.info(
+                f'[PARTIAL] {move.product_id.display_name} '
+                f'done={len(scanned_sns)} demand={move.product_uom_qty}'
+            )
 
-                # Optional: hapus move_line auto tanpa lot
-                move.move_line_ids.filtered(lambda l: not l.lot_id).unlink()
-
-        _logger.info('[PARTIAL] Validate with backorder')
-
-        return picking.with_context(
+        # VALIDATE → Odoo bikin backorder
+        picking.with_context(
             skip_sms=True,
-            cancel_backorder=False
+            cancel_backorder=False,
+            skip_sn_wizard=True,
         ).button_validate()
+
+        return {'type': 'ir.actions.act_window_close'}
+
 
 
     
