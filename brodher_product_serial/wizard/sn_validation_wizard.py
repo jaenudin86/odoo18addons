@@ -131,43 +131,117 @@ class BrodherSNValidationWizard(models.TransientModel):
             return self._force_validate()
         
     def _process_partial_receipt(self):
-        self.ensure_one()
-        picking = self.picking_id
-
-        StockMoveLine = self.env['stock.move.line']
-
-        for move in picking.move_ids_without_package:
-            if move.product_id.tracking != 'serial':
-                continue
-
-            scanned_sns = picking.sn_move_ids.filtered(
-                lambda sm: sm.serial_number_id.product_id == move.product_id
-            ).mapped('serial_number_id')
-
-            if not scanned_sns:
-                continue
-
-            move.move_line_ids.unlink()
-
-            for lot in scanned_sns:
-                StockMoveLine.create({
-                    'picking_id': picking.id,
-                    'move_id': move.id,
-                    'product_id': move.product_id.id,
-                    'lot_id': lot.id,
-                    'location_id': move.location_id.id,
-                    'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1,
-                })
-
-        # ❌ JANGAN action_assign()
-
-        picking.with_context(
-            from_sn_partial=True,
-            skip_sms=True,
-        ).button_validate()
-
-        return {'type': 'ir.actions.act_window_close'}
+            """
+            Process partial receipt - CRITICAL: Set quantity_done properly
+            """
+            self.ensure_one()
+            picking = self.picking_id
+            
+            import logging
+            _logger = logging.getLogger(__name__)
+            
+            _logger.info(f'[PARTIAL] Starting partial receipt for {picking.name}')
+            
+            StockMoveLine = self.env['stock.move.line']
+            
+            for move in picking.move_ids_without_package:
+                if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
+                    continue
+                
+                # Get scanned SNs for this product
+                scanned_sns = picking.sn_move_ids.filtered(
+                    lambda sm: sm.serial_number_id.product_id == move.product_id
+                ).mapped('serial_number_id')
+                
+                scanned_count = len(scanned_sns)
+                demand = move.product_uom_qty
+                
+                _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand} scanned')
+                
+                if scanned_count == 0:
+                    _logger.warning(f'[PARTIAL] No SNs scanned for {move.product_id.display_name}')
+                    # Don't create any move_lines, leave quantity_done = 0
+                    move.move_line_ids.unlink()
+                    continue
+                
+                # Clear existing move_lines
+                move.move_line_ids.unlink()
+                
+                # Create move_lines ONLY for scanned SNs
+                for lot in scanned_sns:
+                    StockMoveLine.create({
+                        'picking_id': picking.id,
+                        'move_id': move.id,
+                        'product_id': move.product_id.id,
+                        'product_uom_id': move.product_id.uom_id.id,
+                        'lot_id': lot.id,
+                        'lot_name': lot.name,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'quantity': 1.0,  # Done qty
+                        'reserved_uom_qty': 0.0,
+                    })
+                
+                # ==========================================
+                # CRITICAL: Set quantity_done on move
+                # ==========================================
+                move.quantity_done = float(scanned_count)
+                
+                _logger.info(f'[PARTIAL] Set {move.product_id.display_name} quantity_done = {scanned_count}')
+                _logger.info(f'[PARTIAL] Move lines created: {len(move.move_line_ids)}')
+            
+            # Log all moves before validation
+            for move in picking.move_ids_without_package:
+                _logger.info(f'[PARTIAL PRE-VALIDATE] {move.product_id.display_name}: '
+                            f'demand={move.product_uom_qty}, done={move.quantity_done}, '
+                            f'lines={len(move.move_line_ids)}')
+            
+            # ==========================================
+            # Validate - Odoo will create backorder
+            # ==========================================
+            _logger.info(f'[PARTIAL] Calling button_validate()')
+            
+            result = picking.with_context(
+                from_sn_partial=True,
+                skip_sms=True,
+            ).button_validate()
+            
+            _logger.info(f'[PARTIAL] Validation result: {result}')
+            
+            # Check if backorder was created
+            backorder = self.env['stock.picking'].search([
+                ('backorder_id', '=', picking.id)
+            ], limit=1)
+            
+            if backorder:
+                _logger.info(f'[PARTIAL] ✓ Backorder created: {backorder.name}')
+                
+                # Show success notification with backorder info
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('Partial Receipt Complete'),
+                        'message': _(
+                            'Receipt completed with scanned items.\n\n'
+                            '✓ Current receipt: %s (Done)\n'
+                            '✓ Backorder created: %s (Ready)\n\n'
+                            'You can receive the remaining items later.'
+                        ) % (picking.name, backorder.name),
+                        'type': 'success',
+                        'sticky': True,
+                        'next': {
+                            'type': 'ir.actions.act_window',
+                            'res_model': 'stock.picking',
+                            'res_id': backorder.id,
+                            'view_mode': 'form',
+                            'target': 'current',
+                        }
+                    }
+                }
+            else:
+                _logger.warning(f'[PARTIAL] No backorder created!')
+                return {'type': 'ir.actions.act_window_close'}
 
 
 

@@ -360,22 +360,38 @@ class StockPicking(models.Model):
         return False, error_msg, True  # can_partial=True
     
     def button_validate(self):
+        """
+        Override validate - handle SN validation and partial receipts
+        """
         for picking in self:
-            # Skip check jika datang dari wizard partial
-            if self.env.context.get('from_sn_partial'):
-                _logger.info('[VALIDATE] Skip SN completion check (partial mode)')
-                break
-
+            # Skip SN check if coming from partial wizard
+            from_partial = self.env.context.get('from_sn_partial', False)
+            
+            if from_partial:
+                _logger.info(f'[VALIDATE] Partial receipt mode for {picking.name}')
+                
+                # Log move states before validation
+                for move in picking.move_ids_without_package:
+                    _logger.info(f'[VALIDATE] Move: {move.product_id.display_name}, '
+                            f'demand={move.product_uom_qty}, done={move.quantity_done}')
+                
+                # Call super to trigger standard Odoo validation
+                # Odoo will detect partial (done < demand) and create backorder
+                return super(StockPicking, self).button_validate()
+            
+            # Normal flow: Check SN completion
             has_sn_products = any(
                 move.product_id.tracking == 'serial' and 
                 move.product_id.product_tmpl_id.sn_product_type
                 for move in picking.move_ids_without_package
             )
-
+            
             if has_sn_products:
                 is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
-
+                
                 if not is_complete:
+                    _logger.info(f'[VALIDATE] Incomplete scan, showing wizard')
+                    
                     return {
                         'type': 'ir.actions.act_window',
                         'res_model': 'brodher.sn.validation.wizard',
@@ -387,8 +403,9 @@ class StockPicking(models.Model):
                             'default_can_create_backorder': True,
                         }
                     }
-
-        return super().button_validate()
+        
+        _logger.info(f'[VALIDATE] All checks passed, calling super')
+        return super(StockPicking, self).button_validate()
 
 
     def _get_generated_serial_numbers(self):
