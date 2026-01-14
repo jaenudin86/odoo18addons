@@ -178,14 +178,14 @@ class BrodherSNValidationWizard(models.TransientModel):
                     'picking_id': picking.id,
                     'move_id': move.id,
                     'product_id': move.product_id.id,
-                    'product_uom_id': move.product_uom_id.id,
-                    'lot_id': lot.id,                    # ✅ PAKAI lot_id
-                    # ❌ JANGAN lot_name
+                    'product_uom_id': move.product_uom.id,   # ✅ FIX
+                    'lot_id': lot.id,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,                     # ✅ Odoo 18 qty done
+                    'quantity': 1.0,
                     'company_id': picking.company_id.id,
                 })
+
 
         # ===============================
         # FORCE ASSIGN (WAJIB DI ODOO 18)
