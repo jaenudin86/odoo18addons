@@ -351,9 +351,10 @@ class StockPicking(models.Model):
         return False, error_msg, True  # can_partial=True
     def button_validate(self):
         """
-        Override validate to handle partial receipt
+        Override validate to handle partial receipt with backorder
         """
         for picking in self:
+            # Check if has SN products
             has_sn_products = any(
                 move.product_id.tracking == 'serial' and 
                 move.product_id.product_tmpl_id.sn_product_type
@@ -361,10 +362,11 @@ class StockPicking(models.Model):
             )
             
             if has_sn_products:
+                # Check completion
                 is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
                 
                 if not is_complete:
-                    # Open wizard with partial option
+                    # Show validation wizard with partial option
                     return {
                         'type': 'ir.actions.act_window',
                         'res_model': 'brodher.sn.validation.wizard',
@@ -373,11 +375,12 @@ class StockPicking(models.Model):
                         'context': {
                             'default_picking_id': picking.id,
                             'default_warning_message': error_msg,
-                            'default_can_create_backorder': can_partial,
+                            'default_can_create_backorder': True,
                         }
                     }
         
-        # Continue with normal validation
+        # Continue with standard Odoo validation
+        # Odoo will handle backorder creation if qty is partial
         return super(StockPicking, self).button_validate()
     def _get_generated_serial_numbers(self):
         """Get all generated serial numbers for this picking (not yet scanned)"""

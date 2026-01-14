@@ -4,33 +4,43 @@
         <field name="name">brodher.sn.validation.wizard.form</field>
         <field name="model">brodher.sn.validation.wizard</field>
         <field name="arch" type="xml">
-            <form string="Serial Number Validation Warning">
+            <form string="Serial Number Validation">
                 <sheet>
                     <div class="alert alert-warning" role="alert">
-                        <h4><i class="fa fa-exclamation-triangle"/> Warning</h4>
-                        <field name="warning_message" nolabel="1"/>
+                        <h4><i class="fa fa-exclamation-triangle"/> Incomplete Serial Number Scan</h4>
+                        <field name="warning_message" nolabel="1" class="oe_form_text"/>
                     </div>
                     
                     <group>
                         <field name="picking_id" invisible="1"/>
                         <field name="can_create_backorder" invisible="1"/>
-                        <field name="action_type" widget="radio"/>
                     </group>
                     
-                    <div class="alert alert-info" invisible="action_type != 'backorder'">
-                        <h5><i class="fa fa-info-circle"/> About Backorder</h5>
-                        <p>
-                            A new transfer will be created for the remaining items.
-                            You can receive them later when the goods arrive.
-                        </p>
-                        <p><strong>Current transfer will be completed with scanned items only.</strong></p>
-                    </div>
+                    <group string="Choose Action">
+                        <field name="action_type" widget="radio" nolabel="1"/>
+                    </group>
+                    
+                    <!-- Show partial summary -->
+                    <group string="Partial Receipt Summary" invisible="action_type != 'partial'">
+                        <field name="partial_summary" nolabel="1" widget="html"/>
+                        
+                        <div class="alert alert-info">
+                            <h5><i class="fa fa-info-circle"/> What Will Happen:</h5>
+                            <ul>
+                                <li><strong>Current Receipt:</strong> Will be completed with scanned items</li>
+                                <li><strong>Backorder:</strong> New transfer will be created for remaining items</li>
+                                <li><strong>PO Status:</strong> Will remain "Partially Received"</li>
+                                <li><strong>Next Step:</strong> You can receive backorder items later</li>
+                            </ul>
+                        </div>
+                    </group>
                     
                     <div class="alert alert-danger" invisible="action_type != 'force'">
                         <h5><i class="fa fa-exclamation-triangle"/> Warning!</h5>
                         <p>
-                            Force validation is <strong>NOT RECOMMENDED</strong>.
-                            This may cause inventory discrepancies.
+                            <strong>Force validation is NOT RECOMMENDED!</strong>
+                            This will mark all items as received even though they weren't scanned.
+                            This may cause serious inventory discrepancies.
                         </p>
                     </div>
                 </sheet>
