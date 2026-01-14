@@ -74,11 +74,21 @@
                 </sheet>
                 
                 <footer>
+                    <!-- Confirm button for Cancel/Partial (no confirm needed) -->
                     <button string="Confirm" 
                             name="action_confirm" 
                             type="object" 
                             class="btn-primary"
-                            confirm="action_type == 'force' ? 'Are you sure you want to force validation? This may cause inventory issues!' : False"/>
+                            invisible="action_type == 'force'"/>
+                    
+                    <!-- Confirm button for Force (with confirmation) -->
+                    <button string="Force Validate" 
+                            name="action_confirm" 
+                            type="object" 
+                            class="btn-danger"
+                            invisible="action_type != 'force'"
+                            confirm="Are you sure you want to force validation? This may cause inventory issues!"/>
+                    
                     <button string="Cancel" 
                             class="btn-secondary" 
                             special="cancel"/>
