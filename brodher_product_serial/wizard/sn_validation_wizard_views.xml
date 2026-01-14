@@ -1,44 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <record id="sn_validation_wizard_form_view" model="ir.ui.view">
+    <record id="view_brodher_sn_validation_wizard" model="ir.ui.view">
         <field name="name">brodher.sn.validation.wizard.form</field>
         <field name="model">brodher.sn.validation.wizard</field>
         <field name="arch" type="xml">
             <form string="Serial Number Validation Warning">
-                <div class="alert alert-warning" role="alert">
-                    <h4>⚠️ Incomplete Serial Number Scanning</h4>
-                </div>
-                
-                <group>
-                    <field name="picking_id" invisible="1"/>
-                    <field name="warning_message" nolabel="1" widget="text" readonly="1"/>
-                </group>
-                
-                <div class="alert alert-info" role="alert">
-                    <p><strong>Important Notes:</strong></p>
-                    <ul>
-                        <li><strong>Products WITH Serial Number Tracking:</strong> Must scan all required SNs</li>
-                        <li><strong>Products WITHOUT Serial Number Tracking:</strong> Can be validated normally without scanning</li>
-                        <li><strong>Continue Scanning:</strong> Go back to scan remaining serial numbers</li>
-                        <li><strong>Force Validate:</strong> Skip SN scanning (not recommended)</li>
-                    </ul>
-                </div>
+                <sheet>
+                    <div class="alert alert-warning" role="alert">
+                        <h4><i class="fa fa-exclamation-triangle"/> Warning</h4>
+                        <field name="warning_message" nolabel="1"/>
+                    </div>
+                    
+                    <group>
+                        <field name="picking_id" invisible="1"/>
+                        <field name="can_create_backorder" invisible="1"/>
+                        <field name="action_type" widget="radio"/>
+                    </group>
+                    
+                    <div class="alert alert-info" invisible="action_type != 'backorder'">
+                        <h5><i class="fa fa-info-circle"/> About Backorder</h5>
+                        <p>
+                            A new transfer will be created for the remaining items.
+                            You can receive them later when the goods arrive.
+                        </p>
+                        <p><strong>Current transfer will be completed with scanned items only.</strong></p>
+                    </div>
+                    
+                    <div class="alert alert-danger" invisible="action_type != 'force'">
+                        <h5><i class="fa fa-exclamation-triangle"/> Warning!</h5>
+                        <p>
+                            Force validation is <strong>NOT RECOMMENDED</strong>.
+                            This may cause inventory discrepancies.
+                        </p>
+                    </div>
+                </sheet>
                 
                 <footer>
-                    <button string="Continue Scanning" 
-                            name="action_continue_scan" 
+                    <button string="Confirm" 
+                            name="action_confirm" 
                             type="object" 
-                            class="btn-primary"
-                            data-hotkey="q"/>
-                    <button string="Force Validate" 
-                            name="action_force_validate" 
-                            type="object" 
-                            class="btn-warning" 
-                            confirm="Are you sure you want to validate without scanning all serial numbers?"
-                            data-hotkey="f"/>
+                            class="btn-primary"/>
                     <button string="Cancel" 
-                            special="cancel"
-                            data-hotkey="z"/>
+                            class="btn-secondary" 
+                            special="cancel"/>
                 </footer>
             </form>
         </field>

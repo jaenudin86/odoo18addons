@@ -202,68 +202,84 @@ class StockPicking(models.Model):
         }
 
     def action_bulk_generate_all(self):
-            """Quick generate - ONLY for products with serial + SN type"""
-            self.ensure_one()
+        """Quick generate - CHECK existing SNs first"""
+        self.ensure_one()
+        
+        if self.state not in ['confirmed', 'assigned', 'waiting']:
+            raise UserError(_('Transfer must be confirmed!'))
+        
+        StockLot = self.env['stock.lot']
+        total_generated = 0
+        generated_details = []
+        skipped = []
+        
+        sn_moves = self.move_ids_without_package.filtered(
+            lambda m: m.product_id.tracking == 'serial' and
+                    m.product_id.product_tmpl_id.sn_product_type
+        )
+        
+        if not sn_moves:
+            raise UserError(_('No products require SN generation!'))
+        
+        for move in sn_moves:
+            qty_needed = int(move.product_uom_qty)
             
-            if self.state not in ['confirmed', 'assigned', 'waiting']:
-                raise UserError(_('Transfer must be confirmed!'))
+            if qty_needed <= 0:
+                continue
             
-            StockLot = self.env['stock.lot']
-            total_generated = 0
-            generated_details = []
+            # Check existing SNs
+            existing_sns = self.env['stock.lot'].search([
+                ('product_id', '=', move.product_id.id),
+                ('generated_by_picking_id', '=', self.id)
+            ])
             
-            # Filter: serial tracking + sn_product_type
-            sn_moves = self.move_ids_without_package.filtered(
-                lambda m: m.product_id.tracking == 'serial' and
-                        m.product_id.product_tmpl_id.sn_product_type
-            )
+            qty_already = len(existing_sns)
+            qty_to_generate = qty_needed - qty_already
             
-            if not sn_moves:
-                raise UserError(_(
-                    '❌ No products require SN generation!\n\n'
-                    'Please ensure products have:\n'
-                    '✓ Tracking = "By Unique Serial Number"\n'
-                    '✓ SN Product Type (M/W) configured'
-                ))
+            if qty_to_generate <= 0:
+                skipped.append(f"⊘ {move.product_id.display_name}: Complete ({qty_already}/{qty_needed})")
+                continue
             
-            for move in sn_moves:
-                qty = int(move.product_uom_qty)
-                if qty <= 0:
-                    continue
+            sn_type = move.product_id.product_tmpl_id.sn_product_type
+            
+            try:
+                serial_numbers = StockLot.generate_serial_numbers(
+                    move.product_id.product_tmpl_id.id,
+                    move.product_id.id,
+                    sn_type,
+                    qty_to_generate,
+                    picking_id=self.id
+                )
                 
-                sn_type = move.product_id.product_tmpl_id.sn_product_type
+                total_generated += len(serial_numbers)
+                generated_details.append(f"✓ {move.product_id.display_name}: {len(serial_numbers)} SNs")
                 
-                try:
-                    serial_numbers = StockLot.generate_serial_numbers(
-                        move.product_id.product_tmpl_id.id,
-                        move.product_id.id,
-                        sn_type,
-                        qty,
-                        picking_id=self.id
-                    )
-                    
-                    total_generated += len(serial_numbers)
-                    generated_details.append(f"✓ {move.product_id.display_name}: {len(serial_numbers)} SNs (Type: {sn_type})")
-                    
-                except Exception as e:
-                    _logger.error(f'Error: {str(e)}')
-                    generated_details.append(f"✗ {move.product_id.display_name}: Failed")
-            
-            if total_generated > 0:
-                self.serial_numbers_generated = True
-            
-            details = '\n'.join(generated_details)
-            
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('Success'),
-                    'message': _('Generated %s SNs!\n\n%s\n\n⚠️ Please SCAN to assign.') % (total_generated, details),
-                    'type': 'success',
-                    'sticky': True,
-                }
+            except Exception as e:
+                _logger.error(f'Error: {str(e)}')
+                generated_details.append(f"✗ {move.product_id.display_name}: Failed")
+        
+        if total_generated > 0:
+            self.serial_numbers_generated = True
+        
+        all_msg = []
+        if generated_details:
+            all_msg.extend(generated_details)
+        if skipped:
+            all_msg.append('\nAlready Complete:')
+            all_msg.extend(skipped)
+        
+        details = '\n'.join(all_msg)
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Success'),
+                'message': _('Generated %s SNs!\n\n%s\n\n⚠️ Please SCAN to assign.') % (total_generated, details),
+                'type': 'success' if total_generated > 0 else 'warning',
+                'sticky': True,
             }
+        }
     def action_view_generated_sns(self):
         """View all generated serial numbers for this picking"""
         self.ensure_one()
@@ -287,49 +303,68 @@ class StockPicking(models.Model):
     
     # ========== EXISTING VALIDATION (SCAN SN - TIDAK DIUBAH) ==========
     def _check_sn_scan_completion(self):
-        """Check if all required SNs are scanned - ONLY for products with SN tracking"""
+        """
+        Check SN scan completion
+        Returns: (is_complete, error_message, can_partial)
+        """
         self.ensure_one()
         
-        # Check if there are ANY products that require SN
         has_sn_products = False
+        partial_info = []
         
         for move in self.move_ids_without_package:
             product_tmpl = move.product_id.product_tmpl_id
             
-            # Check if product has SN tracking enabled
             if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
                 has_sn_products = True
                 
-                # Count scanned SN for this product
                 scanned_count = len(self.sn_move_ids.filtered(
                     lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
                 ))
                 required_qty = int(move.product_uom_qty)
                 
-                # Check if not enough scanned
                 if scanned_count < required_qty:
-                    return False, _(
-                        'Product "%s" requires %d serial numbers, but only %d scanned!\n\n'
-                        '⚠️ Please scan all serial numbers for products with SN tracking.'
-                    ) % (product_tmpl.name, required_qty, scanned_count)
+                    partial_info.append({
+                        'product': product_tmpl.name,
+                        'required': required_qty,
+                        'scanned': scanned_count,
+                        'remaining': required_qty - scanned_count
+                    })
         
-        # If no SN products at all, or all scanned - return True
-        return True, None
-    
+        if not partial_info:
+            return True, None, False
+        
+        # Build error message with partial option
+        error_lines = ['⚠️ Incomplete Serial Number Scan:\n']
+        for info in partial_info:
+            error_lines.append(
+                f"• {info['product']}: {info['scanned']}/{info['required']} scanned "
+                f"(missing {info['remaining']})"
+            )
+        
+        error_lines.append('\n📋 Options:')
+        error_lines.append('1. Continue scanning remaining SNs')
+        error_lines.append('2. Create Backorder for remaining items')
+        
+        error_msg = '\n'.join(error_lines)
+        
+        return False, error_msg, True  # can_partial=True
     def button_validate(self):
-        """Override validate - only check SN for products with SN tracking"""
+        """
+        Override validate to handle partial receipt
+        """
         for picking in self:
-            # Check if ANY product requires SN
             has_sn_products = any(
-                move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type
+                move.product_id.tracking == 'serial' and 
+                move.product_id.product_tmpl_id.sn_product_type
                 for move in picking.move_ids_without_package
             )
             
-            # Only check SN completion if there are SN products
             if has_sn_products:
-                is_complete, error_msg = picking._check_sn_scan_completion()
+                is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
                 
                 if not is_complete:
+                    # Open wizard with partial option
                     return {
                         'type': 'ir.actions.act_window',
                         'res_model': 'brodher.sn.validation.wizard',
@@ -338,6 +373,7 @@ class StockPicking(models.Model):
                         'context': {
                             'default_picking_id': picking.id,
                             'default_warning_message': error_msg,
+                            'default_can_create_backorder': can_partial,
                         }
                     }
         
