@@ -1,22 +1,44 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Inherit Stock Picking Form View - Add Generate SN Buttons -->
+    
+    <!-- ========================================== -->
+    <!-- STOCK MOVE TREE VIEW (Separate Definition) -->
+    <!-- ========================================== -->
+    <record id="view_move_tree_operations" model="ir.ui.view">
+        <field name="name">stock.move.tree.operations</field>
+        <field name="model">stock.move</field>
+        <field name="arch" type="xml">
+            <list decoration-success="sn_scanned &gt;= sn_needed" 
+                  decoration-warning="sn_scanned &gt; 0 and sn_scanned &lt; sn_needed" 
+                  decoration-danger="sn_scanned == 0 and sn_needed &gt; 0">
+                <field name="product_id" readonly="1"/>
+                <field name="product_uom_qty" string="Demand" readonly="1"/>
+                <field name="sn_needed" string="SN Needed" readonly="1"/>
+                <field name="sn_scanned" string="SN Scanned" readonly="1"/>
+                <field name="sn_status" string="Status" readonly="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ========================================== -->
+    <!-- STOCK PICKING FORM - ADD BUTTONS -->
+    <!-- ========================================== -->
     <record id="view_picking_form_generate_sn_buttons" model="ir.ui.view">
         <field name="name">stock.picking.form.generate.sn.buttons</field>
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
             
-            <!-- Add Generate SN buttons -->
+            <!-- Add Generate SN buttons after action_assign -->
             <xpath expr="//button[@name='action_assign']" position="after">
                 
                 <!-- Generate Serial Numbers Button -->
-<button name="action_generate_serial_numbers" 
-        string="Generate SN" 
-        type="object" 
-        class="btn-primary"
-        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products"
-        help="Generate serial numbers (transfer must be confirmed first)"/>
+                <button name="action_generate_serial_numbers" 
+                        string="Generate SN" 
+                        type="object" 
+                        class="btn-primary"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products"
+                        help="Generate serial numbers (must scan after generation)"/>
                 
                 <!-- Quick Generate All Button -->
                 <button name="action_bulk_generate_all" 
@@ -26,27 +48,75 @@
                         invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated"
                         confirm="This will automatically generate serial numbers for all products. Continue?"
                         help="Auto-generate all SNs"/>
-        <button name="action_print_sn_qrcode" 
-            string="Print SN QR" 
-            type="object" 
-            class="btn-info"
-            icon="fa-print"
-            invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting']"
-            help="Print QR code labels for generated serial numbers"/>
+                
+                <!-- Print SN QR Code Button -->
+                <button name="action_print_sn_qrcode" 
+                        string="Print SN QR" 
+                        type="object" 
+                        class="btn-info"
+                        icon="fa-print"
+                        invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting']"
+                        help="Print QR code labels for generated serial numbers"/>
+            </xpath>
+            
+            <!-- Add Scan SN button before validate -->
+            <xpath expr="//button[@name='button_validate']" position="before">
+                <button name="action_scan_serial_number" 
+                        string="Scan Serial Number" 
+                        type="object" 
+                        class="btn-warning"
+                        invisible="state not in ['assigned', 'confirmed'] or not has_sn_products"
+                        help="Scan serial numbers to assign to this transfer"/>
+            </xpath>
+            
+            <!-- Add warning banners at top of sheet -->
+            <xpath expr="//sheet" position="before">
+                
+                <!-- Step 1: Generate SN -->
+                <div class="alert alert-warning" 
+                     role="alert" 
+                     invisible="not has_sn_products or serial_numbers_generated">
+                    <p class="mb-0">
+                        <strong>⚠️ Step 1:</strong> Generate serial numbers first by clicking 
+                        <strong>"Generate SN"</strong> button above.
+                    </p>
+                </div>
+                
+                <!-- Step 2: Scan SN -->
+                <div class="alert alert-info" 
+                     role="alert" 
+                     invisible="not serial_numbers_generated or sn_scan_complete">
+                    <p class="mb-0">
+                        <strong>📱 Step 2:</strong> Scan serial numbers. 
+                        Progress: <strong><field name="scanned_sn_count"/> / <field name="generated_sn_count"/></strong> scanned.
+                        Remaining: <strong style="color: red;"><field name="sn_remaining"/></strong>
+                    </p>
+                </div>
+                
+                <!-- Step 3: Ready to validate -->
+                <div class="alert alert-success" 
+                     role="alert" 
+                     invisible="not sn_scan_complete">
+                    <p class="mb-0">
+                        <strong>✓ Step 3:</strong> All serial numbers scanned! 
+                        Click <strong>"Validate"</strong> to complete the transfer.
+                    </p>
+                </div>
             </xpath>
             
             <!-- Add stat buttons -->
             <xpath expr="//div[@name='button_box']" position="inside">
-                <!-- Generated SNs Button -->
+                
+                <!-- Generated SNs -->
                 <button name="action_view_generated_sns" 
                         type="object" 
                         class="oe_stat_button" 
                         icon="fa-barcode"
-                        invisible="generated_sn_count == 0">
+                        invisible="not serial_numbers_generated">
                     <field name="generated_sn_count" widget="statinfo" string="Generated SNs"/>
                 </button>
                 
-                <!-- Scanned SNs Button -->
+                <!-- Scanned SNs -->
                 <button name="action_view_sn_moves" 
                         type="object" 
                         class="oe_stat_button" 
@@ -56,169 +126,81 @@
                 </button>
             </xpath>
             
-            <!-- Add info banners -->
-            <xpath expr="//sheet" position="before">
-                <!-- Banner: Need to Generate SN -->
-                <div class="alert alert-warning" role="alert" 
-                     invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated">
-                    <i class="fa fa-exclamation-triangle"/> 
-                    <strong>Step 1:</strong> Generate serial numbers first.
-                    <button name="action_generate_serial_numbers" 
-                            string="Generate Now" 
-                            type="object" 
-                            class="btn btn-sm btn-primary ms-2"/>
-                </div>
-                
-                <!-- Banner: SN Generated, Need to Scan -->
-                <div class="alert alert-info" role="alert" 
-                     invisible="not serial_numbers_generated or sn_scan_complete or state not in ['confirmed', 'assigned', 'waiting']">
-                    <i class="fa fa-info-circle"/> 
-                    <strong>Step 2:</strong> 
-                    <field name="generated_sn_count" class="fw-bold"/> serial numbers generated. 
-                    <field name="scanned_sn_count" class="fw-bold"/> scanned.
-                    Please scan remaining <field name="sn_remaining" class="fw-bold text-danger"/> SNs.
-                    <button name="action_scan_serial_number" 
-                            string="Start Scanning" 
-                            type="object" 
-                            class="btn btn-sm btn-success ms-2"
-                            invisible="not require_sn_scan"/>
-                </div>
-                
-                <!-- Banner: All Scanned, Ready to Validate -->
-                <div class="alert alert-success" role="alert" 
-                     invisible="not sn_scan_complete or state not in ['confirmed', 'assigned', 'waiting']">
-                    <i class="fa fa-check-circle"/> 
-                    <strong>Step 3:</strong> 
-                    All <field name="scanned_sn_count"/> serial numbers scanned! You can now validate the transfer.
-                </div>
+            <!-- Update Operations tab -->
+            <xpath expr="//page[@name='operations']" position="attributes">
+                <attribute name="invisible">0</attribute>
             </xpath>
             
-            <!-- Add tracking fields -->
-            <xpath expr="//field[@name='state']" position="after">
-                <field name="serial_numbers_generated" invisible="1"/>
-                <field name="generated_sn_count" invisible="1"/>
-                <field name="scanned_sn_count" invisible="1"/>
-                <field name="sn_remaining" invisible="1"/>
-                <field name="sn_scan_complete" invisible="1"/>
-                <field name="has_sn_products" invisible="1"/>
-                <field name="require_sn_scan" invisible="1"/>
+            <xpath expr="//page[@name='operations']//field[@name='move_ids_without_package']" position="attributes">
+                <attribute name="context">{'tree_view_ref': 'brodher_product_serial.view_move_tree_operations'}</attribute>
             </xpath>
             
-            <!-- Add SN Info in notebook -->
-            <xpath expr="//notebook" position="inside">
-                <page string="Serial Numbers" 
-                      name="serial_numbers"
-                      invisible="not has_sn_products">
-                    
+            <!-- Add Serial Numbers tab -->
+            <xpath expr="//page[@name='operations']" position="after">
+                <page string="Serial Numbers" name="serial_numbers" invisible="not has_sn_products">
                     <group>
                         <group string="Generation Status">
-                            <field name="serial_numbers_generated" readonly="1" widget="boolean"/>
-                            <field name="generated_sn_count" readonly="1" string="SNs Generated"/>
+                            <field name="serial_numbers_generated" readonly="1"/>
+                            <field name="generated_sn_count" readonly="1"/>
                         </group>
                         <group string="Scan Status">
-                            <field name="scanned_sn_count" readonly="1" string="SNs Scanned"/>
-                            <field name="sn_remaining" readonly="1" string="Remaining"/>
-                            <field name="sn_scan_complete" readonly="1" widget="boolean" string="Scan Complete"/>
+                            <field name="scanned_sn_count" readonly="1"/>
+                            <field name="sn_remaining" readonly="1"/>
+                            <field name="sn_scan_complete" readonly="1"/>
                         </group>
                     </group>
                     
-                    <separator string="Products Status"/>
-                    <field name="move_ids_without_package" nolabel="1">
-                        <list>
-                            <field name="product_id"/>
-                            <field name="product_uom_qty" string="Quantity"/>
-                            <field name="sn_needed" string="SN Needed"/>
-                            <field name="sn_generated" string="Generated"/>
-                            <field name="sn_scanned" string="Scanned"/>
-                            <field name="sn_status" string="Status"/>
-                        </list>
-                    </field>
-                    
-                    <!-- Generated SNs Section -->
-                    <group string="Generated Serial Numbers" invisible="generated_sn_count == 0">
-                        <div class="alert alert-info">
-                            <i class="fa fa-info-circle"/> 
-                            <field name="generated_sn_count" class="fw-bold"/> serial numbers have been generated and are ready for scanning.
-                            <button name="action_view_generated_sns" 
-                                    type="object" 
-                                    string="View All" 
-                                    class="btn btn-sm btn-link"/>
-                        </div>
-                    </group>
-                    
-                    <!-- Scanned SNs Section -->
-                    <group string="Scanned Serial Numbers" invisible="scanned_sn_count == 0">
-                        <field name="sn_move_ids" nolabel="1">
-                            <list>
-                                <field name="serial_number_name" string="Serial Number"/>
-                                <field name="product_tmpl_id" string="Product"/>
-                                <field name="scan_date" string="Scanned At"/>
-                                <field name="user_id" string="Scanned By"/>
+                    <group string="Product Status">
+                        <field name="move_ids_without_package" nolabel="1" context="{'tree_view_ref': 'brodher_product_serial.view_move_tree_operations'}">
+                            <list decoration-success="sn_scanned &gt;= sn_needed" 
+                                  decoration-warning="sn_scanned &gt; 0 and sn_scanned &lt; sn_needed" 
+                                  decoration-danger="sn_needed &gt; 0 and sn_scanned == 0">
+                                <field name="product_id"/>
+                                <field name="product_uom_qty" string="Demand"/>
+                                <field name="sn_needed"/>
+                                <field name="sn_scanned"/>
+                                <field name="sn_status" widget="badge" 
+                                       decoration-success="sn_status == '✓ Complete'"
+                                       decoration-warning="'⚠' in sn_status"
+                                       decoration-danger="'✗' in sn_status"/>
                             </list>
                         </field>
                     </group>
                     
-                    <!-- Warning if not all scanned -->
-                    <div class="alert alert-warning" 
-                         invisible="sn_scan_complete or generated_sn_count == 0">
-                        <i class="fa fa-exclamation-triangle"/> 
-                        <strong>Warning:</strong> Not all serial numbers have been scanned yet.
-                        <br/>
-                        Generated: <field name="generated_sn_count"/> | 
-                        Scanned: <field name="scanned_sn_count"/> | 
-                        Remaining: <field name="sn_remaining" class="fw-bold text-danger"/>
+                    <group string="Generated Serial Numbers" invisible="not serial_numbers_generated">
+                        <div class="alert alert-info">
+                            <p><strong>Total Generated:</strong> <field name="generated_sn_count" readonly="1"/> serial numbers</p>
+                            <p>Click <strong>"Generated SNs"</strong> stat button to view list.</p>
+                        </div>
+                    </group>
+                    
+                    <group string="Scanned Serial Numbers" invisible="scanned_sn_count == 0">
+                        <field name="sn_move_ids" nolabel="1">
+                            <list>
+                                <field name="serial_number_name"/>
+                                <field name="product_tmpl_id"/>
+                                <field name="move_date"/>
+                                <field name="user_id"/>
+                                <field name="move_type" widget="badge"/>
+                            </list>
+                        </field>
+                    </group>
+                    
+                    <div class="alert alert-warning" invisible="sn_scan_complete or not serial_numbers_generated">
+                        <h5>⚠️ Incomplete Scan</h5>
+                        <p>
+                            You have generated <strong><field name="generated_sn_count"/></strong> serial numbers, 
+                            but only scanned <strong><field name="scanned_sn_count"/></strong>.
+                        </p>
+                        <p>
+                            <strong>Remaining: <field name="sn_remaining"/></strong>
+                        </p>
+                        <p>Please scan all serial numbers before validating the transfer.</p>
                     </div>
                 </page>
             </xpath>
-<xpath expr="//page[@name='operations']" position="inside">
-    <group string="Summary" name="operations_summary">
-        <group>
-            <label for="move_ids_without_package" string="Products"/>
-            <field name="move_ids_without_package" nolabel="1" context="{'tree_view_ref': 'brodher_product_serial.view_move_tree_operations'}">
-                <list decoration-success="sn_scanned &gt;= sn_needed" 
-                      decoration-warning="sn_scanned &gt; 0 and sn_scanned &lt; sn_needed" 
-                      decoration-danger="sn_scanned == 0 and sn_needed &gt; 0">
-                    <field name="product_id" readonly="1"/>
-                    <field name="product_uom_qty" string="Demand" readonly="1"/>
-                    <field name="sn_needed" string="SN Needed" readonly="1"/>
-                    <field name="sn_scanned" string="SN Scanned" readonly="1"/>
-                    <field name="sn_status" string="Status" readonly="1"/>
-                </list>
-            </field>
-        </group>
-        
-        <group>
-            <label for="move_line_ids_without_package" string="Detailed Operations"/>
-            <field name="move_line_ids_without_package" nolabel="1">
-                <list editable="bottom" decoration-muted="quantity == 0">
-                    <field name="product_id" readonly="1"/>
-                    <field name="lot_id" readonly="1"/>
-                    <field name="lot_name" string="Serial Number" readonly="1"/>
-                    <field name="quantity" string="Done" sum="Total Done"/>
-                    <field name="product_uom_id" string="Unit" readonly="1"/>
-                    <field name="location_id" invisible="1"/>
-                    <field name="location_dest_id" invisible="1"/>
-                </list>
-            </field>
-        </group>
-    </group>
-</xpath>
-
-<record id="view_move_tree_operations" model="ir.ui.view">
-    <field name="name">stock.move.tree.operations</field>
-    <field name="model">stock.move</field>
-    <field name="arch" type="xml">
-        <list>
-            <field name="product_id"/>
-            <field name="product_uom_qty" string="Demand"/>
-            <field name="sn_needed"/>
-            <field name="sn_scanned"/>
-            <field name="sn_status"/>
-        </list>
-    </field>
-</record>
-
             
         </field>
     </record>
+    
 </odoo>
