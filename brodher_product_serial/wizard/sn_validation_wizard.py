@@ -68,37 +68,45 @@ class BrodherSNValidationWizard(models.TransientModel):
     
     def _process_partial_receipt(self):
         """
-        Process partial receipt and create backorder
+        Process partial receipt - keep only scanned items
         """
         self.ensure_one()
         picking = self.picking_id
         
-        # Update move quantities based on scanned SNs
+        _logger.info(f'[PARTIAL] Processing partial receipt for {picking.name}')
+        
+        # For each move, keep only scanned move_lines
         for move in picking.move_ids_without_package:
             if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
                 
-                # Count how many SNs were scanned for this product
-                scanned_count = len(picking.sn_move_ids.filtered(
-                    lambda sm: sm.serial_number_id.product_id.product_tmpl_id == move.product_id.product_tmpl_id
-                ))
+                # Get scanned SNs for this product
+                scanned_sns = picking.sn_move_ids.filtered(
+                    lambda sm: sm.serial_number_id.product_id == move.product_id
+                ).mapped('serial_number_id')
                 
-                original_qty = move.product_uom_qty
+                scanned_count = len(scanned_sns)
+                demand = int(move.product_uom_qty)
                 
-                if scanned_count > 0 and scanned_count < original_qty:
-                    # Update quantity_done to scanned count
-                    # This tells Odoo to only process scanned items
+                _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand} scanned')
+                
+                if scanned_count > 0 and scanned_count < demand:
+                    # Delete move_lines that are NOT in scanned list
                     for ml in move.move_line_ids:
-                        if ml.lot_id and ml.lot_id in picking.sn_move_ids.mapped('serial_number_id'):
-                            ml.quantity = 1  # Confirm this line
+                        if ml.lot_id and ml.lot_id not in scanned_sns:
+                            _logger.info(f'[PARTIAL] Removing unscanned SN: {ml.lot_id.name}')
+                            ml.unlink()
                     
-                    # Set move quantity_done
-                    move.quantity_done = scanned_count
+                    # Ensure all move_lines for scanned SNs have quantity = 1
+                    for ml in move.move_line_ids:
+                        if ml.lot_id:
+                            ml.quantity = 1.0
+                    
+                    _logger.info(f'[PARTIAL] Move lines after cleanup: {len(move.move_line_ids)}')
         
-        # Now validate - Odoo will detect partial and offer backorder
-        # We force it to create backorder
+        # Now validate - Odoo will create backorder for remaining qty
         return picking.with_context(
-            skip_backorder=False,  # Force backorder prompt
-            skip_sms=True
+            skip_sms=True,
+            cancel_backorder=False  # Allow backorder creation
         ).button_validate()
     
     def _force_validate(self):

@@ -170,7 +170,54 @@
                     </div>
                 </page>
             </xpath>
-            
+<xpath expr="//page[@name='operations']" position="inside">
+    <group string="Summary" name="operations_summary">
+        <group>
+            <label for="move_ids_without_package" string="Products"/>
+            <field name="move_ids_without_package" nolabel="1" context="{'tree_view_ref': 'brodher_product_serial.view_move_tree_operations'}">
+                <tree decoration-success="sn_scanned >= sn_needed" 
+                      decoration-warning="sn_scanned > 0 and sn_scanned < sn_needed" 
+                      decoration-danger="sn_scanned == 0 and sn_needed > 0">
+                    <field name="product_id" readonly="1"/>
+                    <field name="product_uom_qty" string="Demand" readonly="1"/>
+                    <field name="sn_needed" string="SN Needed" readonly="1"/>
+                    <field name="sn_scanned" string="SN Scanned" readonly="1"/>
+                    <field name="sn_status" string="Status" readonly="1"/>
+                </tree>
+            </field>
+        </group>
+        
+        <group>
+            <label for="move_line_ids_without_package" string="Detailed Operations"/>
+            <field name="move_line_ids_without_package" nolabel="1">
+                <tree editable="bottom" decoration-muted="quantity == 0">
+                    <field name="product_id" readonly="1"/>
+                    <field name="lot_id" readonly="1"/>
+                    <field name="lot_name" string="Serial Number" readonly="1"/>
+                    <field name="quantity" string="Done" sum="Total Done"/>
+                    <field name="product_uom_id" string="Unit" readonly="1"/>
+                    <field name="location_id" invisible="1"/>
+                    <field name="location_dest_id" invisible="1"/>
+                </tree>
+            </field>
+        </group>
+    </group>
+</xpath>
+
+<record id="view_move_tree_operations" model="ir.ui.view">
+    <field name="name">stock.move.tree.operations</field>
+    <field name="model">stock.move</field>
+    <field name="arch" type="xml">
+        <tree>
+            <field name="product_id"/>
+            <field name="product_uom_qty" string="Demand"/>
+            <field name="sn_needed"/>
+            <field name="sn_scanned"/>
+            <field name="sn_status"/>
+        </tree>
+    </field>
+</record>
+
             
         </field>
     </record>

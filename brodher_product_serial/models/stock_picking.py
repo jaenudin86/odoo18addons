@@ -349,56 +349,65 @@ class StockPicking(models.Model):
         error_msg = '\n'.join(error_lines)
         
         return False, error_msg, True  # can_partial=True
+ 
     def button_validate(self):
-            """
-            Override validate to set quantity_done based on scanned SNs
-            """
-            for picking in self:
-                # Check SN products
-                has_sn_products = any(
-                    move.product_id.tracking == 'serial' and 
-                    move.product_id.product_tmpl_id.sn_product_type
-                    for move in picking.move_ids_without_package
-                )
-                
-                if has_sn_products:
-                    # Update quantity_done for each move based on scanned SNs
-                    for move in picking.move_ids_without_package:
-                        if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
-                            
-                            # Count scanned SNs
-                            scanned_count = len(picking.sn_move_ids.filtered(
-                                lambda sm: sm.serial_number_id.product_id.product_tmpl_id == move.product_id.product_tmpl_id
-                            ))
-                            
-                            # Set quantity_done to scanned count
-                            move.quantity_done = float(scanned_count)
-                            
-                            # Also update move_line quantities
-                            total_qty = sum(move.move_line_ids.mapped('quantity'))
-                            
-                            if total_qty != scanned_count:
-                                _logger.warning(f'Move line total ({total_qty}) != scanned count ({scanned_count}) for {move.product_id.display_name}')
-                    
-                    # Check if complete
-                    is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
-                    
-                    if not is_complete:
-                        # Show validation wizard
-                        return {
-                            'type': 'ir.actions.act_window',
-                            'res_model': 'brodher.sn.validation.wizard',
-                            'view_mode': 'form',
-                            'target': 'new',
-                            'context': {
-                                'default_picking_id': picking.id,
-                                'default_warning_message': error_msg,
-                                'default_can_create_backorder': True,
-                            }
-                        }
+        """
+        Override validate - set quantity based on scanned SNs
+        """
+        for picking in self:
+            # Check SN products
+            has_sn_products = any(
+                move.product_id.tracking == 'serial' and 
+                move.product_id.product_tmpl_id.sn_product_type
+                for move in picking.move_ids_without_package
+            )
             
-            # Continue with standard validation
-            return super(StockPicking, self).button_validate()
+            if has_sn_products:
+                # For each move with SN tracking, ensure move_lines match scanned count
+                for move in picking.move_ids_without_package:
+                    if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
+                        
+                        # Count scanned SNs
+                        scanned_count = len(picking.sn_move_ids.filtered(
+                            lambda sm: sm.serial_number_id.product_id == move.product_id
+                        ))
+                        
+                        # Count move_lines with lot_id (actual received)
+                        move_line_count = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
+                        
+                        _logger.info(f'[VALIDATE] {move.product_id.display_name}: scanned={scanned_count}, move_lines={move_line_count}, demand={move.product_uom_qty}')
+                        
+                        # If scanned doesn't match move_lines, something is wrong
+                        if scanned_count != move_line_count:
+                            raise UserError(_(
+                                'Data inconsistency!\n\n'
+                                'Product: %s\n'
+                                'Scanned SNs: %s\n'
+                                'Move Lines: %s\n\n'
+                                'Please contact administrator.'
+                            ) % (move.product_id.display_name, scanned_count, move_line_count))
+                
+                # Check if complete or partial
+                is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
+                
+                if not is_complete:
+                    # Show validation wizard with partial option
+                    return {
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'brodher.sn.validation.wizard',
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': {
+                            'default_picking_id': picking.id,
+                            'default_warning_message': error_msg,
+                            'default_can_create_backorder': True,
+                        }
+                    }
+        
+        # Continue with standard validation
+        # Odoo will automatically calculate quantity_done from move_lines
+        return super(StockPicking, self).button_validate()
+
     def _get_generated_serial_numbers(self):
         """Get all generated serial numbers for this picking (not yet scanned)"""
         self.ensure_one()
@@ -440,7 +449,44 @@ class StockPicking(models.Model):
         
         return self.env.ref('brodher_product_serial.action_report_serial_number_qrcode').report_action(self)
 
+    def _create_backorder(self):
+        """
+        Override to ensure backorder is created for partial receipts
+        """
+        _logger.info(f'[BACKORDER] Creating backorder for {self.name}')
+        
+        # Call standard Odoo backorder creation
+        backorder = super(StockPicking, self)._create_backorder()
+        
+        if backorder:
+            _logger.info(f'[BACKORDER] Created: {backorder.name}')
+            
+            # Copy relevant info to backorder
+            if self.serial_numbers_generated:
+                # Don't copy this flag - backorder needs its own generation
+                backorder.serial_numbers_generated = False
+        
+        return backorder
 
+    def action_view_backorder(self):
+        """View backorder picking"""
+        self.ensure_one()
+        
+        backorder = self.env['stock.picking'].search([
+            ('backorder_id', '=', self.id)
+        ], limit=1)
+        
+        if not backorder:
+            raise UserError(_('No backorder found for this transfer.'))
+        
+        return {
+            'name': _('Backorder - %s') % backorder.name,
+            'type': 'ir.actions.act_window',
+            'res_model': 'stock.picking',
+            'res_id': backorder.id,
+            'view_mode': 'form',
+            'target': 'current',
+        }
 class StockMove(models.Model):
     _inherit = 'stock.move'
     
