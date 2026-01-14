@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <record id="brodher_sn_move_tree_view" model="ir.ui.view">
-        <field name="name">brodher.sn.move.tree</field>
+        <field name="name">brodher.sn.move.list</field>
         <field name="model">brodher.sn.move</field>
         <field name="arch" type="xml">
             <list string="Serial Number Movements">

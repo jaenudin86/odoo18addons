@@ -351,10 +351,10 @@ class StockPicking(models.Model):
         return False, error_msg, True  # can_partial=True
     def button_validate(self):
         """
-        Override validate to handle partial receipt with backorder
+        Override validate to set quantity_done based on scanned SNs
         """
         for picking in self:
-            # Check if has SN products
+            # Check SN products
             has_sn_products = any(
                 move.product_id.tracking == 'serial' and 
                 move.product_id.product_tmpl_id.sn_product_type
@@ -362,11 +362,29 @@ class StockPicking(models.Model):
             )
             
             if has_sn_products:
-                # Check completion
+                # Update quantity_done for each move based on scanned SNs
+                for move in picking.move_ids_without_package:
+                    if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
+                        
+                        # Count scanned SNs
+                        scanned_count = len(picking.sn_move_ids.filtered(
+                            lambda sm: sm.serial_number_id.product_id.product_tmpl_id == move.product_id.product_tmpl_id
+                        ))
+                        
+                        # Set quantity_done to scanned count
+                        move.quantity_done = float(scanned_count)
+                        
+                        # Also update move_line quantities
+                        total_qty = sum(move.move_line_ids.mapped('quantity'))
+                        
+                        if total_qty != scanned_count:
+                            _logger.warning(f'Move line total ({total_qty}) != scanned count ({scanned_count}) for {move.product_id.display_name}')
+                
+                # Check if complete
                 is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
                 
                 if not is_complete:
-                    # Show validation wizard with partial option
+                    # Show validation wizard
                     return {
                         'type': 'ir.actions.act_window',
                         'res_model': 'brodher.sn.validation.wizard',
@@ -379,8 +397,7 @@ class StockPicking(models.Model):
                         }
                     }
         
-        # Continue with standard Odoo validation
-        # Odoo will handle backorder creation if qty is partial
+        # Continue with standard validation
         return super(StockPicking, self).button_validate()
     def _get_generated_serial_numbers(self):
         """Get all generated serial numbers for this picking (not yet scanned)"""
@@ -427,46 +444,36 @@ class StockPicking(models.Model):
 class StockMove(models.Model):
     _inherit = 'stock.move'
     
-    sn_needed = fields.Integer('SN Needed', compute='_compute_sn_status', store=True)
-    sn_generated = fields.Integer('SN Generated', compute='_compute_sn_status', store=True)
-    sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status', store=True)
+    sn_needed = fields.Integer('SN Needed', compute='_compute_sn_status')
+    sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status')
     sn_status = fields.Char('SN Status', compute='_compute_sn_status')
-
-    @api.depends('product_uom_qty', 'picking_id.sn_move_ids', 'picking_id.serial_numbers_generated')
+    
+    @api.depends('product_uom_qty', 'picking_id.sn_move_ids', 'picking_id.serial_numbers_generated', 'move_line_ids.quantity')
     def _compute_sn_status(self):
         for move in self:
-            product_tmpl = move.product_id.product_tmpl_id
-            
-            if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
+            if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
                 move.sn_needed = int(move.product_uom_qty)
                 
-                # Count SCANNED only (no need to check generated)
+                # Count scanned (from brodher.sn.move)
                 if move.picking_id:
                     move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
-                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
+                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == move.product_id.product_tmpl_id
                     ))
-                    
-                    # Simple generated check from flag
-                    if move.picking_id.serial_numbers_generated:
-                        move.sn_generated = move.sn_needed
-                    else:
-                        move.sn_generated = 0
                 else:
                     move.sn_scanned = 0
-                    move.sn_generated = 0
                 
                 # Status
                 if move.sn_scanned >= move.sn_needed:
                     move.sn_status = '✓ Complete'
-                elif move.sn_generated > 0:
-                    if move.sn_scanned > 0:
-                        move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed}'
-                    else:
-                        move.sn_status = f'⚠ Generated - Scan Required'
+                elif move.sn_scanned > 0:
+                    move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed}'
                 else:
-                    move.sn_status = '✗ Not Generated'
+                    generated = move.picking_id.serial_numbers_generated if move.picking_id else False
+                    if generated:
+                        move.sn_status = '⚠ Generated - Not Scanned'
+                    else:
+                        move.sn_status = '✗ Not Generated'
             else:
                 move.sn_needed = 0
-                move.sn_generated = 0
                 move.sn_scanned = 0
                 move.sn_status = 'N/A'
