@@ -148,7 +148,7 @@ class StockPicking(models.Model):
             'name': _('Serial Number Moves - %s') % self.name,
             'type': 'ir.actions.act_window',
             'res_model': 'brodher.sn.move',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('picking_id', '=', self.id)],
         }
     
@@ -302,7 +302,7 @@ class StockPicking(models.Model):
             'name': _('Serial Numbers - %s') % self.name,
             'type': 'ir.actions.act_window',
             'res_model': 'stock.lot',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': [('id', 'in', lot_ids)],
             'context': {
                 'default_product_id': False,
