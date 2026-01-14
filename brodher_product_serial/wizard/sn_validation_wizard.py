@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
+import logging
 
+_logger = logging.getLogger(__name__)
 class BrodherSNValidationWizard(models.TransientModel):
     _name = 'brodher.sn.validation.wizard'
     _description = 'SN Validation Warning'
