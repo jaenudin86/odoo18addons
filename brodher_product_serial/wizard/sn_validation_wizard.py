@@ -134,9 +134,6 @@ class BrodherSNValidationWizard(models.TransientModel):
         self.ensure_one()
         picking = self.picking_id
 
-        import logging
-        _logger = logging.getLogger(__name__)
-
         StockMoveLine = self.env['stock.move.line']
 
         for move in picking.move_ids_without_package:
@@ -150,10 +147,8 @@ class BrodherSNValidationWizard(models.TransientModel):
             if not scanned_sns:
                 continue
 
-            # reset move lines
             move.move_line_ids.unlink()
 
-            # create move lines from scanned SN
             for lot in scanned_sns:
                 StockMoveLine.create({
                     'picking_id': picking.id,
@@ -165,24 +160,15 @@ class BrodherSNValidationWizard(models.TransientModel):
                     'quantity': 1,
                 })
 
-            _logger.info(
-                f'[PARTIAL] {move.product_id.display_name} '
-                f'done={len(scanned_sns)} demand={move.product_uom_qty}'
-            )
+        # ❌ JANGAN action_assign()
 
-        # 🔥 WAJIB: assign dulu
-        if picking.state in ('confirmed', 'waiting'):
-            _logger.info('[ASSIGN] Re-assign picking before validate')
-            picking.action_assign()
-
-        # VALIDATE
         picking.with_context(
+            from_sn_partial=True,
             skip_sms=True,
-            cancel_backorder=False,
-            skip_sn_wizard=True,
         ).button_validate()
 
         return {'type': 'ir.actions.act_window_close'}
+
 
 
     

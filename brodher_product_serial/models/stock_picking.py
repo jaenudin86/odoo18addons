@@ -358,49 +358,24 @@ class StockPicking(models.Model):
         error_msg = '\n'.join(error_lines)
         
         return False, error_msg, True  # can_partial=True
- 
+    
     def button_validate(self):
-        """
-        Override validate - set quantity based on scanned SNs
-        """
         for picking in self:
-            # Check SN products
+            # Skip check jika datang dari wizard partial
+            if self.env.context.get('from_sn_partial'):
+                _logger.info('[VALIDATE] Skip SN completion check (partial mode)')
+                break
+
             has_sn_products = any(
                 move.product_id.tracking == 'serial' and 
                 move.product_id.product_tmpl_id.sn_product_type
                 for move in picking.move_ids_without_package
             )
-            
+
             if has_sn_products:
-                # For each move with SN tracking, ensure move_lines match scanned count
-                for move in picking.move_ids_without_package:
-                    if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
-                        
-                        # Count scanned SNs
-                        scanned_count = len(picking.sn_move_ids.filtered(
-                            lambda sm: sm.serial_number_id.product_id == move.product_id
-                        ))
-                        
-                        # Count move_lines with lot_id (actual received)
-                        move_line_count = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
-                        
-                        _logger.info(f'[VALIDATE] {move.product_id.display_name}: scanned={scanned_count}, move_lines={move_line_count}, demand={move.product_uom_qty}')
-                        
-                        # If scanned doesn't match move_lines, something is wrong
-                        if scanned_count != move_line_count:
-                            raise UserError(_(
-                                'Data inconsistency!\n\n'
-                                'Product: %s\n'
-                                'Scanned SNs: %s\n'
-                                'Move Lines: %s\n\n'
-                                'Please contact administrator.'
-                            ) % (move.product_id.display_name, scanned_count, move_line_count))
-                
-                # Check if complete or partial
                 is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
-                
+
                 if not is_complete:
-                    # Show validation wizard with partial option
                     return {
                         'type': 'ir.actions.act_window',
                         'res_model': 'brodher.sn.validation.wizard',
@@ -412,10 +387,9 @@ class StockPicking(models.Model):
                             'default_can_create_backorder': True,
                         }
                     }
-        
-        # Continue with standard validation
-        # Odoo will automatically calculate quantity_done from move_lines
-        return super(StockPicking, self).button_validate()
+
+        return super().button_validate()
+
 
     def _get_generated_serial_numbers(self):
         """Get all generated serial numbers for this picking (not yet scanned)"""
