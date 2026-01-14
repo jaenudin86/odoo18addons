@@ -64,17 +64,26 @@ class StockPicking(models.Model):
     # ========== NEW COMPUTES (GENERATE SN) ==========
     @api.depends('move_ids_without_package', 'serial_numbers_generated')
     def _compute_generated_sn_count(self):
-        """Simple count based on flag and expected qty"""
-        for picking in self:
-            if picking.serial_numbers_generated and picking.has_sn_products:
-                # Sum all qty for products that need SN
-                total = sum(picking.move_ids_without_package.filtered(
-                    lambda m: m.product_id.tracking == 'serial' and 
-                            m.product_id.product_tmpl_id.sn_product_type
-                ).mapped('product_uom_qty'))
-                picking.generated_sn_count = int(total)
-            else:
-                picking.generated_sn_count = 0
+            """Count generated SNs based on flag and expected qty"""
+            for picking in self:
+                if picking.serial_numbers_generated and picking.has_sn_products:
+                    # Count from stock.lot records
+                    product_ids = picking.move_ids_without_package.filtered(
+                        lambda m: m.product_id.tracking == 'serial' and 
+                                m.product_id.product_tmpl_id.sn_product_type
+                    ).mapped('product_id').ids
+                    
+                    if product_ids:
+                        # Count actual generated lots
+                        lots = self.env['stock.lot'].search([
+                            ('product_id', 'in', product_ids),
+                            ('generated_by_picking_id', '=', picking.id)
+                        ])
+                        picking.generated_sn_count = len(lots)
+                    else:
+                        picking.generated_sn_count = 0
+                else:
+                    picking.generated_sn_count = 0
     # @api.depends('move_ids', 'move_line_ids.lot_id')
     # def _compute_sn_generation_summary(self):
     #     """Generate summary of SN status per product"""
@@ -487,49 +496,110 @@ class StockPicking(models.Model):
             'view_mode': 'form',
             'target': 'current',
         }
+# -*- coding: utf-8 -*-
+
 class StockMove(models.Model):
     _inherit = 'stock.move'
     
+    # SN tracking fields
     sn_needed = fields.Integer('SN Needed', compute='_compute_sn_status', store=True)
     sn_generated = fields.Integer('SN Generated', compute='_compute_sn_status', store=True)
     sn_scanned = fields.Integer('SN Scanned', compute='_compute_sn_status', store=True)
     sn_status = fields.Char('SN Status', compute='_compute_sn_status')
-
-    @api.depends('product_uom_qty', 'picking_id.sn_move_ids', 'picking_id.serial_numbers_generated')
+    
+    @api.depends('product_uom_qty', 'picking_id.sn_move_ids', 'picking_id.serial_numbers_generated', 'picking_id.generated_sn_count')
     def _compute_sn_status(self):
+        """Compute SN tracking status for this move"""
         for move in self:
-            product_tmpl = move.product_id.product_tmpl_id
-            
-            if move.product_id.tracking == 'serial' and product_tmpl.sn_product_type:
+            if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
+                # How many SNs needed based on demand
                 move.sn_needed = int(move.product_uom_qty)
                 
-                # Count SCANNED only (no need to check generated)
                 if move.picking_id:
-                    move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
-                        lambda sm: sm.serial_number_id.product_id.product_tmpl_id == product_tmpl
-                    ))
-                    
-                    # Simple generated check from flag
+                    # Count generated SNs for this product
                     if move.picking_id.serial_numbers_generated:
-                        move.sn_generated = move.sn_needed
+                        # If picking says SNs are generated, count them
+                        generated_lots = self.env['stock.lot'].search([
+                            ('product_id', '=', move.product_id.id),
+                            ('generated_by_picking_id', '=', move.picking_id.id)
+                        ])
+                        move.sn_generated = len(generated_lots)
                     else:
                         move.sn_generated = 0
+                    
+                    # Count scanned SNs (from brodher.sn.move)
+                    move.sn_scanned = len(move.picking_id.sn_move_ids.filtered(
+                        lambda sm: sm.serial_number_id.product_id == move.product_id
+                    ))
                 else:
-                    move.sn_scanned = 0
                     move.sn_generated = 0
+                    move.sn_scanned = 0
                 
-                # Status
+                # Determine status based on generation and scan
                 if move.sn_scanned >= move.sn_needed:
                     move.sn_status = '✓ Complete'
-                elif move.sn_generated > 0:
+                elif move.sn_generated >= move.sn_needed:
                     if move.sn_scanned > 0:
-                        move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed}'
+                        move.sn_status = f'⚠ {move.sn_scanned}/{move.sn_needed} scanned'
                     else:
-                        move.sn_status = f'⚠ Generated - Scan Required'
+                        move.sn_status = '⚠ Generated - Not Scanned'
+                elif move.sn_generated > 0:
+                    move.sn_status = f'⚠ Partial Gen ({move.sn_generated}/{move.sn_needed})'
                 else:
                     move.sn_status = '✗ Not Generated'
             else:
+                # Not a serial tracked product
                 move.sn_needed = 0
                 move.sn_generated = 0
                 move.sn_scanned = 0
                 move.sn_status = 'N/A'
+    
+    def _action_assign(self):
+        """
+        Override to prevent auto-reservation for products with SN tracking.
+        For SN products, we don't create move_lines until scan.
+        """
+        # Separate SN products from others
+        sn_moves = self.filtered(
+            lambda m: m.product_id.tracking == 'serial' and 
+                     m.product_id.product_tmpl_id.sn_product_type
+        )
+        
+        other_moves = self - sn_moves
+        
+        # For SN moves: skip reservation, just mark as assigned
+        if sn_moves:
+            _logger.info(f'[ASSIGN] Preventing auto-reservation for {len(sn_moves)} SN moves')
+            
+            for move in sn_moves:
+                if move.state in ['confirmed', 'waiting', 'partially_available']:
+                    move.write({'state': 'assigned'})
+                    _logger.info(f'[ASSIGN] {move.product_id.display_name}: state → assigned (no move_lines)')
+        
+        # For other moves: use standard Odoo behavior
+        if other_moves:
+            _logger.info(f'[ASSIGN] Standard reservation for {len(other_moves)} non-SN moves')
+            return super(StockMove, other_moves)._action_assign()
+        
+        return True
+    
+    def _set_quantity_done(self, quantity):
+        """
+        Override to prevent direct quantity_done setting for SN products.
+        Only allow via scan process.
+        """
+        sn_moves = self.filtered(
+            lambda m: m.product_id.tracking == 'serial' and 
+                     m.product_id.product_tmpl_id.sn_product_type
+        )
+        
+        if sn_moves:
+            _logger.warning(f'[SET_QTY] Blocked direct quantity_done for {len(sn_moves)} SN moves')
+            # For SN moves, quantity_done is managed via move_lines created during scan
+            # Don't allow direct setting
+        
+        other_moves = self - sn_moves
+        if other_moves:
+            return super(StockMove, other_moves)._set_quantity_done(quantity)
+        
+        return True
