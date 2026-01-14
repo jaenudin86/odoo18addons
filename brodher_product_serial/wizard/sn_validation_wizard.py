@@ -131,52 +131,43 @@ class BrodherSNValidationWizard(models.TransientModel):
             return self._force_validate()
     
     def _process_partial_receipt(self):
-        """
-        Process partial receipt - keep only scanned items, create backorder for rest
-        """
         self.ensure_one()
         picking = self.picking_id
-        
+
         import logging
         _logger = logging.getLogger(__name__)
-        
-        _logger.info(f'[PARTIAL RECEIPT] Starting for {picking.name}')
-        
-        # For each move, keep only scanned move_lines
+
         for move in picking.move_ids_without_package:
             if move.product_id.tracking == 'serial' and move.product_id.product_tmpl_id.sn_product_type:
-                
-                # Get scanned SNs for this product
+
                 scanned_sns = picking.sn_move_ids.filtered(
                     lambda sm: sm.serial_number_id.product_id == move.product_id
                 ).mapped('serial_number_id')
-                
+
                 scanned_count = len(scanned_sns)
                 demand = int(move.product_uom_qty)
-                
-                _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand} scanned')
-                
-                if scanned_count > 0 and scanned_count < demand:
-                    # Keep only move_lines with scanned SNs
-                    for ml in move.move_line_ids:
-                        if ml.lot_id and ml.lot_id not in scanned_sns:
-                            _logger.info(f'[PARTIAL] Removing unscanned move_line: {ml.lot_id.name if ml.lot_id else "NO LOT"}')
-                            ml.unlink()
-                    
-                    # Ensure all remaining move_lines have quantity = 1
-                    for ml in move.move_line_ids:
-                        if ml.lot_id:
-                            ml.quantity = 1.0
-                    
-                    _logger.info(f'[PARTIAL] After cleanup: {len(move.move_line_ids)} move_lines remain')
-        
-        # Now validate - Odoo will automatically create backorder for remaining qty
-        _logger.info(f'[PARTIAL] Calling button_validate for partial receipt')
-        
+
+                _logger.info(f'[PARTIAL] {move.product_id.display_name}: {scanned_count}/{demand}')
+
+                # RESET semua qty_done
+                for ml in move.move_line_ids:
+                    ml.qty_done = 0
+
+                # SET qty_done hanya untuk SN yang discan
+                for ml in move.move_line_ids:
+                    if ml.lot_id and ml.lot_id in scanned_sns:
+                        ml.qty_done = 1
+
+                # OPTIONAL: hapus move_line tanpa lot (auto generated)
+                move.move_line_ids.filtered(lambda l: not l.lot_id).unlink()
+
+        _logger.info('[PARTIAL] Validate with backorder')
+
         return picking.with_context(
             skip_sms=True,
-            cancel_backorder=False  # Allow backorder creation
+            cancel_backorder=False  # WAJIB false
         ).button_validate()
+
     
     def _force_validate(self):
         """Force validate without complete scan (not recommended)"""
