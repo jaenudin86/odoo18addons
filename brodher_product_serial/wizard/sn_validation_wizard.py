@@ -156,15 +156,10 @@ class BrodherSNValidationWizard(models.TransientModel):
                 f'demand={move.product_uom_qty}, scanned={scanned_count}'
             )
 
-            # 🔥 PENTING: hapus move line lama
+            # 🔥 hapus move line lama
             move.move_line_ids.unlink()
 
-            # 🔥 PENTING: turunkan demand = jumlah SN
-            move.write({
-                'product_uom_qty': scanned_count,
-            })
-
-            # 🔥 Buat move line baru
+            # 🔥 BUAT MOVE LINE SESUAI SN (DONE QTY)
             for lot in scanned_lots:
                 StockMoveLine.create({
                     'picking_id': picking.id,
@@ -174,21 +169,21 @@ class BrodherSNValidationWizard(models.TransientModel):
                     'lot_id': lot.id,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,  # ✅ DONE QTY Odoo 18
+                    'quantity': 1.0,   # ✅ done qty
                     'company_id': picking.company_id.id,
                 })
 
-        # 🔥 WAJIB assign ulang
+        # 🔥 ASSIGN ULANG
         if picking.state in ('confirmed', 'waiting'):
             _logger.info('[ASSIGN] action_assign')
             picking.action_assign()
 
-        _logger.info('[VALIDATE] button_validate (partial mode)')
+        _logger.info('[VALIDATE] button_validate with backorder')
 
-        # 🔥 BACKORDER AKTIF d
+        # 🔥 JANGAN BLOK BACKORDER
         picking.with_context(
             skip_sms=True,
-            cancel_backorder=False,
+            cancel_backorder=False,   # ⬅️ WAJIB
             skip_sn_wizard=True,
         ).button_validate()
 
