@@ -165,7 +165,7 @@ class BrodherSNValidationWizard(models.TransientModel):
                 _logger.warning(f'[PARTIAL] No scanned items for {move.product_id.display_name}')
                 # Clear all move_lines, set quantity_done = 0
                 move.move_line_ids.unlink()
-                move.quantity_done = 0.0
+                # move.quantity_done = 0.0
                 continue
             
             # ==========================================
@@ -196,9 +196,9 @@ class BrodherSNValidationWizard(models.TransientModel):
             # ==========================================
             # Step 4: CRITICAL - Set quantity_done on MOVE
             # ==========================================
-            move.quantity_done = float(scanned_count)
+            # move.quantity_done = float(scanned_count)
             
-            _logger.info(f'[PARTIAL] ✓ {move.product_id.display_name}: quantity_done={move.quantity_done}/{move.product_uom_qty}')
+                _logger.info(f'[PARTIAL] ✓ {move.product_id.display_name}: {scanned_count} move_lines created')
         
         # ==========================================
         # Step 5: DON'T call action_assign!
@@ -212,10 +212,11 @@ class BrodherSNValidationWizard(models.TransientModel):
         # ==========================================
         _logger.info('[PARTIAL] Summary before validation:')
         for move in picking.move_ids_without_package:
-            _logger.info(f'  {move.product_id.display_name}: '
-                        f'demand={move.product_uom_qty}, '
-                        f'done={move.quantity_done}, '
-                        f'move_lines={len(move.move_line_ids)}')
+                done_qty = sum(move.move_line_ids.mapped('quantity'))
+                _logger.info(f'  {move.product_id.display_name}: '
+                f'demand={move.product_uom_qty}, '
+                f'done={done_qty}, '
+                f'move_lines={len(move.move_line_ids)}')
         
         # ==========================================
         # Step 7: Validate - Odoo will create backorder
