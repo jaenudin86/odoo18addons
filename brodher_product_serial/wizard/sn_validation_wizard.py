@@ -131,10 +131,6 @@ class BrodherSNValidationWizard(models.TransientModel):
             return self._force_validate()
         
     def _process_partial_receipt(self):
-        """
-        Odoo 18 compatible partial receipt
-        Backorder otomatis dari move_line.quantity
-        """
         self.ensure_one()
         picking = self.picking_id
 
@@ -143,28 +139,33 @@ class BrodherSNValidationWizard(models.TransientModel):
 
         StockMoveLine = self.env['stock.move.line']
 
-        _logger.warning(f'[PARTIAL] Start partial receipt for {picking.name}')
-
-        # ==================================================
-        # CREATE MOVE LINES FROM SCANNED SERIAL NUMBERS
-        # ==================================================
         for move in picking.move_ids_without_package:
-            if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
+            if move.product_id.tracking != 'serial':
                 continue
 
-            scanned_sns = picking.sn_move_ids.filtered(
+            scanned_lots = picking.sn_move_ids.filtered(
                 lambda sm: sm.serial_number_id.product_id == move.product_id
             ).mapped('serial_number_id')
 
-            if not scanned_sns:
+            scanned_count = len(scanned_lots)
+            if not scanned_count:
                 continue
 
-            # 🔥 REMOVE OLD MOVE LINES
-            if move.move_line_ids:
-                move.move_line_ids.unlink()
+            _logger.info(
+                f'[CHECK] [{picking.name}] {move.product_id.display_name}: '
+                f'demand={move.product_uom_qty}, scanned={scanned_count}'
+            )
 
-            # 🔥 CREATE MOVE LINES FROM SCAN
-            for lot in scanned_sns:
+            # 🔥 PENTING: hapus move line lama
+            move.move_line_ids.unlink()
+
+            # 🔥 PENTING: turunkan demand = jumlah SN
+            move.write({
+                'product_uom_qty': scanned_count,
+            })
+
+            # 🔥 Buat move line baru
+            for lot in scanned_lots:
                 StockMoveLine.create({
                     'picking_id': picking.id,
                     'move_id': move.id,
@@ -173,44 +174,23 @@ class BrodherSNValidationWizard(models.TransientModel):
                     'lot_id': lot.id,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,  # 🔑 DONE QTY ODOO 18
+                    'quantity': 1.0,  # ✅ DONE QTY Odoo 18
                     'company_id': picking.company_id.id,
                 })
 
-            _logger.warning(
-                f'[PARTIAL] {move.product_id.display_name}: '
-                f'done={len(scanned_sns)}, demand={move.product_uom_qty}'
-            )
-
-        # ==================================================
-        # FORCE ASSIGN (WAJIB)
-        # ==================================================
+        # 🔥 WAJIB assign ulang
         if picking.state in ('confirmed', 'waiting'):
-            _logger.warning('[ASSIGN] Force assign before validate')
+            _logger.info('[ASSIGN] action_assign')
             picking.action_assign()
 
-        # ==================================================
-        # FINAL CHECK
-        # ==================================================
-        for move in picking.move_ids_without_package:
-            done_qty = sum(move.move_line_ids.mapped('quantity'))
-            _logger.warning(
-                f'[CHECK] {move.product_id.display_name}: '
-                f'demand={move.product_uom_qty}, done={done_qty}'
-            )
+        _logger.info('[VALIDATE] button_validate (partial mode)')
 
-        # ==================================================
-        # VALIDATE → BACKORDER AUTO
-        # ==================================================
-        _logger.warning('[VALIDATE] button_validate (partial mode)')
-
+        # 🔥 BACKORDER AKTIF d
         picking.with_context(
             skip_sms=True,
             cancel_backorder=False,
-            skip_sn_wizard=True,   # 🔥 KUNCI
+            skip_sn_wizard=True,
         ).button_validate()
-
-        _logger.warning('[PARTIAL] DONE')
 
         return {'type': 'ir.actions.act_window_close'}
 
