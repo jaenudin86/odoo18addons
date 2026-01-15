@@ -22,14 +22,14 @@
                     
                     <!-- Editable Lines -->
                     <field name="line_ids" nolabel="1">
-                        <tree editable="bottom" decoration-success="quantity &gt; 0" decoration-muted="quantity == 0">
+                        <list editable="bottom" decoration-success="quantity &gt; 0" decoration-muted="quantity == 0">
                             <field name="product_name" readonly="1"/>
                             <field name="quantity_in_picking" string="Demand" readonly="1"/>
                             <field name="quantity_existing" string="Already" readonly="1"/>
                             <field name="quantity" string="To Generate"/>
                             <field name="sn_type" widget="badge" readonly="1"/>
                             <field name="product_id" column_invisible="1"/>
-                        </tree>
+                        </list>
                     </field>
                     
                     <!-- Summary -->
