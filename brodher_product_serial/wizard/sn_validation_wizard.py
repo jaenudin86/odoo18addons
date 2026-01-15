@@ -130,7 +130,7 @@ class BrodherSNValidationWizard(models.TransientModel):
             # Force validate (dangerous!)
             return self._force_validate()
         
-        def _process_partial_receipt(self):
+    def _process_partial_receipt(self):
             """
             Process partial receipt with forced state management
             """
