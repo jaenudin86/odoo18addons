@@ -1,5 +1,5 @@
 <odoo>
-<record id="view_partner_form_inherit_customer" model="ir.ui.view">
+<!-- <record id="view_partner_form_inherit_customer" model="ir.ui.view">
     <field name="name">res.partner.form.inherit.customer</field>
     <field name="model">res.partner</field>
     <field name="inherit_id" ref="base.view_partner_form"/>
@@ -9,5 +9,5 @@
             <field name="date_of_birth"/>
         </xpath>
     </field>
-</record>
+</record> -->
 </odoo>
