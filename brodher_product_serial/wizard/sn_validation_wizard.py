@@ -130,155 +130,188 @@ class BrodherSNValidationWizard(models.TransientModel):
             # Force validate (dangerous!)
             return self._force_validate()
         
-    def _process_partial_receipt(self):
-        self.ensure_one()
-        picking = self.picking_id
-        
-        import logging
-        _logger = logging.getLogger(__name__)
-        
-        _logger.info(f'[PARTIAL START] {picking.name}, state: {picking.state}')
-        
-        StockMoveLine = self.env['stock.move.line']
-        
-        # ==========================================
-        # Step 1: Create move_lines for scanned SNs
-        # ==========================================
-        for move in picking.move_ids_without_package:
-            if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
-                continue
+        def _process_partial_receipt(self):
+            """
+            Process partial receipt with forced state management
+            """
+            self.ensure_one()
+            picking = self.picking_id
             
-            scanned_lots = picking.sn_move_ids.filtered(
-                lambda sm: sm.serial_number_id.product_id == move.product_id
-            ).mapped('serial_number_id')
+            import logging
+            _logger = logging.getLogger(__name__)
             
-            scanned_count = len(scanned_lots)
+            _logger.info(f'[PARTIAL] Start: {picking.name}, state: {picking.state}')
             
-            _logger.info(f'[PARTIAL] {move.product_id.display_name}: scanned={scanned_count}/{move.product_uom_qty}')
+            StockMoveLine = self.env['stock.move.line']
             
-            # Clear existing move_lines
-            if move.move_line_ids:
-                move.move_line_ids.unlink()
+            # ==========================================
+            # Step 1: Create move_lines
+            # ==========================================
+            for move in picking.move_ids_without_package:
+                if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
+                    continue
+                
+                _logger.info(f'[PARTIAL] Processing move: {move.product_id.display_name}, state: {move.state}')
+                
+                scanned_lots = picking.sn_move_ids.filtered(
+                    lambda sm: sm.serial_number_id.product_id == move.product_id
+                ).mapped('serial_number_id')
+                
+                scanned_count = len(scanned_lots)
+                _logger.info(f'[PARTIAL] Scanned: {scanned_count}/{move.product_uom_qty}')
+                
+                # Clear move_lines
+                if move.move_line_ids:
+                    _logger.info(f'[PARTIAL] Deleting {len(move.move_line_ids)} existing move_lines')
+                    move.move_line_ids.unlink()
+                
+                if scanned_count == 0:
+                    _logger.info(f'[PARTIAL] No scanned items, skipping')
+                    continue
+                
+                # Create move_lines
+                for lot in scanned_lots:
+                    ml = StockMoveLine.create({
+                        'picking_id': picking.id,
+                        'move_id': move.id,
+                        'product_id': move.product_id.id,
+                        'product_uom_id': move.product_id.uom_id.id,
+                        'lot_id': lot.id,
+                        'lot_name': lot.name,
+                        'location_id': move.location_id.id,
+                        'location_dest_id': move.location_dest_id.id,
+                        'quantity': 1.0,
+                        'company_id': picking.company_id.id,
+                    })
+                    _logger.info(f'[PARTIAL] Created move_line: {ml.id} for {lot.name}')
+                
+                # ==========================================
+                # CRITICAL: Force move to 'assigned' state
+                # ==========================================
+                if move.state != 'assigned':
+                    _logger.info(f'[PARTIAL] Forcing move state: {move.state} → assigned')
+                    move.write({'state': 'assigned'})
             
-            if scanned_count == 0:
-                continue
+            # ==========================================
+            # Step 2: Force picking state
+            # ==========================================
+            if picking.state != 'assigned':
+                _logger.info(f'[PARTIAL] Forcing picking state: {picking.state} → assigned')
+                picking.write({'state': 'assigned'})
             
-            # Create move_lines for scanned SNs
-            for lot in scanned_lots:
-                StockMoveLine.create({
-                    'picking_id': picking.id,
-                    'move_id': move.id,
-                    'product_id': move.product_id.id,
-                    'product_uom_id': move.product_id.uom_id.id,
-                    'lot_id': lot.id,
-                    'lot_name': lot.name,
-                    'location_id': move.location_id.id,
-                    'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,
-                    'company_id': picking.company_id.id,
-                })
-        
-        # ==========================================
-        # Step 2: Ensure picking state is assigned
-        # ==========================================
-        if picking.state not in ['assigned']:
-            picking.state = 'assigned'
-            _logger.info(f'[PARTIAL] Set state to assigned')
-        
-        # ==========================================
-        # Step 3: Call _action_done() directly
-        # This bypasses all button_validate checks
-        # ==========================================
-        _logger.info('[PARTIAL] Calling _action_done() directly')
-        
-        try:
-            # This is the CORE method that does the actual transfer
-            picking._action_done()
-            
-            _logger.info(f'[PARTIAL] _action_done() completed')
-            _logger.info(f'[PARTIAL] Picking state: {picking.state}')
-            
-        except Exception as e:
-            _logger.error(f'[PARTIAL] _action_done() failed: {str(e)}', exc_info=True)
-            
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('❌ Validation Failed'),
-                    'message': _('Error: %s') % str(e),
-                    'type': 'danger',
-                    'sticky': True,
-                }
-            }
-        
-        # ==========================================
-        # Step 4: Check result
-        # ==========================================
-        
-        # Refresh picking from DB
-        picking.invalidate_recordset()
-        
-        _logger.info(f'[PARTIAL] Final picking state: {picking.state}')
-        
-        # Look for backorder
-        backorder = self.env['stock.picking'].search([
-            ('backorder_id', '=', picking.id)
-        ], order='id desc', limit=1)
-        
-        if backorder:
-            _logger.info(f'[PARTIAL] ✅ SUCCESS! Backorder created: {backorder.name}')
-            
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('✅ Partial Receipt Complete'),
-                    'message': _(
-                        '✓ Receipt: %s (Done)\n'
-                        '✓ Backorder: %s (Ready)\n\n'
-                        'Remaining items can be received later.'
-                    ) % (picking.name, backorder.name),
-                    'type': 'success',
-                    'sticky': True,
-                }
-            }
-        
-        elif picking.state == 'done':
-            _logger.info(f'[PARTIAL] ✅ Fully completed (no backorder needed)')
-            
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('✅ Receipt Complete'),
-                    'message': _('All items received successfully!'),
-                    'type': 'success',
-                }
-            }
-        
-        else:
-            _logger.error(f'[PARTIAL] ❌ FAILED! State: {picking.state}')
-            
-            # Debug: Check moves
+            # ==========================================
+            # Step 3: Verify all moves are assigned
+            # ==========================================
+            _logger.info('[PARTIAL] Pre-validation check:')
             for move in picking.move_ids:
-                _logger.error(f'  Move: {move.product_id.display_name}, state: {move.state}, '
-                            f'qty: {move.product_uom_qty}, lines: {len(move.move_line_ids)}')
+                _logger.info(f'  Move: {move.product_id.display_name}')
+                _logger.info(f'    State: {move.state}')
+                _logger.info(f'    Qty: {move.product_uom_qty}')
+                _logger.info(f'    Move lines: {len(move.move_line_ids)}')
+                _logger.info(f'    Move line qty: {sum(move.move_line_ids.mapped("quantity"))}')
             
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _('⚠️ Warning'),
-                    'message': _(
-                        'Validation completed but state is: %s\n'
-                        'Please check the transfer manually.'
-                    ) % picking.state,
-                    'type': 'warning',
-                    'sticky': True,
+            # ==========================================
+            # Step 4: Commit changes before _action_done
+            # ==========================================
+            self.env.cr.commit()
+            _logger.info('[PARTIAL] Changes committed')
+            
+            # ==========================================
+            # Step 5: Call _action_done()
+            # ==========================================
+            _logger.info('[PARTIAL] Calling _action_done()')
+            
+            try:
+                result = picking._action_done()
+                _logger.info(f'[PARTIAL] _action_done() returned: {result}')
+                
+            except Exception as e:
+                _logger.error(f'[PARTIAL] _action_done() exception: {str(e)}', exc_info=True)
+                
+                # Rollback
+                self.env.cr.rollback()
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('❌ Error'),
+                        'message': _('Failed: %s') % str(e),
+                        'type': 'danger',
+                        'sticky': True,
+                    }
                 }
-            }
-
+            
+            # ==========================================
+            # Step 6: Check result
+            # ==========================================
+            self.env.cr.commit()
+            picking.invalidate_recordset()
+            
+            _logger.info('[PARTIAL] Post-validation check:')
+            _logger.info(f'  Picking state: {picking.state}')
+            
+            for move in picking.move_ids:
+                _logger.info(f'  Move: {move.product_id.display_name}, state: {move.state}')
+            
+            # Look for backorder
+            backorder = self.env['stock.picking'].search([
+                ('backorder_id', '=', picking.id)
+            ], order='id desc', limit=1)
+            
+            if backorder:
+                _logger.info(f'[PARTIAL] ✅ SUCCESS! Backorder: {backorder.name}')
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('✅ Partial Receipt Complete'),
+                        'message': _(
+                            '✓ Receipt: %s (Done)\n'
+                            '✓ Backorder: %s (Ready)\n\n'
+                            'You can receive remaining items later.'
+                        ) % (picking.name, backorder.name),
+                        'type': 'success',
+                        'sticky': True,
+                    }
+                }
+            
+            elif picking.state == 'done':
+                _logger.info(f'[PARTIAL] ✅ Fully complete')
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('✅ Complete'),
+                        'message': _('All items received!'),
+                        'type': 'success',
+                    }
+                }
+            
+            else:
+                _logger.error(f'[PARTIAL] ❌ FAILED! State: {picking.state}')
+                
+                # Try to find what's blocking
+                for move in picking.move_ids:
+                    if move.state != 'done':
+                        _logger.error(f'  Blocking move: {move.product_id.display_name}, state: {move.state}')
+                
+                return {
+                    'type': 'ir.actions.client',
+                    'tag': 'display_notification',
+                    'params': {
+                        'title': _('⚠️ Warning'),
+                        'message': _(
+                            'Validation incomplete.\n'
+                            'State: %s\n\n'
+                            'Check logs for details.'
+                        ) % picking.state,
+                        'type': 'warning',
+                        'sticky': True,
+                    }
+                }
     def _force_validate(self):
         """Force validate without complete scan (not recommended)"""
         self.ensure_one()
