@@ -361,52 +361,45 @@ class StockPicking(models.Model):
         return False, error_msg, True  # can_partial=True
     
     def button_validate(self):
-        """
-        Override validate - handle SN validation and partial receipts
-        """
-        for picking in self:
-            # Skip SN check if coming from partial wizard
-            from_partial = self.env.context.get('from_sn_partial', False)
-            
-            if from_partial:
-                _logger.info(f'[VALIDATE] Partial receipt mode for {picking.name}')
+            """
+            Override validate - handle SN validation and partial receipts
+            """
+            for picking in self:
+                # Skip SN check if coming from partial wizard
+                skip_wizard = self.env.context.get('skip_sn_wizard', False)
                 
-                # Log move states before validation
-                for move in picking.move_ids_without_package:
-                    _logger.info(f'[VALIDATE] Move: {move.product_id.display_name}, '
-                            f'demand={move.product_uom_qty}, done={move.quantity_done}')
+                if skip_wizard:
+                    _logger.info(f'[VALIDATE] Skipping SN wizard (from partial receipt)')
+                    # Continue directly to super
+                    return super(StockPicking, self).button_validate()
                 
-                # Call super to trigger standard Odoo validation
-                # Odoo will detect partial (done < demand) and create backorder
-                return super(StockPicking, self).button_validate()
-            
-            # Normal flow: Check SN completion
-            has_sn_products = any(
-                move.product_id.tracking == 'serial' and 
-                move.product_id.product_tmpl_id.sn_product_type
-                for move in picking.move_ids_without_package
-            )
-            
-            if has_sn_products:
-                is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
+                # Normal flow: Check SN completion
+                has_sn_products = any(
+                    move.product_id.tracking == 'serial' and 
+                    move.product_id.product_tmpl_id.sn_product_type
+                    for move in picking.move_ids_without_package
+                )
                 
-                if not is_complete:
-                    _logger.info(f'[VALIDATE] Incomplete scan, showing wizard')
+                if has_sn_products:
+                    is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
                     
-                    return {
-                        'type': 'ir.actions.act_window',
-                        'res_model': 'brodher.sn.validation.wizard',
-                        'view_mode': 'form',
-                        'target': 'new',
-                        'context': {
-                            'default_picking_id': picking.id,
-                            'default_warning_message': error_msg,
-                            'default_can_create_backorder': True,
+                    if not is_complete:
+                        _logger.info(f'[VALIDATE] Incomplete scan detected')
+                        
+                        return {
+                            'type': 'ir.actions.act_window',
+                            'res_model': 'brodher.sn.validation.wizard',
+                            'view_mode': 'form',
+                            'target': 'new',
+                            'context': {
+                                'default_picking_id': picking.id,
+                                'default_warning_message': error_msg,
+                                'default_can_create_backorder': True,
+                            }
                         }
-                    }
-        
-        _logger.info(f'[VALIDATE] All checks passed, calling super')
-        return super(StockPicking, self).button_validate()
+            
+            _logger.info(f'[VALIDATE] Proceeding to standard validation')
+            return super(StockPicking, self).button_validate()
 
 
     def _get_generated_serial_numbers(self):

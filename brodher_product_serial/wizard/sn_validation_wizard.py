@@ -131,63 +131,171 @@ class BrodherSNValidationWizard(models.TransientModel):
             return self._force_validate()
         
     def _process_partial_receipt(self):
+        """
+        Process partial receipt properly - set quantity_done and let Odoo create backorder
+        """
         self.ensure_one()
         picking = self.picking_id
-
+        
         import logging
         _logger = logging.getLogger(__name__)
-
+        
+        _logger.info(f'[PARTIAL START] {picking.name}')
+        
         StockMoveLine = self.env['stock.move.line']
-
+        
+        # ==========================================
+        # Step 1: Prepare moves with scanned quantities
+        # ==========================================
         for move in picking.move_ids_without_package:
-            if move.product_id.tracking != 'serial':
+            if move.product_id.tracking != 'serial' or not move.product_id.product_tmpl_id.sn_product_type:
                 continue
-
+            
+            # Get scanned lots for this product
             scanned_lots = picking.sn_move_ids.filtered(
                 lambda sm: sm.serial_number_id.product_id == move.product_id
             ).mapped('serial_number_id')
-
+            
             scanned_count = len(scanned_lots)
-            if not scanned_count:
+            demand = move.product_uom_qty
+            
+            _logger.info(f'[PARTIAL] {move.product_id.display_name}: demand={demand}, scanned={scanned_count}')
+            
+            if scanned_count == 0:
+                _logger.warning(f'[PARTIAL] No scanned items for {move.product_id.display_name}')
+                # Clear all move_lines, set quantity_done = 0
+                move.move_line_ids.unlink()
+                move.quantity_done = 0.0
                 continue
-
-            _logger.info(
-                f'[CHECK] [{picking.name}] {move.product_id.display_name}: '
-                f'demand={move.product_uom_qty}, scanned={scanned_count}'
-            )
-
-            # 🔥 hapus move line lama
-            move.move_line_ids.unlink()
-
-            # 🔥 BUAT MOVE LINE SESUAI SN (DONE QTY)
+            
+            # ==========================================
+            # Step 2: Delete ALL existing move_lines
+            # ==========================================
+            if move.move_line_ids:
+                _logger.info(f'[PARTIAL] Deleting {len(move.move_line_ids)} existing move_lines')
+                move.move_line_ids.unlink()
+            
+            # ==========================================
+            # Step 3: Create NEW move_lines for scanned SNs
+            # ==========================================
             for lot in scanned_lots:
-                StockMoveLine.create({
+                ml = StockMoveLine.create({
                     'picking_id': picking.id,
                     'move_id': move.id,
                     'product_id': move.product_id.id,
-                    'product_uom_id': move.product_uom.id,
+                    'product_uom_id': move.product_uom_id.id,
                     'lot_id': lot.id,
+                    'lot_name': lot.name,
                     'location_id': move.location_id.id,
                     'location_dest_id': move.location_dest_id.id,
-                    'quantity': 1.0,   # ✅ done qty
+                    'quantity': 1.0,  # Done qty
                     'company_id': picking.company_id.id,
                 })
-
-        # 🔥 ASSIGN ULANG
-        if picking.state in ('confirmed', 'waiting'):
-            _logger.info('[ASSIGN] action_assign')
-            picking.action_assign()
-
-        _logger.info('[VALIDATE] button_validate with backorder')
-
-        # 🔥 JANGAN BLOK BACKORDER
-        picking.with_context(
+                _logger.info(f'[PARTIAL] Created move_line for SN: {lot.name}')
+            
+            # ==========================================
+            # Step 4: CRITICAL - Set quantity_done on MOVE
+            # ==========================================
+            move.quantity_done = float(scanned_count)
+            
+            _logger.info(f'[PARTIAL] ✓ {move.product_id.display_name}: quantity_done={move.quantity_done}/{move.product_uom_qty}')
+        
+        # ==========================================
+        # Step 5: DON'T call action_assign!
+        # It will recreate move_lines and mess things up
+        # ==========================================
+        # if picking.state in ('confirmed', 'waiting'):
+        #     picking.action_assign()  ← JANGAN!
+        
+        # ==========================================
+        # Step 6: Log summary before validation
+        # ==========================================
+        _logger.info('[PARTIAL] Summary before validation:')
+        for move in picking.move_ids_without_package:
+            _logger.info(f'  {move.product_id.display_name}: '
+                        f'demand={move.product_uom_qty}, '
+                        f'done={move.quantity_done}, '
+                        f'move_lines={len(move.move_line_ids)}')
+        
+        # ==========================================
+        # Step 7: Validate - Odoo will create backorder
+        # ==========================================
+        _logger.info('[PARTIAL] Calling button_validate()')
+        
+        # Set picking to assigned state if not already
+        if picking.state not in ['assigned', 'confirmed']:
+            picking.state = 'assigned'
+        
+        # Call validate
+        result = picking.with_context(
             skip_sms=True,
-            cancel_backorder=False,   # ⬅️ WAJIB
-            skip_sn_wizard=True,
+            cancel_backorder=False,  # Allow backorder
+            skip_sn_wizard=True,     # Skip our wizard
         ).button_validate()
-
-        return {'type': 'ir.actions.act_window_close'}
+        
+        _logger.info(f'[PARTIAL] Validation returned: {result}')
+        
+        # ==========================================
+        # Step 8: Check if backorder was created
+        # ==========================================
+        backorder = self.env['stock.picking'].search([
+            ('backorder_id', '=', picking.id)
+        ], order='id desc', limit=1)
+        
+        if backorder:
+            _logger.info(f'[PARTIAL] ✅ SUCCESS! Backorder created: {backorder.name}')
+            _logger.info(f'[PARTIAL]   Original: {picking.name} (state: {picking.state})')
+            _logger.info(f'[PARTIAL]   Backorder: {backorder.name} (state: {backorder.state})')
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('✅ Partial Receipt Complete'),
+                    'message': _(
+                        'Receipt successfully processed!\n\n'
+                        '📦 Completed: %s (%s items)\n'
+                        '📋 Backorder: %s (%s items remaining)\n\n'
+                        'You can process the backorder later.'
+                    ) % (
+                        picking.name,
+                        int(sum(picking.move_ids.mapped('quantity_done'))),
+                        backorder.name,
+                        int(sum(backorder.move_ids.mapped('product_uom_qty')))
+                    ),
+                    'type': 'success',
+                    'sticky': True,
+                }
+            }
+        else:
+            _logger.error(f'[PARTIAL] ❌ FAILED! No backorder created')
+            _logger.error(f'[PARTIAL]   Picking state: {picking.state}')
+            
+            # Check if picking was fully done (maybe all items were scanned?)
+            if picking.state == 'done':
+                total_demand = sum(picking.move_ids.mapped('product_uom_qty'))
+                total_done = sum(picking.move_ids.mapped('quantity_done'))
+                
+                if total_demand == total_done:
+                    return {
+                        'type': 'ir.actions.client',
+                        'tag': 'display_notification',
+                        'params': {
+                            'title': _('✅ Receipt Complete'),
+                            'message': _('All items received. No backorder needed.'),
+                            'type': 'success',
+                        }
+                    }
+            
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('⚠️ Warning'),
+                    'message': _('Receipt processed but backorder was not created.'),
+                    'type': 'warning',
+                }
+            }
 
     def _force_validate(self):
         """Force validate without complete scan (not recommended)"""
