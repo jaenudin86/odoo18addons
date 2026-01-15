@@ -24,12 +24,14 @@ Long description of module's purpose
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',
-        # 'views/views.xml',
+    'views/views.xml',
         # 'views/templates.xml',
     'views/product_ingredients.xml',
     'views/scan_barcode_template.xml',
      'views/scan_barcode_view.xml',
     'views/scan_barcode_menu.xml',
+    'data/ir_sequence_data.xml',
+    
     # 'reports/stock_picking_qrcode_report.xml',
     # 'reports/stock_picking_qrcode_template.xml',
     'reports/stock_picking_qrcode_action.xml',
