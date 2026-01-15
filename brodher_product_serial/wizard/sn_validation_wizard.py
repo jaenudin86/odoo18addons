@@ -183,7 +183,7 @@ class BrodherSNValidationWizard(models.TransientModel):
                     'picking_id': picking.id,
                     'move_id': move.id,
                     'product_id': move.product_id.id,
-                    'product_uom_id': move.product_uom,
+                    'product_uom_id': move.product_id.uom_id.id,
                     'lot_id': lot.id,
                     'lot_name': lot.name,
                     'location_id': move.location_id.id,
