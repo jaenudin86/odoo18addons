@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
 from datetime import datetime
+import re
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
@@ -16,93 +17,80 @@ class ProductTemplate(models.Model):
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
 
-    # ==============================
-    # TEMPLATE CREATE
-    # ==============================
-    @api.model
-    def create(self, vals):
-        """
-        - Article = TRUE  → template auto-generate default_code + barcode
-        - Article = FALSE → template TIDAK generate apa pun
-        """
-        if vals.get('is_article') and not vals.get('default_code'):
-            code = self._generate_article_number(True)
-            vals.update({
-                'default_code': code,
-                'barcode': code,
-            })
-
-        return super().create(vals)
-
-    # ==============================
-    # VARIANT CREATE
-    # ==============================
-    def _create_variant_ids(self):
-        """
-        Semua VARIANT auto-generate default_code & barcode
-        """
-        res = super()._create_variant_ids()
-
-        for template in self:
-            for variant in template.product_variant_ids:
-                if not variant.default_code:
-                    code = self._generate_article_number(template.is_article)
-                    variant.write({
-                        'default_code': code,
-                        'barcode': code,
-                    })
-                elif not variant.barcode:
-                    variant.barcode = variant.default_code
-
-        return res
-
-    # ==============================
-    # SEQUENCE GENERATOR
-    # ==============================
     def _generate_article_number(self, is_article):
         """
-        ATCYYXXX → Article
-        PSITYYXXX → Non Article
+        - ATC: ATC + DD + MM + YY + XXX (12 Digit)
+        - PSIT: PSIT + YY + XXXX (10 Digit)
         """
-        year = datetime.today().strftime('%y')
-        prefix = 'ATC' if is_article else 'PSIT'
-        seq_code = 'article.number.sequence' if is_article else 'pist.number.sequence'
+        now = datetime.today()
+        ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
+        
+        if is_article:
+            prefix = 'ATC'
+            date_str = now.strftime('%d%m%y')
+            seq_code = 'article.number.sequence'
+            seq = self.env['ir.sequence'].with_context(ctx).next_by_code(seq_code) or '001'
+            return f"{prefix}{date_str}{seq}"
+        else:
+            prefix = 'PSIT'
+            year_str = now.strftime('%y')
+            seq_code = 'pist.number.sequence'
+            seq = self.env['ir.sequence'].with_context(ctx).next_by_code(seq_code) or '0001'
+            return f"{prefix}{year_str}{seq}"
 
-        seq = self.env['ir.sequence'].next_by_code(seq_code) or '001'
-        return f"{prefix}{year}{seq}"
+    @api.model
+    def create(self, vals):
+        # Template tidak membuat barcode/default_code (hanya di variant)
+        return super(ProductTemplate, self).create(vals)
+
+
 class ProductProduct(models.Model):
     _inherit = 'product.product'
 
+    static_barcode = fields.Char(string='Barcode Statis', store=True, readonly=True)
+
+    # Sinkronisasi field dari template
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
     is_article = fields.Boolean(related='product_tmpl_id.is_article', store=True)
 
-    gross_weight = fields.Float(related='product_tmpl_id.gross_weight', store=True)
-    net_weight = fields.Float(related='product_tmpl_id.net_weight', store=True)
-    net_net_weight = fields.Float(related='product_tmpl_id.net_net_weight', store=True)
-    base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
-    text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
-
     @api.model
     def create(self, vals):
-        """
-        Jika variant dibuat MANUAL (bukan dari template)
-        """
-        if not vals.get('default_code'):
-            tmpl = self.env['product.template'].browse(vals.get('product_tmpl_id'))
-            code = tmpl._generate_article_number(tmpl.is_article)
-            vals.update({
-                'default_code': code,
-                'barcode': code,
-            })
+        tmpl_id = vals.get('product_tmpl_id')
+        if tmpl_id:
+            tmpl = self.env['product.template'].browse(tmpl_id)
+            
+            # 1. Generate default_code & barcode Odoo
+            if not vals.get('default_code'):
+                code = tmpl._generate_article_number(tmpl.is_article)
+                vals.update({
+                    'default_code': code,
+                    'barcode': code,
+                })
 
-        return super().create(vals)
+            # 2. KHUSUS ATC: Generate Barcode Statis (xxMyyy)
+            if tmpl.is_article:
+                # xx: Ambil angka saja dari field size
+                size_val = tmpl.size or ""
+                xx = "".join(re.findall(r'\d+', size_val))
+                
+                # M: Konstanta ManasLu
+                m_char = "M"
+                
+                # yyy: 1-3 huruf awal nama parfum
+                # Menggunakan title case agar rapi (Contoh: Elanor -> Ela)
+                name_clean = (tmpl.name or "")[:3].title()
+                
+                vals['static_barcode'] = f"{xx}{m_char}{name_clean}"
+        
+        return super(ProductProduct, self).create(vals)
 
     def write(self, vals):
-        res = super().write(vals)
+        res = super(ProductProduct, self).write(vals)
         if 'default_code' in vals:
             for rec in self:
                 if rec.default_code and rec.barcode != rec.default_code:
                     rec.barcode = rec.default_code
         return res
+

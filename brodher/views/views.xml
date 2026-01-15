@@ -1,60 +1,13 @@
 <odoo>
-  <data>
-    <!-- explicit list view definition -->
-<!--
-    <record model="ir.ui.view" id="brodher.list">
-      <field name="name">brodher list</field>
-      <field name="model">brodher.brodher</field>
-      <field name="arch" type="xml">
-        <list>
-          <field name="name"/>
-          <field name="value"/>
-          <field name="value2"/>
-        </list>
-      </field>
-    </record>
--->
-
-    <!-- actions opening views on models -->
-<!--
-    <record model="ir.actions.act_window" id="brodher.action_window">
-      <field name="name">brodher window</field>
-      <field name="res_model">brodher.brodher</field>
-      <field name="view_mode">list,form</field>
-    </record>
--->
-
-    <!-- server action to the one above -->
-<!--
-    <record model="ir.actions.server" id="brodher.action_server">
-      <field name="name">brodher server</field>
-      <field name="model_id" ref="model_brodher_brodher"/>
-      <field name="state">code</field>
-      <field name="code">
-        action = {
-          "type": "ir.actions.act_window",
-          "view_mode": "list,form",
-          "res_model": model._name,
-        }
-      </field>
-    </record>
--->
-
-    <!-- Top menu item -->
-<!--
-    <menuitem name="brodher" id="brodher.menu_root"/>
--->
-    <!-- menu categories -->
-<!--
-    <menuitem name="Menu 1" id="brodher.menu_1" parent="brodher.menu_root"/>
-    <menuitem name="Menu 2" id="brodher.menu_2" parent="brodher.menu_root"/>
--->
-    <!-- actions -->
-<!--
-    <menuitem name="List" id="brodher.menu_1_list" parent="brodher.menu_1"
-              action="brodher.action_window"/>
-    <menuitem name="Server to list" id="brodher" parent="brodher.menu_2"
-              action="brodher.action_server"/>
--->
-  </data>
+<record id="view_partner_form_inherit_customer" model="ir.ui.view">
+    <field name="name">res.partner.form.inherit.customer</field>
+    <field name="model">res.partner</field>
+    <field name="inherit_id" ref="base.view_partner_form"/>
+    <field name="arch" type="xml">
+        <xpath expr="//field[@name='vat']" position="after">
+            <field name="customer_ktp"/>
+            <field name="date_of_birth"/>
+        </xpath>
+    </field>
+</record>
 </odoo>
