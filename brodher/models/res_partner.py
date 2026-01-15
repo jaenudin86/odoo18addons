@@ -23,3 +23,4 @@ class ResPartner(models.Model):
             vals['ref'] = f"AC{seq}"
             
         return super(ResPartner, self).create(vals)
+    
