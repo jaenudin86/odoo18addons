@@ -7,66 +7,44 @@
             <form string="Generate Serial Numbers">
                 <sheet>
                     <div class="oe_title">
-                        <h1>
-                            <i class="fa fa-barcode"/> Generate Serial Numbers
-                        </h1>
-                        <h2>
-                            <field name="picking_name" readonly="1" class="oe_inline"/>
-                        </h2>
+                        <h1><i class="fa fa-barcode"/> Generate Serial Numbers</h1>
+                        <h2><field name="picking_name" readonly="1" class="oe_inline"/></h2>
                     </div>
                     
                     <group>
                         <field name="picking_id" invisible="1"/>
-                        <field name="total_sn_to_generate" string="Total SNs to Generate" readonly="1"/>
+                        <field name="total_sn_to_generate" string="Total to Generate" readonly="1"/>
                     </group>
                     
-                    <notebook>
-                        <page string="Products" name="products">
-                            <field name="move_summary" nolabel="1" widget="html"/>
-                            
-                            <div class="alert alert-info mt-3">
-                                <h5><i class="fa fa-info-circle"/> About Generation</h5>
-                                <ul>
-                                    <li>Serial numbers will be created for all products shown above</li>
-                                    <li>SN Type (Man/Woman) is automatically detected from product configuration</li>
-                                    <li>Serial numbers use GLOBAL sequence per type and year</li>
-                                    <li>After generation, you must SCAN the SNs to assign them to this transfer</li>
-                                </ul>
-                            </div>
-                        </page>
-                        
-                        <page string="Instructions" name="instructions">
-                            <div class="alert alert-info">
-                                <h4><i class="fa fa-lightbulb-o"/> How It Works</h4>
-                                <ol>
-                                    <li><strong>Generate:</strong> Click button below to create serial numbers</li>
-                                    <li><strong>Scan:</strong> Use "Scan Serial Number" button to assign SNs to transfer</li>
-                                    <li><strong>Validate:</strong> Complete the transfer after all SNs are scanned</li>
-                                </ol>
-                                
-                                <h5 class="mt-3">Serial Number Format:</h5>
-                                <p><code>PF + Year(2) + Type(M/W) + Sequence(7 digits)</code></p>
-                                <p><strong>Example:</strong> <code>PF25M0001234</code></p>
-                                <ul>
-                                    <li>PF = Product Finished</li>
-                                    <li>25 = Year 2025</li>
-                                    <li>M = Man (or W = Woman)</li>
-                                    <li>0001234 = Global sequence number</li>
-                                </ul>
-                            </div>
-                        </page>
-                    </notebook>
+                    <div class="alert alert-info">
+                        <strong>Instructions:</strong> Edit "To Generate" column to set quantity per product
+                    </div>
+                    
+                    <!-- Editable Lines -->
+                    <field name="line_ids" nolabel="1">
+                        <tree editable="bottom" decoration-success="quantity &gt; 0" decoration-muted="quantity == 0">
+                            <field name="product_name" readonly="1"/>
+                            <field name="quantity_in_picking" string="Demand" readonly="1"/>
+                            <field name="quantity_existing" string="Already" readonly="1"/>
+                            <field name="quantity" string="To Generate"/>
+                            <field name="sn_type" widget="badge" readonly="1"/>
+                            <field name="product_id" column_invisible="1"/>
+                        </tree>
+                    </field>
+                    
+                    <!-- Summary -->
+                    <group string="Summary">
+                        <field name="move_summary" nolabel="1" widget="html"/>
+                    </group>
                 </sheet>
                 
                 <footer>
-                    <button string="Generate Serial Numbers" 
+                    <button string="Generate" 
                             name="action_generate_and_close" 
                             type="object" 
                             class="btn-primary"
                             invisible="total_sn_to_generate == 0"/>
-                    <button string="Cancel" 
-                            class="btn-secondary" 
-                            special="cancel"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
         </field>
