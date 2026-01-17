@@ -1,46 +1,54 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
-        <!-- Form View Extension untuk Stock Warehouse -->
+        <!-- Form View Extension -->
         <record id="view_warehouse_form_custom" model="ir.ui.view">
             <field name="name">stock.warehouse.form.custom</field>
             <field name="model">stock.warehouse</field>
             <field name="inherit_id" ref="stock.view_warehouse"/>
             <field name="arch" type="xml">
-                <!-- Tambahkan tab baru untuk Warehouse Details -->
                 <xpath expr="//notebook" position="inside">
                     <page string="Warehouse Details" name="warehouse_details">
-                        <group>
-                            <group string="Basic Information">
-                                <field name="x_warehouse_type" required="1"/>
-                                <field name="x_warehouse_number" required="1" readonly="1"/>
-                                <field name="x_brand_code"/>
-                                <!-- <field name="x_sequence_number"/> -->
+                        
+                        <!-- Basic Information -->
+                        <group string="Basic Information">
+                            <group>
+                                <field name="x_warehouse_type"/>
+                                <field name="x_warehouse_number"/>
+                                <field name="x_brand"/>
                             </group>
-                            <group string="Contact Information">
+                        </group>
+                        
+                        <!-- Contact Information -->
+                        <group string="Contact Information">
+                            <group>
                                 <field name="x_pic_name"/>
-                                <field name="x_email_warehouse" widget="email"/>
-                                <field name="x_mobile_phone_no" widget="phone"/>
+                                <field name="x_email_warehouse"/>
+                            </group>
+                            <group>
+                                <field name="x_mobile_phone_no"/>
                                 <field name="x_npwp_warehouse"/>
                             </group>
                         </group>
                         
+                        <!-- Addresses -->
                         <group string="Addresses">
                             <group>
-                                <field name="x_legal_address" placeholder="Legal address..."/>
-                                <field name="x_operational_address" placeholder="Operational address..."/>
-                                <field name="x_location_address" placeholder="Location address..."/>
+                                <field name="x_legal_address"/>
+                                <field name="x_operational_address"/>
+                                <field name="x_location_address"/>
                             </group>
                             <group>
                                 <field name="x_city_name"/>
                                 <field name="x_zip_code"/>
-                                <field name="x_location"/>
                             </group>
                         </group>
                         
-                        <group string="Store Information" attrs="{'invisible': [('x_warehouse_type', '!=', 'whs')]}">
+                        <!-- Store Information -->
+                        <group string="Store Information">
                             <group>
                                 <field name="x_pic_store"/>
+                                <field name="x_location"/>
                                 <field name="x_dept_store_name"/>
                             </group>
                             <group>
@@ -49,37 +57,19 @@
                             </group>
                         </group>
                         
+                        <!-- Photos and QR Code -->
                         <group string="Photos and QR Code">
                             <group>
-                                <field name="x_front_photo" widget="image" options="{'size': [200, 200]}"/>
-                                <label for="x_front_photo" string="Front Photo"/>
+                                <field name="x_front_photo" widget="image"/>
+                                <field name="x_inside_photo" widget="image"/>
                             </group>
                             <group>
-                                <field name="x_inside_photo" widget="image" options="{'size': [200, 200]}"/>
-                                <label for="x_inside_photo" string="Inside Photo"/>
-                            </group>
-                            <group>
-                                <field name="x_photo_spv_spl" widget="image" options="{'size': [200, 200]}"/>
-                                <label for="x_photo_spv_spl" string="Photo SPV &amp; SPL"/>
-                            </group>
-                            <group>
-                                <field name="x_qr_code" widget="image" options="{'size': [200, 200]}"/>
-                                <label for="x_qr_code" string="QR Code"/>
+                                <field name="x_photo_spv_spl" widget="image"/>
+                                <field name="x_qr_code" widget="image"/>
                             </group>
                         </group>
+                        
                     </page>
-                </xpath>
-                
-                <!-- Tambahkan warehouse type dan number di header -->
-                <xpath expr="//sheet/div[@name='button_box']" position="after">
-                    <div class="oe_title">
-                        <h1>
-                            <field name="x_warehouse_number" readonly="1" class="oe_inline"/>
-                        </h1>
-                        <h2>
-                            <field name="x_warehouse_type" widget="badge" class="oe_inline"/>
-                        </h2>
-                    </div>
                 </xpath>
             </field>
         </record>
@@ -93,8 +83,7 @@
                 <xpath expr="//field[@name='name']" position="after">
                     <field name="x_warehouse_type"/>
                     <field name="x_warehouse_number"/>
-                    <field name="x_brand_code"/>
-                    <field name="x_pic_name"/>
+                    <field name="x_brand"/>
                     <field name="x_city_name"/>
                 </xpath>
             </field>
@@ -109,8 +98,7 @@
                 <xpath expr="//search" position="inside">
                     <field name="x_warehouse_type"/>
                     <field name="x_warehouse_number"/>
-                    <field name="x_brand_code"/>
-                    <field name="x_pic_name"/>
+                    <field name="x_brand"/>
                     <field name="x_city_name"/>
                     
                     <filter string="Gudang Pusat (WHC)" name="filter_whc" 
@@ -124,7 +112,7 @@
                         <filter string="Warehouse Type" name="group_warehouse_type" 
                                 context="{'group_by': 'x_warehouse_type'}"/>
                         <filter string="Brand" name="group_brand" 
-                                context="{'group_by': 'x_brand_code'}"/>
+                                context="{'group_by': 'x_brand'}"/>
                         <filter string="City" name="group_city" 
                                 context="{'group_by': 'x_city_name'}"/>
                     </group>
