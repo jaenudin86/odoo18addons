@@ -29,7 +29,7 @@ Long description of module's purpose
     'views/scan_barcode_template.xml',
      'views/scan_barcode_view.xml',
     'views/scan_barcode_menu.xml',
-    # 'data/ir_sequence_data.xml',
+    'data/ir_sequence_data.xml',
     
     # 'reports/stock_picking_qrcode_report.xml',
     # 'reports/stock_picking_qrcode_template.xml',
