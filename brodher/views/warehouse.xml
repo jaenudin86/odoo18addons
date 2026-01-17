@@ -15,7 +15,7 @@
                                 <field name="x_warehouse_type" required="1"/>
                                 <field name="x_warehouse_number" required="1" readonly="1"/>
                                 <field name="x_brand_code"/>
-                                <field name="x_sequence_number"/>
+                                <!-- <field name="x_sequence_number"/> -->
                             </group>
                             <group string="Contact Information">
                                 <field name="x_pic_name"/>
