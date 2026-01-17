@@ -14,7 +14,7 @@
                             <group string="Basic Information">
                                 <field name="x_warehouse_type" required="1"/>
                                 <field name="x_warehouse_number" required="1" readonly="1"/>
-                                <field name="x_brand"/>
+                                <field name="x_brand_code"/>
                                 <field name="x_sequence_number"/>
                             </group>
                             <group string="Contact Information">
@@ -93,7 +93,7 @@
                 <xpath expr="//field[@name='name']" position="after">
                     <field name="x_warehouse_type"/>
                     <field name="x_warehouse_number"/>
-                    <field name="x_brand"/>
+                    <field name="x_brand_code"/>
                     <field name="x_pic_name"/>
                     <field name="x_city_name"/>
                 </xpath>
@@ -109,7 +109,7 @@
                 <xpath expr="//search" position="inside">
                     <field name="x_warehouse_type"/>
                     <field name="x_warehouse_number"/>
-                    <field name="x_brand"/>
+                    <field name="x_brand_code"/>
                     <field name="x_pic_name"/>
                     <field name="x_city_name"/>
                     
@@ -124,7 +124,7 @@
                         <filter string="Warehouse Type" name="group_warehouse_type" 
                                 context="{'group_by': 'x_warehouse_type'}"/>
                         <filter string="Brand" name="group_brand" 
-                                context="{'group_by': 'x_brand'}"/>
+                                context="{'group_by': 'x_brand_code'}"/>
                         <filter string="City" name="group_city" 
                                 context="{'group_by': 'x_city_name'}"/>
                     </group>
