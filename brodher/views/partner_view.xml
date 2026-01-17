@@ -1,0 +1,75 @@
+<odoo>
+    <record id="view_partner_form_inherit_custom" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.custom</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//h1" position="after">
+                <div class="d-flex">
+                    <h2 class="me-3" invisible="not customer_code">
+                        <field name="customer_code"/>
+                    </h2>
+                    <h2 invisible="not supplier_code">
+                        <field name="supplier_code"/>
+                    </h2>
+                </div>
+            </xpath>
+
+            <xpath expr="//page[@name='contact_addresses']" position="after">
+                <page string="Customer Data" name="customer_data" invisible="customer_rank == 0">
+                    <group>
+                        <group string="Identity">
+                            <field name="ktp_id"/>
+                            <field name="date_of_birth"/>
+                        </group>
+                        <group string="Tax Info">
+                            <field name="npwp_name"/>
+                            <field name="npwp_address"/>
+                        </group>
+                    </group>
+                </page>
+
+                <page string="Supplier Data" name="supplier_data" invisible="supplier_rank == 0">
+                    <group>
+                        <group string="General Info">
+                            <field name="supplier_id_ktp"/>
+                            <field name="supplier_product"/>
+                            <field name="supplier_status"/>
+                            <field name="company_profile"/>
+                        </group>
+                        <group string="PIC Contacts">
+                            <field name="contact_head_pic_name"/>
+                            <field name="contact_head_pic_mobile" widget="phone"/>
+                            <field name="contact_pic1_name"/>
+                            <field name="contact_pic1_mobile" widget="phone"/>
+                        </group>
+                    </group>
+                    <group string="Factory &amp; Bank">
+                        <group string="Factory">
+                            <field name="factory_address"/>
+                            <field name="factory_city"/>
+                            <field name="factory_phone"/>
+                        </group>
+                        <group string="Bank Info">
+                            <field name="beneficiary_name"/>
+                            <field name="bank_currency_id"/>
+                            <field name="bank_swift"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_res_partner_filter_custom" model="ir.ui.view">
+        <field name="name">res.partner.select.custom</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_res_partner_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="customer_code"/>
+                <field name="supplier_code"/>
+            </field>
+        </xpath>
+    </record>
+</odoo>

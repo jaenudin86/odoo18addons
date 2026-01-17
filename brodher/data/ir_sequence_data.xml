@@ -1,0 +1,19 @@
+<odoo>
+    <data noupdate="1">
+        <record id="seq_customer_code" model="ir.sequence">
+            <name>Customer Code Sequence</name>
+            <code>customer.code.sequence</code>
+            <padding>7</padding>
+            <number_next>1</number_next>
+            <number_increment>1</number_increment>
+        </record>
+
+        <record id="seq_supplier_code" model="ir.sequence">
+            <name>Supplier Code Sequence</name>
+            <code>supplier.code.sequence</code>
+            <padding>4</padding>
+            <number_next>1</number_next>
+            <number_increment>1</number_increment>
+        </record>
+    </data>
+</odoo>
