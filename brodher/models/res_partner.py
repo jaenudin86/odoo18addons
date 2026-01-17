@@ -48,21 +48,15 @@ class ResPartner(models.Model):
     npwp_name = fields.Char(string="NPWP Name")
     npwp_address = fields.Text(string="NPWP Address")
 
-    @api.model_create_multi
-    def create(self, vals_list):
-        for vals in vals_list:
-            # Generate Customer Code (AC + 7 digit = 9 digit)
-            # Logika: Jika sedang membuat customer
-            if vals.get('customer_rank', 0) > 0 or self._context.get('res_partner_search_mode') == 'customer':
-                if not vals.get('customer_code'):
-                    seq = self.env['ir.sequence'].next_by_code('customer.code.sequence')
-                    vals['customer_code'] = f'AC{seq}'
+@api.model_create_multi
+def create(self, vals_list):
+    partners = super().create(vals_list)
 
-            # Generate Supplier Code (AS + 4 digit = 6 digit)
-            # Logika: Jika sedang membuat supplier
-            if vals.get('supplier_rank', 0) > 0 or self._context.get('res_partner_search_mode') == 'supplier':
-                if not vals.get('supplier_code'):
-                    seq = self.env['ir.sequence'].next_by_code('supplier.code.sequence')
-                    vals['supplier_code'] = f'AS{seq}'
-                    
-        return super(ResPartner, self).create(vals_list)
+    for partner in partners:
+        if partner.customer_rank > 0 and not partner.customer_code:
+            partner.customer_code = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
+
+        if partner.supplier_rank > 0 and not partner.supplier_code:
+            partner.supplier_code = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
+
+    return partners
