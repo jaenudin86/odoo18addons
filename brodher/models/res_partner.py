@@ -64,10 +64,10 @@ def create(self, vals_list):
     partners = super().create(vals_list)
 
     for partner in partners:
-        if partner.customer_rank > 0 and not partner.customer_code:
+        if not partner.customer_code:
             partner.customer_code = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
 
-        if partner.supplier_rank > 0 and not partner.supplier_code:
+        if not partner.supplier_code:
             partner.supplier_code = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
 
     return partners
