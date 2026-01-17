@@ -69,7 +69,6 @@
             <xpath expr="//field[@name='name']" position="after">
                 <field name="customer_code"/>
                 <field name="supplier_code"/>
-            </field>
         </xpath>
     </record>
 </odoo>
