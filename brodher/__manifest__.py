@@ -35,7 +35,7 @@ Long description of module's purpose
     # 'reports/stock_picking_qrcode_report.xml',
     # 'reports/stock_picking_qrcode_template.xml',
     'reports/stock_picking_qrcode_action.xml',
-    'views/partner_view.xml',
+    # 'views/partner_view.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
