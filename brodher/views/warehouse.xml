@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
     <data>
+        
         <!-- Form View Extension -->
         <record id="view_warehouse_form_custom" model="ir.ui.view">
             <field name="name">stock.warehouse.form.custom</field>
@@ -101,11 +102,11 @@
                     <field name="x_brand"/>
                     <field name="x_city_name"/>
                     
-                    <filter string="Gudang Pusat (WHC)" name="filter_whc" 
+                    <filter string="Gudang Pusat" name="filter_whc" 
                             domain="[('x_warehouse_type', '=', 'whc')]"/>
-                    <filter string="Gudang Online (WHO)" name="filter_who" 
+                    <filter string="Gudang Online" name="filter_who" 
                             domain="[('x_warehouse_type', '=', 'who')]"/>
-                    <filter string="Gudang Offline (WHS)" name="filter_whs" 
+                    <filter string="Gudang Offline" name="filter_whs" 
                             domain="[('x_warehouse_type', '=', 'whs')]"/>
                     
                     <group expand="0" string="Group By">
