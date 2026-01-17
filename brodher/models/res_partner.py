@@ -48,6 +48,17 @@ class ResPartner(models.Model):
     npwp_name = fields.Char(string="NPWP Name")
     npwp_address = fields.Text(string="NPWP Address")
 
+    display_name = fields.Char(compute="_compute_display_name", store=True)
+
+    def _compute_display_name(self):
+        for rec in self:
+            if rec.customer_code:
+                rec.display_name = f"{rec.customer_code} - {rec.name}"
+            elif rec.supplier_code:
+                rec.display_name = f"{rec.supplier_code} - {rec.name}"
+            else:
+                rec.display_name = rec.name
+
 @api.model_create_multi
 def create(self, vals_list):
     partners = super().create(vals_list)
