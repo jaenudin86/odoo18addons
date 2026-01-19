@@ -61,13 +61,16 @@ class ResPartner(models.Model):
 
 @api.model_create_multi
 def create(self, vals_list):
-    partners = super().create(vals_list)
-
-    for partner in partners:
-        if not partner.customer_code:
-            partner.customer_code = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
-
-        if not partner.supplier_code:
-            partner.supplier_code = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
-
-    return partners
+    for vals in vals_list:
+        # Cek apakah dia Customer (customer_rank > 0 biasanya dari Sales)
+        # Atau cek apakah dia dibuat dari menu Customer/Vendor
+        
+        if vals.get('customer_rank', 0) > 0 or vals.get('customer_code'):
+             if not vals.get('customer_code'):
+                vals['customer_code'] = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
+        
+        if vals.get('supplier_rank', 0) > 0 or vals.get('supplier_code'):
+            if not vals.get('supplier_code'):
+                vals['supplier_code'] = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
+                
+    return super(ResPartner, self).create(vals_list)
