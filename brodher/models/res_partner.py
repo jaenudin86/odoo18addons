@@ -58,19 +58,26 @@ class ResPartner(models.Model):
                 rec.display_name = f"{rec.supplier_code} - {rec.name}"
             else:
                 rec.display_name = rec.name
-
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
-            # Cek apakah dia Customer (customer_rank > 0 biasanya dari Sales)
-            # Atau cek apakah dia dibuat dari menu Customer/Vendor
+            # 1. Cek apakah ini Customer
+            # Kita cek dari context menu ATAU dari nilai rank yang dikirim UI
+            is_customer = self._context.get('res_partner_search_mode') == 'customer' or vals.get('customer_rank', 0) > 0
             
-            if vals.get('customer_rank', 0) > 0 or vals.get('customer_code'):
-                if not vals.get('customer_code'):
-                    vals['customer_code'] = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
-            
-            if vals.get('supplier_rank', 0) > 0 or vals.get('supplier_code'):
-                if not vals.get('supplier_code'):
-                    vals['supplier_code'] = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
-                    
+            # 2. Cek apakah ini Supplier
+            is_supplier = self._context.get('res_partner_search_mode') == 'supplier' or vals.get('supplier_rank', 0) > 0
+
+            # Eksekusi pembuatan nomor saat Save
+            if is_customer and not vals.get('customer_code'):
+                seq = self.env['ir.sequence'].next_by_code('customer.code.sequence')
+                if seq:
+                    vals['customer_code'] = f"AC{seq}"
+
+            if is_supplier and not vals.get('supplier_code'):
+                seq = self.env['ir.sequence'].next_by_code('supplier.code.sequence')
+                if seq:
+                    vals['supplier_code'] = f"AS{seq}"
+
         return super(ResPartner, self).create(vals_list)
+
