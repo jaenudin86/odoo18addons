@@ -10,7 +10,7 @@ class StockWarehouse(models.Model):
     # ========================================
     # WAREHOUSE TYPE & NUMBERING
     # ========================================
-    
+    code = fields.Char('Short Name', size=20, required=True, help="Short name for this warehouse.")
     x_warehouse_type = fields.Selection([
         ('whc', 'WHC - Gudang Pusat'),
         ('who', 'WHO - Gudang Online'),
@@ -74,13 +74,18 @@ class StockWarehouse(models.Model):
     
     @api.model
     def create(self, vals):
-        """Auto-generate warehouse number saat create"""
-        if vals.get('x_warehouse_type') and vals.get('x_brand'):
-            vals['x_warehouse_number'] = self._generate_warehouse_number(
-                vals['x_warehouse_type'],
-                vals['x_brand']
-            )
-        return super(StockWarehouse, self).create(vals)
+            """Auto-generate warehouse number dan sinkron ke short name (code)"""
+            if vals.get('x_warehouse_type') and vals.get('x_brand'):
+                generated_number = self._generate_warehouse_number(
+                    vals['x_warehouse_type'],
+                    vals['x_brand']
+                )
+                vals['x_warehouse_number'] = generated_number
+                
+                # 2. Masukkan nomor yang digenerate ke field 'code' (Short Name)
+                vals['code'] = generated_number
+                
+            return super(StockWarehouse, self).create(vals)
     
     def _generate_warehouse_number(self, warehouse_type, brand):
         """
