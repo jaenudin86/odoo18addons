@@ -17,6 +17,7 @@
 
             <xpath expr="//page[@name='contact_addresses']" position="after">
                 <page string="Customer Data" name="customer_data" invisible="customer_rank == 0">
+                     <field name="customer_code"/>
                     <group>
                         <group string="Identity">
                             <field name="ktp_id"/>
@@ -31,6 +32,7 @@
 
                 <page string="Supplier Data" name="supplier_data" invisible="supplier_rank == 0">
                     <group>
+                        <field name="supplier_code"/>
                         <group string="General Info">
                             <field name="supplier_id_ktp"/>
                             <field name="supplier_product"/>
@@ -42,18 +44,25 @@
                             <field name="contact_head_pic_mobile" widget="phone"/>
                             <field name="contact_pic1_name"/>
                             <field name="contact_pic1_mobile" widget="phone"/>
+                            <field name="contact_pic2_name"/>
+                            <field name="contact_pic2_mobile" widget="phone"/>
                         </group>
                     </group>
                     <group string="Factory &amp; Bank">
                         <group string="Factory">
                             <field name="factory_address"/>
                             <field name="factory_city"/>
+                            <field name="factory_state"/>
+                            <field name="factory_postal"/>
+                            <field name="factory_country"/>
+                            <field name="factory_fax2"/>
                             <field name="factory_phone"/>
                         </group>
                         <group string="Bank Info">
                             <field name="beneficiary_name"/>
                             <field name="bank_currency_id"/>
-                            <field name="bank_swift"/>
+                            <field name="bank_city"/>
+                            <field name="bank_country"/>
                         </group>
                     </group>
                 </page>
