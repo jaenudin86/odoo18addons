@@ -4,24 +4,26 @@
         <field name="model">res.partner</field>
         <field name="inherit_id" ref="base.view_partner_form"/>
         <field name="arch" type="xml">
+            
             <xpath expr="//h1" position="after">
-                <div class="d-flex">
-                    <h2 class="me-3" invisible="not customer_code">
-                        <field name="customer_code"/>
-                    </h2>
-                    <h2 invisible="not supplier_code">
-                        
-                    </h2>
-                        <field name="supplier_code"/>
-                        <field name="customer_code"/>
+                <div class="d-flex align-items-center">
+                    <div invisible="not customer_code" class="me-4">
+                        <h2 class="mb-0"><field name="customer_code"/></h2>
+                        <field name="customer_code" widget="barcode" options="{'symbology': 'code128', 'width': 200, 'height': 50}"/>
+                    </div>
+                    
+                    <div invisible="not supplier_code">
+                        <h2 class="mb-0"><field name="supplier_code"/></h2>
+                        <field name="supplier_code" widget="barcode" options="{'symbology': 'code128', 'width': 200, 'height': 50}"/>
+                    </div>
                 </div>
             </xpath>
 
             <xpath expr="//page[@name='contact_addresses']" position="after">
                 <page string="Customer Data" name="customer_data" invisible="customer_rank == 0">
-                     <field name="customer_code"/>
                     <group>
                         <group string="Identity">
+                            <field name="customer_code"/>
                             <field name="ktp_id"/>
                             <field name="date_of_birth"/>
                         </group>
@@ -34,8 +36,8 @@
 
                 <page string="Supplier Data" name="supplier_data" invisible="supplier_rank == 0">
                     <group>
-                        <field name="supplier_code"/>
                         <group string="General Info">
+                            <field name="supplier_code"/>
                             <field name="supplier_id_ktp"/>
                             <field name="supplier_product"/>
                             <field name="supplier_status"/>
@@ -57,14 +59,15 @@
                             <field name="factory_state"/>
                             <field name="factory_postal"/>
                             <field name="factory_country"/>
-                            <field name="factory_fax2"/>
                             <field name="factory_phone"/>
+                            <field name="factory_fax2"/>
                         </group>
                         <group string="Bank Info">
                             <field name="beneficiary_name"/>
                             <field name="bank_currency_id"/>
                             <field name="bank_city"/>
                             <field name="bank_country"/>
+                            <field name="bank_swift"/>
                         </group>
                     </group>
                 </page>
@@ -78,8 +81,9 @@
         <field name="inherit_id" ref="base.view_res_partner_filter"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
-                <field name="customer_code"/>
-                <field name="supplier_code"/>
+                <field name="customer_code" string="Customer Code"/>
+                <field name="supplier_code" string="Supplier Code"/>
+                <field name="ktp_id" string="KTP / ID"/>
             </xpath>
         </field>
     </record>
