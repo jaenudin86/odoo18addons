@@ -59,18 +59,18 @@ class ResPartner(models.Model):
             else:
                 rec.display_name = rec.name
 
-@api.model_create_multi
-def create(self, vals_list):
-    for vals in vals_list:
-        # Cek apakah dia Customer (customer_rank > 0 biasanya dari Sales)
-        # Atau cek apakah dia dibuat dari menu Customer/Vendor
-        
-        if vals.get('customer_rank', 0) > 0 or vals.get('customer_code'):
-             if not vals.get('customer_code'):
-                vals['customer_code'] = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
-        
-        if vals.get('supplier_rank', 0) > 0 or vals.get('supplier_code'):
-            if not vals.get('supplier_code'):
-                vals['supplier_code'] = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
-                
-    return super(ResPartner, self).create(vals_list)
+    @api.model_create_multi
+    def create(self, vals_list):
+        for vals in vals_list:
+            # Cek apakah dia Customer (customer_rank > 0 biasanya dari Sales)
+            # Atau cek apakah dia dibuat dari menu Customer/Vendor
+            
+            if vals.get('customer_rank', 0) > 0 or vals.get('customer_code'):
+                if not vals.get('customer_code'):
+                    vals['customer_code'] = f"AC{self.env['ir.sequence'].next_by_code('customer.code.sequence')}"
+            
+            if vals.get('supplier_rank', 0) > 0 or vals.get('supplier_code'):
+                if not vals.get('supplier_code'):
+                    vals['supplier_code'] = f"AS{self.env['ir.sequence'].next_by_code('supplier.code.sequence')}"
+                    
+        return super(ResPartner, self).create(vals_list)
