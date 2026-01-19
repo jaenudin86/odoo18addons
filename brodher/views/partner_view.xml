@@ -10,8 +10,10 @@
                         <field name="customer_code"/>
                     </h2>
                     <h2 invisible="not supplier_code">
-                        <field name="supplier_code"/>
+                        
                     </h2>
+                        <field name="supplier_code"/>
+                        <field name="customer_code"/>
                 </div>
             </xpath>
 
