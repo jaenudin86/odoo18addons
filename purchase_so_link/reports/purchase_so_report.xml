@@ -6,7 +6,7 @@
         <field name="name">purchase.so.report.list</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
-            <list string="Purchase by Sales Order" create="false" delete="false">
+            <tree string="Purchase by Sales Order" create="false" delete="false">
                 <field name="sale_order_name"/>
                 <field name="sale_order_date"/>
                 <field name="partner_id"/>
@@ -18,7 +18,7 @@
                 <field name="purchase_amount" sum="Total PO Amount"/>
                 <field name="state"/>
                 <field name="company_id" groups="base.group_multi_company"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -50,64 +50,53 @@
     </record>
 
     <!-- Purchase SO Report Search View -->
-<!-- <record id="view_purchase_so_report_search" model="ir.ui.view">
-    <field name="name">purchase.so.report.search</field>
-    <field name="model">purchase.so.report</field>
-    <field name="arch" type="xml">
-        <search string="Purchase by Sales Order">
-
-            <field name="sale_order_name"/>
-            <field name="purchase_order_name"/>
-            <field name="partner_id"/>
-            <field name="purchase_partner_id"/>
-            <field name="sale_user_id"/>
-
-            <separator/>
-
-            <filter string="Purchase Order"
-                    name="confirmed"
-                    domain="[('state', '=', 'purchase')]"/>
-
-            <filter string="Done"
-                    name="done"
-                    domain="[('state', '=', 'done')]"/>
-
-            <group expand="0" string="Group By">
-                <filter string="Sales Order"
-                        name="group_sale_order"
-                        groupby="sale_order_name"/>
-                <filter string="Customer"
-                        name="group_customer"
-                        groupby="partner_id"/>
-                <filter string="Vendor"
-                        name="group_vendor"
-                        groupby="purchase_partner_id"/>
-                <filter string="Salesperson"
-                        name="group_salesperson"
-                        groupby="sale_user_id"/>
-                <filter string="Status"
-                        name="group_state"
-                        groupby="state"/>
-                <filter string="PO Date"
-                        name="group_po_date"
-                        groupby="purchase_date"/>
-            </group>
-
-        </search>
-    </field>
-</record> -->
-
-
-
+    <record id="view_purchase_so_report_search" model="ir.ui.view">
+        <field name="name">purchase.so.report.search</field>
+        <field name="model">purchase.so.report</field>
+        <field name="arch" type="xml">
+            <search string="Purchase by Sales Order">
+                <field name="sale_order_name" string="Sales Order" filter_domain="[('sale_order_name', 'ilike', self)]"/>
+                <field name="purchase_order_name" string="Purchase Order" filter_domain="[('purchase_order_name', 'ilike', self)]"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="purchase_partner_id" string="Vendor"/>
+                <field name="sale_user_id" string="Salesperson"/>
+                
+                <separator/>
+                
+                <filter string="Purchase Order" name="confirmed" domain="[('state', '=', 'purchase')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                
+                <separator/>
+                
+                <group expand="0" string="Group By">
+                    <filter string="Sales Order" name="group_sale_order" context="{'group_by': 'sale_order_name'}"/>
+                    <filter string="Customer" name="group_customer" context="{'group_by': 'partner_id'}"/>
+                    <filter string="Vendor" name="group_vendor" context="{'group_by': 'purchase_partner_id'}"/>
+                    <filter string="Salesperson" name="group_salesperson" context="{'group_by': 'sale_user_id'}"/>
+                    <filter string="Status" name="group_state" context="{'group_by': 'state'}"/>
+                    <filter string="PO Date" name="group_po_date" context="{'group_by': 'purchase_date'}"/>
+                    <filter string="SO Date" name="group_so_date" context="{'group_by': 'sale_order_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
 
     <!-- Purchase SO Report Action -->
-    <!-- <record id="action_purchase_so_report" model="ir.actions.act_window">
+    <record id="action_purchase_so_report" model="ir.actions.act_window">
         <field name="name">Purchase by Sales Order</field>
         <field name="res_model">purchase.so.report</field>
-        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_mode">tree,pivot,graph</field>
         <field name="search_view_id" ref="view_purchase_so_report_search"/>
-    </record> -->
-
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No purchase orders linked to sales orders found
+            </p>
+            <p>
+                This report shows purchase orders that are linked to sales orders.
+            </p>
+        </field>
+    </record>
 
     <!-- Menu Item -->
     <menuitem id="menu_purchase_so_report"
