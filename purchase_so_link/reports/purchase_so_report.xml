@@ -6,7 +6,7 @@
         <field name="name">purchase.so.report.list</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
-            <tree string="Purchase by Sales Order" create="false" delete="false" edit="false">
+            <tree string="Purchase by Sales Order">
                 <field name="sale_order_name" string="Sales Order"/>
                 <field name="sale_order_date" string="SO Date"/>
                 <field name="partner_id" string="Customer"/>
