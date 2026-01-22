@@ -6,7 +6,7 @@
         <field name="name">purchase.so.report.list</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
-            <tree string="Purchase by Sales Order">
+            <list string="Purchase by Sales Order" create="false" delete="false" edit="false">
                 <field name="sale_order_name" string="Sales Order"/>
                 <field name="sale_order_date" string="SO Date"/>
                 <field name="partner_id" string="Customer"/>
@@ -18,7 +18,7 @@
                 <field name="purchase_amount" string="PO Amount" sum="Total PO Amount" widget="monetary"/>
                 <field name="state" string="Status"/>
                 <field name="company_id" groups="base.group_multi_company" string="Company"/>
-            </tree>
+            </list>
         </field>
     </record>
 
