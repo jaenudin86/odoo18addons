@@ -6,18 +6,18 @@
         <field name="name">purchase.so.report.list</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
-            <tree string="Purchase by Sales Order" create="false" delete="false">
-                <field name="sale_order_name"/>
-                <field name="sale_order_date"/>
-                <field name="partner_id"/>
-                <field name="sale_user_id"/>
-                <field name="purchase_order_name"/>
-                <field name="purchase_date"/>
-                <field name="purchase_partner_id"/>
-                <field name="sale_amount" sum="Total SO Amount"/>
-                <field name="purchase_amount" sum="Total PO Amount"/>
-                <field name="state"/>
-                <field name="company_id" groups="base.group_multi_company"/>
+            <tree string="Purchase by Sales Order" create="false" delete="false" edit="false">
+                <field name="sale_order_name" string="Sales Order"/>
+                <field name="sale_order_date" string="SO Date"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="sale_user_id" string="Salesperson"/>
+                <field name="purchase_order_name" string="Purchase Order"/>
+                <field name="purchase_date" string="PO Date"/>
+                <field name="purchase_partner_id" string="Vendor"/>
+                <field name="sale_amount" string="SO Amount" sum="Total SO Amount" widget="monetary"/>
+                <field name="purchase_amount" string="PO Amount" sum="Total PO Amount" widget="monetary"/>
+                <field name="state" string="Status"/>
+                <field name="company_id" groups="base.group_multi_company" string="Company"/>
             </tree>
         </field>
     </record>
@@ -55,8 +55,8 @@
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
             <search string="Purchase by Sales Order">
-                <field name="sale_order_name" string="Sales Order" filter_domain="[('sale_order_name', 'ilike', self)]"/>
-                <field name="purchase_order_name" string="Purchase Order" filter_domain="[('purchase_order_name', 'ilike', self)]"/>
+                <field name="sale_order_name" string="Sales Order"/>
+                <field name="purchase_order_name" string="Purchase Order"/>
                 <field name="partner_id" string="Customer"/>
                 <field name="purchase_partner_id" string="Vendor"/>
                 <field name="sale_user_id" string="Salesperson"/>
@@ -87,7 +87,6 @@
         <field name="res_model">purchase.so.report</field>
         <field name="view_mode">tree,pivot,graph</field>
         <field name="search_view_id" ref="view_purchase_so_report_search"/>
-        <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 No purchase orders linked to sales orders found
