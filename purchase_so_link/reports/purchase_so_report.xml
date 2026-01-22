@@ -58,20 +58,18 @@
 
                 <field name="sale_order_name"/>
                 <field name="purchase_order_name"/>
-                <field name="partner_id"/>
+                <field name="partner_id"/>2
                 <field name="purchase_partner_id"/>
                 <field name="sale_user_id"/>
 
-                <!-- Date Filters (ODOO 18 SAFE) -->
+                <!-- Date Filters -->
                 <filter string="This Month"
                         name="this_month"
-                        date="purchase_date"
-                        default_period="this_month"/>
+                        domain="[('purchase_date', '>=', context_today().replace(day=1))]"/>
 
                 <filter string="This Year"
                         name="this_year"
-                        date="purchase_date"
-                        default_period="this_year"/>
+                        domain="[('purchase_date', '>=', context_today().replace(month=1, day=1))]"/>
 
                 <separator/>
 
@@ -83,7 +81,6 @@
                         name="done"
                         domain="[('state', '=', 'done')]"/>
 
-                <!-- Group By -->
                 <group expand="0" string="Group By">
                     <filter string="Sales Order"
                             name="group_sale_order"
@@ -108,6 +105,7 @@
             </search>
         </field>
     </record>
+
 
 
     <!-- Purchase SO Report Action -->
