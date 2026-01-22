@@ -6,7 +6,7 @@
         <field name="name">purchase.so.report.list</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
-            <list string="Purchase by Sales Order" create="false" delete="false" edit="false">
+            <tree string="Purchase by Sales Order" create="false" delete="false" edit="false">
                 <field name="sale_order_name" string="Sales Order"/>
                 <field name="sale_order_date" string="SO Date"/>
                 <field name="partner_id" string="Customer"/>
@@ -18,7 +18,7 @@
                 <field name="purchase_amount" string="PO Amount" sum="Total PO Amount" widget="monetary"/>
                 <field name="state" string="Status"/>
                 <field name="company_id" groups="base.group_multi_company" string="Company"/>
-            </list>
+            </tree>
         </field>
     </record>
 
@@ -85,7 +85,7 @@
     <record id="action_purchase_so_report" model="ir.actions.act_window">
         <field name="name">Purchase by Sales Order</field>
         <field name="res_model">purchase.so.report</field>
-        <field name="view_mode">list,pivot,graph</field>
+        <field name="view_mode">tree,pivot,graph</field>
         <field name="search_view_id" ref="view_purchase_so_report_search"/>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -97,10 +97,10 @@
         </field>
     </record>
 
-    <!-- Menu Item -->
+    <!-- Menu Item - Using purchase.menu_purchase_root as parent -->
     <menuitem id="menu_purchase_so_report"
               name="Purchase by SO"
-              parent="purchase.menu_purchase_control"
+              parent="purchase.menu_purchase_root"
               action="action_purchase_so_report"
               sequence="100"/>
 
