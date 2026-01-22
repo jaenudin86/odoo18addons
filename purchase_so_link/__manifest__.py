@@ -20,7 +20,7 @@
         'views/purchase_order_views.xml',
         'views/sale_order_views.xml',
         'reports/purchase_so_report_template.xml',
-        # 'reports/purchase_so_report.xml',
+        'reports/purchase_so_report.xml',
         # 'reports/account_purchase_so_report.xml',
     ],
     'installable': True,
