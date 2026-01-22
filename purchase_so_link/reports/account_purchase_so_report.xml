@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Print Report Action -->
+    <record id="action_report_purchase_so" model="ir.actions.report">
+        <field name="name">Purchase by SO Report</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">purchase_so_link.report_purchase_so_document</field>
+        <field name="report_file">purchase_so_link.report_purchase_so_document</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <!-- Accounting Analysis View -->
+    <record id="view_purchase_so_accounting_pivot" model="ir.ui.view">
+        <field name="name">purchase.so.accounting.pivot</field>
+        <field name="model">purchase.so.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Purchase SO Accounting Analysis">
+                <field name="partner_id" type="row"/>
+                <field name="sale_order_name" type="row"/>
+                <field name="purchase_date" interval="month" type="col"/>
+                <field name="sale_amount" type="measure"/>
+                <field name="purchase_amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Accounting Analysis Graph -->
+    <record id="view_purchase_so_accounting_graph" model="ir.ui.view">
+        <field name="name">purchase.so.accounting.graph</field>
+        <field name="model">purchase.so.report</field>
+        <field name="arch" type="xml">
+            <graph string="Purchase SO Accounting Analysis" type="line">
+                <field name="purchase_date" interval="month"/>
+                <field name="purchase_amount" type="measure"/>
+                <field name="sale_amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- Accounting Report Action -->
+    <record id="action_purchase_so_accounting_report" model="ir.actions.act_window">
+        <field name="name">Purchase SO Accounting</field>
+        <field name="res_model">purchase.so.report</field>
+        <field name="view_mode">pivot,graph,tree</field>
+        <field name="view_id" ref="view_purchase_so_accounting_pivot"/>
+        <field name="search_view_id" ref="view_purchase_so_report_search"/>
+        <field name="context">{
+            'search_default_this_year': 1,
+            'search_default_confirmed': 1,
+            'group_by': ['partner_id']
+        }</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No accounting data available
+            </p>
+            <p>
+                This report provides accounting analysis of purchases linked to sales orders,
+                showing trends and comparisons for financial tracking.
+            </p>
+        </field>
+    </record>
+
+    <!-- Accounting Menu -->
+    <menuitem id="menu_purchase_so_accounting"
+              name="Purchase SO Accounting"
+              parent="account.menu_finance_reports"
+              action="action_purchase_so_accounting_report"
+              sequence="50"
+              groups="account.group_account_user"/>
+</odoo>

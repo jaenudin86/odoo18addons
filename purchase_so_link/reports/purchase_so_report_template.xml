@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- PDF Report Template -->
+    <template id="report_purchase_so_document">
+        <t t-call="web.external_layout">
+            <div class="page">
+                <h2>Purchase Orders by Sales Order Report</h2>
+                <t t-foreach="docs" t-as="so">
+                    <div class="row mt-4">
+                        <div class="col-6">
+                            <strong>Sales Order:</strong> <span t-field="so.name"/><br/>
+                            <strong>Customer:</strong> <span t-field="so.partner_id.name"/><br/>
+                            <strong>Date:</strong> <span t-field="so.date_order"/><br/>
+                            <strong>Salesperson:</strong> <span t-field="so.user_id.name"/>
+                        </div>
+                        <div class="col-6">
+                            <strong>SO Amount:</strong> <span t-field="so.amount_total" 
+                                t-options='{"widget": "monetary", "display_currency": so.currency_id}'/><br/>
+                            <strong>Total Purchases:</strong> <span t-field="so.total_purchase_amount"
+                                t-options='{"widget": "monetary", "display_currency": so.currency_id}'/><br/>
+                            <strong>Remaining Budget:</strong> 
+                            <span t-field="so.remaining_purchase_budget"
+                                t-options='{"widget": "monetary", "display_currency": so.currency_id}'
+                                t-att-class="'text-danger' if so.remaining_purchase_budget &lt; 0 else 'text-success'"/>
+                        </div>
+                    </div>
+
+                    <h4 class="mt-3">Related Purchase Orders</h4>
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>PO Number</th>
+                                <th>Vendor</th>
+                                <th>Date</th>
+                                <th>Status</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="so.purchase_order_ids" t-as="po">
+                                <tr>
+                                    <td><span t-field="po.name"/></td>
+                                    <td><span t-field="po.partner_id.name"/></td>
+                                    <td><span t-field="po.date_order"/></td>
+                                    <td><span t-field="po.state"/></td>
+                                    <td class="text-right">
+                                        <span t-field="po.amount_total"
+                                            t-options='{"widget": "monetary", "display_currency": po.currency_id}'/>
+                                    </td>
+                                </tr>
+                            </t>
+                            <t t-if="not so.purchase_order_ids">
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        No purchase orders found for this sales order
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                    <hr style="border-top: 2px solid #000;"/>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

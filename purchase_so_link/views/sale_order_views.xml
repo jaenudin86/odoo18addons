@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Sales Order Form View -->
+    <record id="view_sale_order_form_inherit" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add button in header -->
+            <xpath expr="//button[@name='action_quotation_send']" position="after">
+                <button name="action_view_purchase_orders" type="object" 
+                        class="oe_stat_button" icon="fa-shopping-cart"
+                        attrs="{'invisible': [('purchase_order_count', '=', 0)]}">
+                    <field name="purchase_order_count" widget="statinfo" string="Purchase Orders"/>
+                </button>
+            </xpath>
+            
+            <!-- Add purchase info group -->
+            <xpath expr="//page[@name='other_information']" position="inside">
+                <group string="Purchase Information" name="purchase_info">
+                    <field name="total_purchase_amount" widget="monetary"/>
+                    <field name="remaining_purchase_budget" widget="monetary"
+                           decoration-danger="remaining_purchase_budget &lt; 0"
+                           decoration-success="remaining_purchase_budget &gt;= 0"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+</odoo>

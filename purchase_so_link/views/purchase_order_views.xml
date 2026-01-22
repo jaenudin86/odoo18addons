@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Purchase Order Form View -->
+    <record id="view_purchase_order_form_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Add SO field after partner_id -->
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="sale_order_id" options="{'no_create': True}"/>
+            </xpath>
+            
+            <!-- Add info box showing SO amounts -->
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <group name="so_info_group" col="4" attrs="{'invisible': [('sale_order_id', '=', False)]}">
+                    <field name="sale_order_amount" widget="monetary"/>
+                    <field name="total_po_for_so" widget="monetary"/>
+                    <field name="remaining_so_amount" widget="monetary" 
+                           decoration-danger="remaining_so_amount &lt; 0"
+                           decoration-success="remaining_so_amount &gt;= 0"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Purchase Order Tree View -->
+    <record id="view_purchase_order_tree_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.tree.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="sale_order_id" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Purchase Order Search View -->
+    <record id="view_purchase_order_filter_inherit" model="ir.ui.view">
+        <field name="name">purchase.order.filter.inherit</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.view_purchase_order_filter"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='draft']" position="after">
+                <filter string="With Sales Order" name="with_so" 
+                        domain="[('sale_order_id', '!=', False)]"/>
+            </xpath>
+            <xpath expr="//group[@name='group_by']" position="inside">
+                <filter string="Sales Order" name="group_by_sale_order" 
+                        context="{'group_by': 'sale_order_id'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
