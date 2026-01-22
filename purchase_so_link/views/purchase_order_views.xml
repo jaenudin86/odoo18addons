@@ -47,9 +47,11 @@
                         domain="[('sale_order_id', '!=', False)]"/>
             </xpath>
             <xpath expr="//group[@name='group_by']" position="inside">
-                <filter string="Sales Order" name="group_by_sale_order" 
-                        context="{'group_by': 'sale_order_id'}"/>
+                <filter string="Sales Order"
+                        name="group_by_sale_order"
+                        groupby="sale_order_id"/>
             </xpath>
+
         </field>
     </record>
 </odoo>
