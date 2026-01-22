@@ -13,7 +13,7 @@
             
             <!-- Add info box showing SO amounts -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <group name="so_info_group" col="4" attrs="{'invisible': [('sale_order_id', '=', False)]}">
+               <group name="so_info_group" col="4" invisible="not sale_order_id">
                     <field name="sale_order_amount" widget="monetary"/>
                     <field name="total_po_for_so" widget="monetary"/>
                     <field name="remaining_so_amount" widget="monetary" 
