@@ -46,7 +46,7 @@
                 <filter string="With Sales Order" name="with_so" 
                         domain="[('sale_order_id', '!=', False)]"/>
             </xpath>
-            <xpath expr="//group[@name='group_by']" position="inside">
+            <xpath expr="//search/group[@string='Group By']" position="inside">
                 <filter string="Sales Order"
                         name="group_by_sale_order"
                         groupby="sale_order_id"/>
