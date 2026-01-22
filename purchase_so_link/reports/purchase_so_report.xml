@@ -62,14 +62,16 @@
                 <field name="purchase_partner_id"/>
                 <field name="sale_user_id"/>
 
-                <!-- Date Filters (SAFE for Odoo 18) -->
+                <!-- Date Filters (ODOO 18 SAFE) -->
                 <filter string="This Month"
                         name="this_month"
-                        domain="[('purchase_date', '&gt;=', context_today().strftime('%Y-%m-01'))]"/>
+                        date="purchase_date"
+                        default_period="this_month"/>
 
                 <filter string="This Year"
                         name="this_year"
-                        domain="[('purchase_date', '&gt;=', context_today().strftime('%Y-01-01'))]"/>
+                        date="purchase_date"
+                        default_period="this_year"/>
 
                 <separator/>
 
@@ -106,6 +108,7 @@
             </search>
         </field>
     </record>
+
 
     <!-- Purchase SO Report Action -->
     <record id="action_purchase_so_report" model="ir.actions.act_window">
