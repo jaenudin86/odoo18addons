@@ -50,61 +50,53 @@
     </record>
 
     <!-- Purchase SO Report Search View -->
-    <record id="view_purchase_so_report_search" model="ir.ui.view">
-        <field name="name">purchase.so.report.search</field>
-        <field name="model">purchase.so.report</field>
-        <field name="arch" type="xml">
-            <search string="Purchase by Sales Order">
+<record id="view_purchase_so_report_search" model="ir.ui.view">
+    <field name="name">purchase.so.report.search</field>
+    <field name="model">purchase.so.report</field>
+    <field name="arch" type="xml">
+        <search string="Purchase by Sales Order">
 
-                <field name="sale_order_name"/>
-                <field name="purchase_order_name"/>
-                <field name="partner_id"/>2
-                <field name="purchase_partner_id"/>
-                <field name="sale_user_id"/>
+            <field name="sale_order_name"/>
+            <field name="purchase_order_name"/>
+            <field name="partner_id"/>
+            <field name="purchase_partner_id"/>
+            <field name="sale_user_id"/>
 
-                <!-- Date Filters -->
-                <filter string="This Month"
-                        name="this_month"
-                        domain="[('purchase_date', '>=', context_today().replace(day=1))]"/>
+            <separator/>
 
-                <filter string="This Year"
-                        name="this_year"
-                        domain="[('purchase_date', '>=', context_today().replace(month=1, day=1))]"/>
+            <filter string="Purchase Order"
+                    name="confirmed"
+                    domain="[('state', '=', 'purchase')]"/>
 
-                <separator/>
+            <filter string="Done"
+                    name="done"
+                    domain="[('state', '=', 'done')]"/>
 
-                <filter string="Purchase Order"
-                        name="confirmed"
-                        domain="[('state', '=', 'purchase')]"/>
+            <group expand="0" string="Group By">
+                <filter string="Sales Order"
+                        name="group_sale_order"
+                        groupby="sale_order_name"/>
+                <filter string="Customer"
+                        name="group_customer"
+                        groupby="partner_id"/>
+                <filter string="Vendor"
+                        name="group_vendor"
+                        groupby="purchase_partner_id"/>
+                <filter string="Salesperson"
+                        name="group_salesperson"
+                        groupby="sale_user_id"/>
+                <filter string="Status"
+                        name="group_state"
+                        groupby="state"/>
+                <filter string="PO Date"
+                        name="group_po_date"
+                        groupby="purchase_date"/>
+            </group>
 
-                <filter string="Done"
-                        name="done"
-                        domain="[('state', '=', 'done')]"/>
+        </search>
+    </field>
+</record>
 
-                <group expand="0" string="Group By">
-                    <filter string="Sales Order"
-                            name="group_sale_order"
-                            groupby="sale_order_name"/>
-                    <filter string="Customer"
-                            name="group_customer"
-                            groupby="partner_id"/>
-                    <filter string="Vendor"
-                            name="group_vendor"
-                            groupby="purchase_partner_id"/>
-                    <filter string="Salesperson"
-                            name="group_salesperson"
-                            groupby="sale_user_id"/>
-                    <filter string="Status"
-                            name="group_state"
-                            groupby="state"/>
-                    <filter string="PO Date"
-                            name="group_po_date"
-                            groupby="purchase_date"/>
-                </group>
-
-            </search>
-        </field>
-    </record>
 
 
 
@@ -114,10 +106,8 @@
         <field name="res_model">purchase.so.report</field>
         <field name="view_mode">list,pivot,graph</field>
         <field name="search_view_id" ref="view_purchase_so_report_search"/>
-        <field name="context">
-            {'search_default_this_year': 1, 'search_default_confirmed': 1}
-        </field>
     </record>
+
 
     <!-- Menu Item -->
     <menuitem id="menu_purchase_so_report"
