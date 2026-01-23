@@ -29,7 +29,7 @@
     'depends': [
         'base',
         'account',
-        'account_accountant',
+        # 'account_accountant',
     ],
     'data': [
         'security/accounting_security.xml',
