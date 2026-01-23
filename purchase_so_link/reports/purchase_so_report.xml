@@ -50,7 +50,7 @@
     </record>
 
     <!-- Purchase SO Report Search View -->
-    <!-- <record id="view_purchase_so_report_search" model="ir.ui.view">
+    <record id="view_purchase_so_report_search" model="ir.ui.view">
         <field name="name">purchase.so.report.search</field>
         <field name="model">purchase.so.report</field>
         <field name="arch" type="xml">
@@ -79,7 +79,7 @@
                 </group>
             </search>
         </field>
-    </record> -->
+    </record>
 
     <!-- Purchase SO Report Action -->
     <record id="action_purchase_so_report" model="ir.actions.act_window">
