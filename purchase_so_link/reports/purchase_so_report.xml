@@ -100,7 +100,7 @@
     <!-- Menu Item - Using purchase.menu_purchase_root as parent -->
     <menuitem id="menu_purchase_so_report"
           name="Purchase by SO"
-          parent="purchase.menu_purchase_reports"
+          parent="purchase.purchase_report_main"
           action="action_purchase_so_report"
           sequence="4"/>
 
