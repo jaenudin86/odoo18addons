@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Advanced Accounting Main Menu -->
+    <menuitem id="menu_advanced_accounting_root"
+              name="Advanced Accounting"
+              sequence="10"/>
+
+    <!-- Budget Menu -->
+    <menuitem id="menu_account_budget"
+              name="Budgets"
+              parent="menu_advanced_accounting_root"
+              sequence="10"/>
+
+    <menuitem id="menu_account_budget_list"
+              name="Budgets"
+              parent="menu_account_budget"
+              action="action_account_budget"
+              sequence="10"/>
+
+    <!-- Asset Menu -->
+    <menuitem id="menu_account_asset"
+              name="Assets"
+              parent="menu_advanced_accounting_root"
+              sequence="20"/>
+
+    <menuitem id="menu_account_asset_list"
+              name="Assets"
+              parent="menu_account_asset"
+              action="action_account_asset"
+              sequence="10"/>
+
+    <!-- Cost Center Menu -->
+    <menuitem id="menu_account_cost_center"
+              name="Cost Centers"
+              parent="menu_advanced_accounting_root"
+              sequence="30"/>
+
+    <menuitem id="menu_account_cost_center_list"
+              name="Cost Centers"
+              parent="menu_account_cost_center"
+              action="action_account_cost_center"
+              sequence="10"/>
+
+    <!-- Payment Follow-up Menu -->
+    <menuitem id="menu_account_payment_followup"
+              name="Payment Follow-up"
+              parent="menu_advanced_accounting_root"
+              sequence="40"/>
+
+    <menuitem id="menu_account_payment_followup_config"
+              name="Follow-up Levels"
+              parent="menu_account_payment_followup"
+              action="action_account_payment_followup"
+              sequence="10"/>
+
+    <menuitem id="menu_account_payment_followup_history"
+              name="Follow-up History"
+              parent="menu_account_payment_followup"
+              action="action_account_payment_followup_line"
+              sequence="20"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_advanced_accounting_config"
+              name="Configuration"
+              parent="menu_advanced_accounting_root"
+              sequence="100"
+              groups="account.group_account_manager"/>
+
+</odoo>

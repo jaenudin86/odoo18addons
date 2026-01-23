@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Report Templates -->
+    <!-- Additional report templates can be defined here -->
+    
+    <!-- Email Template for Payment Follow-up -->
+    <record id="email_template_payment_followup" model="mail.template">
+        <field name="name">Payment Follow-up Email</field>
+        <field name="model_id" ref="model_account_payment_followup_line"/>
+        <field name="subject">Payment Reminder - {{ object.partner_id.name }}</field>
+        <field name="body_html" type="html">
+            <div style="font-family: Arial, sans-serif; font-size: 14px;">
+                <p>Dear {{ object.partner_id.name }},</p>
+                
+                <p>{{ object.followup_id.description }}</p>
+                
+                <p><strong>Amount Due: {{ object.amount_due }} {{ object.currency_id.symbol }}</strong></p>
+                
+                <p>Best regards,<br/>
+                {{ object.company_id.name }}</p>
+            </div>
+        </field>
+        <field name="lang">{{ object.partner_id.lang }}</field>
+        <field name="auto_delete" eval="False"/>
+    </record>
+
+</odoo>

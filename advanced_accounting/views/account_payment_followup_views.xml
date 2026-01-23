@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Payment Follow-up Tree View -->
+    <record id="view_account_payment_followup_tree" model="ir.ui.view">
+        <field name="name">account.payment.followup.tree</field>
+        <field name="model">account.payment.followup</field>
+        <field name="arch" type="xml">
+            <tree string="Payment Follow-ups">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="delay"/>
+                <field name="send_email" widget="boolean_toggle"/>
+                <field name="send_letter" widget="boolean_toggle"/>
+                <field name="manual_action" widget="boolean_toggle"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Payment Follow-up Form View -->
+    <record id="view_account_payment_followup_form" model="ir.ui.view">
+        <field name="name">account.payment.followup.form</field>
+        <field name="model">account.payment.followup</field>
+        <field name="arch" type="xml">
+            <form string="Payment Follow-up">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Follow-up Level Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="sequence"/>
+                            <field name="delay"/>
+                        </group>
+                        <group>
+                            <field name="send_email"/>
+                            <field name="send_letter"/>
+                            <field name="manual_action"/>
+                        </group>
+                    </group>
+                    <group string="Email Content" invisible="not send_email">
+                        <field name="description" nolabel="1"/>
+                    </group>
+                    <group string="Manual Action" invisible="not manual_action">
+                        <field name="manual_action_note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Payment Follow-up Action -->
+    <record id="action_account_payment_followup" model="ir.actions.act_window">
+        <field name="name">Payment Follow-up Levels</field>
+        <field name="res_model">account.payment.followup</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Payment Follow-up Line Tree View -->
+    <record id="view_account_payment_followup_line_tree" model="ir.ui.view">
+        <field name="name">account.payment.followup.line.tree</field>
+        <field name="model">account.payment.followup.line</field>
+        <field name="arch" type="xml">
+            <tree string="Follow-up History">
+                <field name="partner_id"/>
+                <field name="followup_date"/>
+                <field name="followup_id"/>
+                <field name="amount_due" widget="monetary"/>
+                <field name="result"/>
+                <field name="currency_id" column_invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Payment Follow-up Line Form View -->
+    <record id="view_account_payment_followup_line_form" model="ir.ui.view">
+        <field name="name">account.payment.followup.line.form</field>
+        <field name="model">account.payment.followup.line</field>
+        <field name="arch" type="xml">
+            <form string="Follow-up Line">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="followup_id"/>
+                            <field name="followup_date"/>
+                        </group>
+                        <group>
+                            <field name="amount_due" widget="monetary"/>
+                            <field name="result"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Overdue Invoices">
+                        <field name="move_line_ids" nolabel="1">
+                            <tree>
+                                <field name="move_id"/>
+                                <field name="date"/>
+                                <field name="date_maturity"/>
+                                <field name="account_id"/>
+                                <field name="debit" sum="Total Debit"/>
+                                <field name="credit" sum="Total Credit"/>
+                                <field name="amount_residual" sum="Total Residual"/>
+                            </tree>
+                        </field>
+                    </group>
+                    <group string="Result Notes">
+                        <field name="result_note" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Payment Follow-up Line Action -->
+    <record id="action_account_payment_followup_line" model="ir.actions.act_window">
+        <field name="name">Follow-up History</field>
+        <field name="res_model">account.payment.followup.line</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Partner Form View Inheritance -->
+    <record id="view_partner_payment_followup_form" model="ir.ui.view">
+        <field name="name">res.partner.payment.followup.form</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='sales_purchases']" position="after">
+                <page string="Payment Follow-up" name="payment_followup">
+                    <group>
+                        <group>
+                            <field name="last_followup_date"/>
+                            <field name="followup_level"/>
+                        </group>
+                    </group>
+                    <field name="payment_followup_line_ids">
+                        <tree>
+                            <field name="followup_date"/>
+                            <field name="followup_id"/>
+                            <field name="amount_due" widget="monetary"/>
+                            <field name="result"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

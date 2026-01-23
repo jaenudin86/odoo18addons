@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Cost Center Tree View -->
+    <record id="view_account_cost_center_tree" model="ir.ui.view">
+        <field name="name">account.cost.center.tree</field>
+        <field name="model">account.cost.center</field>
+        <field name="arch" type="xml">
+            <tree string="Cost Centers">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="parent_id"/>
+                <field name="manager_id" widget="many2one_avatar_user"/>
+                <field name="total_cost" widget="monetary"/>
+                <field name="total_revenue" widget="monetary"/>
+                <field name="balance" widget="monetary"/>
+                <field name="currency_id" column_invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Cost Center Form View -->
+    <record id="view_account_cost_center_form" model="ir.ui.view">
+        <field name="name">account.cost.center.form</field>
+        <field name="model">account.cost.center</field>
+        <field name="arch" type="xml">
+            <form string="Cost Center">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_account_analytic_account_by_cost_center)d" type="action"
+                                class="oe_stat_button" icon="fa-folder-open">
+                            <field name="analytic_account_ids" widget="statinfo" string="Analytic Accounts"/>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archived" bg_color="text-bg-danger" invisible="active"/>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="code" placeholder="Code" class="oe_inline" style="width: 20%"/>
+                            <field name="name" placeholder="Cost Center Name" class="oe_inline"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="parent_id"/>
+                            <field name="manager_id" widget="many2one_avatar_user"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="active" invisible="1"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Financial Summary">
+                        <group>
+                            <field name="total_revenue" widget="monetary"/>
+                            <field name="total_cost" widget="monetary"/>
+                        </group>
+                        <group>
+                            <field name="balance" widget="monetary"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Analytic Accounts">
+                            <field name="analytic_account_ids">
+                                <tree>
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="partner_id"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Cost Center Search View -->
+    <record id="view_account_cost_center_search" model="ir.ui.view">
+        <field name="name">account.cost.center.search</field>
+        <field name="model">account.cost.center</field>
+        <field name="arch" type="xml">
+            <search string="Cost Centers">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="manager_id"/>
+                <filter string="Archived" name="inactive" domain="[('active','=',False)]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Parent Cost Center" name="group_parent" context="{'group_by':'parent_id'}"/>
+                    <filter string="Manager" name="group_manager" context="{'group_by':'manager_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Cost Center Action -->
+    <record id="action_account_cost_center" model="ir.actions.act_window">
+        <field name="name">Cost Centers</field>
+        <field name="res_model">account.cost.center</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new cost center
+            </p>
+            <p>
+                Cost centers are used to track and manage costs within different departments or divisions.
+            </p>
+        </field>
+    </record>
+
+    <!-- Analytic Accounts by Cost Center Action -->
+    <record id="action_account_analytic_account_by_cost_center" model="ir.actions.act_window">
+        <field name="name">Analytic Accounts</field>
+        <field name="res_model">account.analytic.account</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('cost_center_id', '=', active_id)]</field>
+        <field name="context">{'default_cost_center_id': active_id}</field>
+    </record>
+
+</odoo>

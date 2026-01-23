@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Asset Tree View -->
+    <record id="view_account_asset_tree" model="ir.ui.view">
+        <field name="name">account.asset.tree</field>
+        <field name="model">account.asset</field>
+        <field name="arch" type="xml">
+            <tree string="Assets" decoration-info="state=='draft'" decoration-success="state=='open'">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="date"/>
+                <field name="asset_type"/>
+                <field name="original_value" widget="monetary"/>
+                <field name="book_value" widget="monetary"/>
+                <field name="value_residual" widget="monetary"/>
+                <field name="state" widget="badge" decoration-info="state=='draft'" decoration-success="state=='open'" decoration-muted="state=='close'"/>
+                <field name="currency_id" column_invisible="1"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Asset Form View -->
+    <record id="view_account_asset_form" model="ir.ui.view">
+        <field name="name">account.asset.form</field>
+        <field name="model">account.asset</field>
+        <field name="arch" type="xml">
+            <form string="Asset">
+                <header>
+                    <button name="action_validate" string="Validate" type="object" 
+                            invisible="state != 'draft'" class="btn-primary"/>
+                    <button name="action_close" string="Close Asset" type="object" 
+                            invisible="state != 'open'" groups="advanced_accounting.group_account_asset_manager"/>
+                    <button name="action_draft" string="Set to Draft" type="object" 
+                            invisible="state == 'draft'"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,open"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="%(action_account_asset_depreciation_lines)d" type="action"
+                                class="oe_stat_button" icon="fa-bars">
+                            <field name="depreciation_line_ids" widget="statinfo" string="Depreciation Lines"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" placeholder="Asset Name"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="code"/>
+                            <field name="asset_type"/>
+                            <field name="date"/>
+                            <field name="first_depreciation_date"/>
+                        </group>
+                        <group>
+                            <field name="partner_id"/>
+                            <field name="invoice_id"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Asset Values">
+                        <group>
+                            <field name="original_value" widget="monetary"/>
+                            <field name="salvage_value" widget="monetary"/>
+                        </group>
+                        <group>
+                            <field name="book_value" widget="monetary"/>
+                            <field name="value_residual" widget="monetary"/>
+                        </group>
+                    </group>
+                    <group string="Depreciation Method">
+                        <group>
+                            <field name="method"/>
+                            <field name="method_number"/>
+                            <field name="method_period"/>
+                        </group>
+                        <group>
+                            <field name="method_progress_factor" invisible="method != 'degressive'"/>
+                            <field name="prorata"/>
+                        </group>
+                    </group>
+                    <group string="Accounting Information">
+                        <group>
+                            <field name="account_asset_id"/>
+                            <field name="account_depreciation_id"/>
+                        </group>
+                        <group>
+                            <field name="account_depreciation_expense_id"/>
+                            <field name="journal_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Depreciation Board">
+                            <field name="depreciation_line_ids">
+                                <tree decoration-info="not move_check" decoration-success="move_check">
+                                    <field name="sequence"/>
+                                    <field name="name"/>
+                                    <field name="depreciation_date"/>
+                                    <field name="amount" widget="monetary"/>
+                                    <field name="remaining_value" widget="monetary"/>
+                                    <field name="move_id"/>
+                                    <field name="move_check" string="Posted" widget="boolean_toggle"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                    <button name="create_move" string="Post Entry" type="object" 
+                                            icon="fa-check" invisible="move_check"/>
+                                </tree>
+                            </field>
+                        </page>
+                        <page string="Notes">
+                            <field name="note"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Asset Search View -->
+    <record id="view_account_asset_search" model="ir.ui.view">
+        <field name="name">account.asset.search</field>
+        <field name="model">account.asset</field>
+        <field name="arch" type="xml">
+            <search string="Assets">
+                <field name="name"/>
+                <field name="code"/>
+                <field name="partner_id"/>
+                <filter string="Draft" name="draft" domain="[('state','=','draft')]"/>
+                <filter string="Running" name="open" domain="[('state','=','open')]"/>
+                <filter string="Closed" name="close" domain="[('state','=','close')]"/>
+                <separator/>
+                <filter string="Purchase" name="purchase" domain="[('asset_type','=','purchase')]"/>
+                <filter string="Sale" name="sale" domain="[('asset_type','=','sale')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Status" name="group_state" context="{'group_by':'state'}"/>
+                    <filter string="Asset Type" name="group_type" context="{'group_by':'asset_type'}"/>
+                    <filter string="Date" name="group_date" context="{'group_by':'date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Asset Action -->
+    <record id="action_account_asset" model="ir.actions.act_window">
+        <field name="name">Assets</field>
+        <field name="res_model">account.asset</field>
+        <field name="view_mode">tree,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create a new asset
+            </p>
+            <p>
+                An asset is a resource owned by a company that is expected to provide future economic benefits.
+            </p>
+        </field>
+    </record>
+
+    <!-- Depreciation Lines Action -->
+    <record id="action_account_asset_depreciation_lines" model="ir.actions.act_window">
+        <field name="name">Depreciation Lines</field>
+        <field name="res_model">account.asset.depreciation.line</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('asset_id', '=', active_id)]</field>
+        <field name="context">{'default_asset_id': active_id}</field>
+    </record>
+
+</odoo>

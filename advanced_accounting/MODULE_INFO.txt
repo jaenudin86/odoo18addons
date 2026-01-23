@@ -1,0 +1,221 @@
+================================================================================
+ADVANCED ACCOUNTING MODULE FOR ODOO 18
+================================================================================
+
+Version: 18.0.1.0.0
+License: LGPL-3
+Author: Your Company
+Category: Accounting/Accounting
+
+================================================================================
+DESCRIPTION
+================================================================================
+
+Advanced Accounting module brings enterprise-level accounting features to 
+Odoo 18. This comprehensive module provides powerful tools for budget 
+management, asset tracking, cost center analysis, and payment follow-up.
+
+================================================================================
+KEY FEATURES
+================================================================================
+
+✓ Budget Management
+  - Multi-level budget creation and approval
+  - Budget vs Actual tracking in real-time
+  - Budget alerts and warnings
+  - Comprehensive budget reports
+
+✓ Asset Management
+  - Fixed asset tracking and lifecycle management
+  - Automated depreciation (Linear & Degressive methods)
+  - Depreciation board with automatic journal entries
+  - Prorata temporis calculation
+  - Asset disposal functionality
+
+✓ Cost Center Management
+  - Hierarchical cost center structure
+  - Department-wise cost tracking
+  - Budget allocation per cost center
+  - Performance analysis and reporting
+
+✓ Payment Follow-up
+  - Automated payment reminder system
+  - Multi-level follow-up configuration
+  - Customizable email templates
+  - Follow-up history tracking
+
+✓ Enhanced Analytic Accounting
+  - Extended analytic account features
+  - Budget integration with analytics
+  - Cost center linkage
+  - Advanced reporting capabilities
+
+================================================================================
+TECHNICAL SPECIFICATIONS
+================================================================================
+
+Compatibility:
+- Odoo Version: 18.0 (Community & Enterprise)
+- Python: 3.10+
+- Database: PostgreSQL 12+
+
+Dependencies:
+- base (core)
+- account (core)
+- account_accountant
+- analytic (core)
+
+Database Models:
+- account.budget
+- account.budget.line
+- account.asset
+- account.asset.depreciation.line
+- account.cost.center
+- account.payment.followup
+- account.payment.followup.line
+- account.financial.report
+
+Security Groups:
+- Budget User
+- Budget Manager
+- Asset User
+- Asset Manager
+- Accounting Approver
+
+================================================================================
+FILE STRUCTURE
+================================================================================
+
+advanced_accounting/
+├── __init__.py
+├── __manifest__.py
+├── README.md
+├── INSTALL.md
+├── USER_GUIDE.md
+├── QUICKSTART.md
+├── CHANGELOG.md
+├── MODULE_INFO.txt
+├── models/
+│   ├── __init__.py
+│   ├── account_budget.py
+│   ├── account_asset.py
+│   ├── account_cost_center.py
+│   ├── account_payment_followup.py
+│   ├── account_analytic_enhanced.py
+│   ├── account_financial_report.py
+│   └── account_move_extended.py
+├── views/
+│   ├── account_budget_views.xml
+│   ├── account_asset_views.xml
+│   ├── account_cost_center_views.xml
+│   ├── account_payment_followup_views.xml
+│   ├── account_analytic_views.xml
+│   ├── account_report_views.xml
+│   ├── account_dashboard_views.xml
+│   └── menu_views.xml
+├── wizard/
+│   ├── __init__.py
+│   ├── account_budget_wizard.py
+│   ├── account_budget_wizard_views.xml
+│   ├── account_report_wizard.py
+│   └── account_report_wizard_views.xml
+├── security/
+│   ├── accounting_security.xml
+│   └── ir.model.access.csv
+├── data/
+│   └── account_data.xml
+├── reports/
+│   └── account_report_templates.xml
+└── static/
+    └── description/
+        └── index.html
+
+================================================================================
+INSTALLATION STEPS
+================================================================================
+
+1. Download and extract module to Odoo addons directory
+2. Update Apps List in Odoo
+3. Search for "Advanced Accounting"
+4. Click Install button
+5. Configure settings and permissions
+
+For detailed installation instructions, see INSTALL.md
+
+================================================================================
+QUICK START
+================================================================================
+
+After installation:
+
+1. Create Your First Budget:
+   Advanced Accounting > Budgets > Create
+
+2. Add Your First Asset:
+   Advanced Accounting > Assets > Create
+
+3. Setup Cost Centers:
+   Advanced Accounting > Cost Centers > Create
+
+4. Configure Follow-up:
+   Advanced Accounting > Payment Follow-up > Follow-up Levels
+
+For detailed usage instructions, see USER_GUIDE.md and QUICKSTART.md
+
+================================================================================
+DOCUMENTATION FILES
+================================================================================
+
+- README.md        : Overview and feature list
+- INSTALL.md       : Detailed installation guide
+- USER_GUIDE.md    : Complete user manual with examples
+- QUICKSTART.md    : 5-minute setup guide
+- CHANGELOG.md     : Version history and changes
+- MODULE_INFO.txt  : This file
+
+================================================================================
+SUPPORT & CONTACT
+================================================================================
+
+For support, bug reports, or feature requests:
+- Email: support@yourcompany.com
+- Website: https://www.yourcompany.com
+- Documentation: See included documentation files
+
+================================================================================
+LICENSE
+================================================================================
+
+This module is licensed under LGPL-3.0
+
+You are free to:
+- Use commercially
+- Modify
+- Distribute
+- Use privately
+
+Under the following terms:
+- License and copyright notice
+- State changes
+- Disclose source
+- Same license
+
+See LICENSE file for full text.
+
+================================================================================
+CHANGELOG
+================================================================================
+
+Version 18.0.1.0.0 (2026-01-22)
+- Initial release
+- Budget Management feature
+- Asset Management feature
+- Cost Center Management feature
+- Payment Follow-up feature
+- Enhanced Analytic Accounting
+
+For complete changelog, see CHANGELOG.md
+
+================================================================================
+END OF MODULE INFO
+================================================================================

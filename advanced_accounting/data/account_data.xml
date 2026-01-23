@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+
+        <!-- Default Payment Follow-up Levels -->
+        <record id="followup_level_1" model="account.payment.followup">
+            <field name="name">Level 1: First Reminder</field>
+            <field name="sequence">1</field>
+            <field name="delay">15</field>
+            <field name="send_email" eval="True"/>
+            <field name="description">
+                <![CDATA[
+                <p>Dear Customer,</p>
+                <p>This is a friendly reminder that your payment is now overdue.</p>
+                <p>Please arrange payment at your earliest convenience.</p>
+                <p>Thank you for your cooperation.</p>
+                ]]>
+            </field>
+        </record>
+
+        <record id="followup_level_2" model="account.payment.followup">
+            <field name="name">Level 2: Second Reminder</field>
+            <field name="sequence">2</field>
+            <field name="delay">30</field>
+            <field name="send_email" eval="True"/>
+            <field name="description">
+                <![CDATA[
+                <p>Dear Customer,</p>
+                <p>This is a second reminder regarding your overdue payment.</p>
+                <p>Please settle this matter urgently to avoid any service interruption.</p>
+                <p>Thank you.</p>
+                ]]>
+            </field>
+        </record>
+
+        <record id="followup_level_3" model="account.payment.followup">
+            <field name="name">Level 3: Final Notice</field>
+            <field name="sequence">3</field>
+            <field name="delay">45</field>
+            <field name="send_email" eval="True"/>
+            <field name="send_letter" eval="True"/>
+            <field name="manual_action" eval="True"/>
+            <field name="description">
+                <![CDATA[
+                <p>Dear Customer,</p>
+                <p>This is a final notice regarding your significantly overdue payment.</p>
+                <p>If payment is not received within 5 business days, we will be forced to take further action.</p>
+                <p>Please contact us immediately.</p>
+                ]]>
+            </field>
+            <field name="manual_action_note">Consider legal action or debt collection agency.</field>
+        </record>
+
+    </data>
+</odoo>
