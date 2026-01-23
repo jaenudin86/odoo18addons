@@ -99,9 +99,10 @@
 
     <!-- Menu Item - Using purchase.menu_purchase_root as parent -->
     <menuitem id="menu_purchase_so_report"
-              name="Purchase by SO"
-              parent="purchase.menu_purchase_root"
-              action="action_purchase_so_report"
-              sequence="100"/>
+          name="Purchase by SO"
+          parent="purchase.menu_purchase_reports"
+          action="action_purchase_so_report"
+          sequence="4"/>
+
 
 </odoo>
