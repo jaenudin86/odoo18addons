@@ -44,9 +44,10 @@
         'reports/product_qrcode_label_template.xml',
         # 'wizard/stock_picking_sn_wizard_views.xml',  # NEW
         'wizard/brodher_stock_picking_sn_wizard_views.xml',  # NEW
-         'reports/serial_number_qrcode_report.xml',  # ← TAMBAHKAN INI
+         'reports/serial_number_qrcode_report.xml', 
+         'wizard/sn_status_report_wizard_views.xml', # ← TAMBAHKAN INI
          'reports/sn_status_report.xml',
-         'wizard/sn_status_report_wizard_views.xml',
+         
          'views/sn_status_report_menu.xml',
 
          
