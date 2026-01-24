@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Report Action -->
+    <record id="action_report_sn_status" model="ir.actions.report">
+        <field name="name">Serial Number Status Report</field>
+        <field name="model">stock.lot</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.sn_status_report_template</field>
+        <field name="report_file">brodher_product_serial.sn_status_report_template</field>
+        <field name="binding_model_id" ref="stock.model_stock_lot"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+    
+    <!-- Report Template -->
+    <template id="sn_status_report_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    
+                    <!-- Header -->
+                    <div class="text-center mb-4">
+                        <h2>Serial Number Status Report</h2>
+                        <p>
+                            Report Date: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                        </p>
+                    </div>
+                    
+                    <!-- Summary Statistics -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h4>Summary</h4>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Status</th>
+                                        <th class="text-right">Count</th>
+                                        <th class="text-right">Percentage</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-set="total_sns" t-value="len(docs)"/>
+                                    <t t-set="available_count" t-value="len(docs.filtered(lambda s: s.sn_status == 'available'))"/>
+                                    <t t-set="used_count" t-value="len(docs.filtered(lambda s: s.sn_status == 'used'))"/>
+                                    <t t-set="reserved_count" t-value="len(docs.filtered(lambda s: s.sn_status == 'reserved'))"/>
+                                    <t t-set="sold_count" t-value="len(docs.filtered(lambda s: s.sn_status == 'sold'))"/>
+                                    
+                                    <tr>
+                                        <td><span class="badge badge-secondary">Available (Generated)</span></td>
+                                        <td class="text-right"><strong t-esc="available_count"/></td>
+                                        <td class="text-right"><t t-esc="'%.1f' % ((available_count / total_sns * 100) if total_sns else 0)"/>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-success">Used (In Stock)</span></td>
+                                        <td class="text-right"><strong t-esc="used_count"/></td>
+                                        <td class="text-right"><t t-esc="'%.1f' % ((used_count / total_sns * 100) if total_sns else 0)"/>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-warning">Reserved (Shipped)</span></td>
+                                        <td class="text-right"><strong t-esc="reserved_count"/></td>
+                                        <td class="text-right"><t t-esc="'%.1f' % ((reserved_count / total_sns * 100) if total_sns else 0)"/>%</td>
+                                    </tr>
+                                    <tr>
+                                        <td><span class="badge badge-danger">Sold (Completed)</span></td>
+                                        <td class="text-right"><strong t-esc="sold_count"/></td>
+                                        <td class="text-right"><t t-esc="'%.1f' % ((sold_count / total_sns * 100) if total_sns else 0)"/>%</td>
+                                    </tr>
+                                    <tr class="table-active">
+                                        <td><strong>Total</strong></td>
+                                        <td class="text-right"><strong t-esc="total_sns"/></td>
+                                        <td class="text-right"><strong>100%</strong></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Detailed List -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h4>Serial Number Details</h4>
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Serial Number</th>
+                                        <th>Product</th>
+                                        <th>Type</th>
+                                        <th>Status</th>
+                                        <th>Generated Date</th>
+                                        <th>Last Move</th>
+                                        <th>Current Location</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="docs" t-as="sn">
+                                        <tr>
+                                            <td><strong t-esc="sn.name"/></td>
+                                            <td t-esc="sn.product_id.display_name"/>
+                                            <td>
+                                                <t t-if="sn.sn_type == 'M'">
+                                                    <span class="badge badge-info">Man</span>
+                                                </t>
+                                                <t t-if="sn.sn_type == 'W'">
+                                                    <span class="badge badge-danger">Woman</span>
+                                                </t>
+                                            </td>
+                                            <td>
+                                                <t t-if="sn.sn_status == 'available'">
+                                                    <span class="badge badge-secondary">Available</span>
+                                                </t>
+                                                <t t-if="sn.sn_status == 'used'">
+                                                    <span class="badge badge-success">In Stock</span>
+                                                </t>
+                                                <t t-if="sn.sn_status == 'reserved'">
+                                                    <span class="badge badge-warning">Reserved</span>
+                                                </t>
+                                                <t t-if="sn.sn_status == 'sold'">
+                                                    <span class="badge badge-danger">Sold</span>
+                                                </t>
+                                            </td>
+                                            <td>
+                                                <t t-if="sn.sn_generated_date">
+                                                    <span t-esc="sn.sn_generated_date.strftime('%Y-%m-%d')"/>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
+                                            <td>
+                                                <t t-if="sn.last_sn_move_date">
+                                                    <span t-esc="sn.last_sn_move_date.strftime('%Y-%m-%d')"/>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
+                                            <td>
+                                                <t t-set="quant" t-value="sn.env['stock.quant'].search([('lot_id', '=', sn.id), ('quantity', '>', 0)], limit=1)"/>
+                                                <t t-if="quant">
+                                                    <span t-esc="quant.location_id.complete_name"/>
+                                                </t>
+                                                <t t-else="">
+                                                    <span class="text-muted">No stock</span>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <!-- Movement History (if single SN) -->
+                    <t t-if="len(docs) == 1">
+                        <t t-set="sn" t-value="docs[0]"/>
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <h4>Movement History - <t t-esc="sn.name"/></h4>
+                                <t t-set="moves" t-value="sn.env['brodher.sn.move'].search([('serial_number_id', '=', sn.id)], order='move_date desc')"/>
+                                <t t-if="moves">
+                                    <table class="table table-sm table-bordered">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Type</th>
+                                                <th>Transfer</th>
+                                                <th>From</th>
+                                                <th>To</th>
+                                                <th>User</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <t t-foreach="moves" t-as="move">
+                                                <tr>
+                                                    <td><span t-esc="move.move_date.strftime('%Y-%m-%d %H:%M')"/></td>
+                                                    <td>
+                                                        <t t-if="move.move_type == 'in'">
+                                                            <span class="badge badge-success">IN</span>
+                                                        </t>
+                                                        <t t-if="move.move_type == 'out'">
+                                                            <span class="badge badge-warning">OUT</span>
+                                                        </t>
+                                                    </td>
+                                                    <td><span t-esc="move.picking_id.name"/></td>
+                                                    <td>
+                                                        <t t-if="move.location_src_id">
+                                                            <span t-esc="move.location_src_id.complete_name"/>
+                                                        </t>
+                                                        <t t-else="">-</t>
+                                                    </td>
+                                                    <td>
+                                                        <t t-if="move.location_dest_id">
+                                                            <span t-esc="move.location_dest_id.complete_name"/>
+                                                        </t>
+                                                        <t t-else="">-</t>
+                                                    </td>
+                                                    <td><span t-esc="move.user_id.name"/></td>
+                                                </tr>
+                                            </t>
+                                        </tbody>
+                                    </table>
+                                </t>
+                                <t t-else="">
+                                    <p class="text-muted">No movement history</p>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+                    
+                    <!-- Footer -->
+                    <div class="row mt-4">
+                        <div class="col-12 text-muted">
+                            <small>
+                                Generated by: <span t-esc="user.name"/> | 
+                                Company: <span t-esc="user.company_id.name"/>
+                            </small>
+                        </div>
+                    </div>
+                    
+                </div>
+            </t>
+        </t>
+    </template>
+    
+</odoo>

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Report Menu -->
+    <menuitem
+        id="menu_sn_status_report"
+        name="SN Status Report"
+        parent="stock.menu_warehouse_report"
+        action="action_sn_status_report_wizard"
+        sequence="50"/>
+    
+    <!-- Wizard for Report Parameters -->
+    <record id="action_sn_status_report_wizard" model="ir.actions.act_window">
+        <field name="name">Serial Number Status Report</field>
+        <field name="res_model">brodher.sn.status.report.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+    
+</odoo>

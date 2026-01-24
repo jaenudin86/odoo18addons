@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sn_status_report_wizard_form" model="ir.ui.view">
+        <field name="name">brodher.sn.status.report.wizard.form</field>
+        <field name="model">brodher.sn.status.report.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Serial Number Status Report">
+                <group>
+                    <group string="Date Range">
+                        <field name="date_from"/>
+                        <field name="date_to"/>
+                    </group>
+                    <group string="Filters">
+                        <field name="product_ids" widget="many2many_tags"/>
+                        <field name="sn_status"/>
+                        <field name="sn_type"/>
+                    </group>
+                </group>
+                
+                <footer>
+                    <button string="Print PDF" 
+                            name="action_print_report" 
+                            type="object" 
+                            class="btn-primary"/>
+                    <button string="View List" 
+                            name="action_view_list" 
+                            type="object" 
+                            class="btn-secondary"/>
+                    <button string="Cancel" 
+                            class="btn-secondary" 
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
