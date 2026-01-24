@@ -316,32 +316,14 @@ class ScanSNOutWizard(models.TransientModel):
         _logger.info(f'[SCAN OUT] ✓ Created move_line for {sn.name}')
         
         # ==========================================
-        # 3. Update SN status ONLY if external (not internal)
+        # 3. Update SN status to 'reserved' (shipped)
         # ==========================================
+        sn.write({
+            'sn_status': 'reserved',
+            'last_sn_move_date': fields.Datetime.now()
+        })
         
-        # Check if destination is external (customer)
-        if loc_dest.usage == 'customer':
-            # External delivery → change to 'reserved' (shipped out)
-            sn.write({
-                'sn_status': 'reserved',
-                'last_sn_move_date': fields.Datetime.now()
-            })
-            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} status → RESERVED (external delivery)')
-        
-        elif loc_dest.usage == 'internal':
-            # Internal transfer → status stays 'used' (still in warehouse)
-            sn.write({
-                'last_sn_move_date': fields.Datetime.now()
-            })
-            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} status → USED (internal transfer, no status change)')
-        
-        else:
-            # Other location types (e.g., supplier return)
-            sn.write({
-                'last_sn_move_date': fields.Datetime.now()
-            })
-            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} last_sn_move_date updated (location: {loc_dest.usage})')
-        
+        _logger.info(f'[SCAN OUT] ✓ SN {sn.name} status → RESERVED')
         
         # Clear input
         self.scanned_sn = ''
