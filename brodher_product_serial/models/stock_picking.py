@@ -115,6 +115,12 @@ class StockPicking(models.Model):
                 'This picking does not contain any products with Serial Number tracking!'
             ))
         
+        _logger.info(f'[SCAN DEBUG] Picking: {self.name}')
+        _logger.info(f'[SCAN DEBUG] Picking Type: {self.picking_type_id.name}')
+        _logger.info(f'[SCAN DEBUG] Picking Type Code: {self.picking_type_code}')
+        _logger.info(f'[SCAN DEBUG] Location From: {self.location_id.complete_name}')
+        _logger.info(f'[SCAN DEBUG] Location To: {self.location_dest_id.complete_name}')
+    
         # Determine wizard based on picking type
         if self.picking_type_code == 'incoming':
             # INCOMING - Receipt from PO
