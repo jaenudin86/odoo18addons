@@ -17,3 +17,4 @@ access_account_financial_report_user,account.financial.report.user,model_account
 access_account_financial_report_manager,account.financial.report.manager,model_account_financial_report,account.group_account_manager,1,1,1,1
 access_account_financial_report_line_user,account.financial.report.line.user,model_account_financial_report_line,account.group_account_user,1,0,0,0
 access_account_financial_report_line_manager,account.financial.report.line.manager,model_account_financial_report_line,account.group_account_manager,1,1,1,1
+access_brodher_sn_status_report_wizard,brodher.sn.status.report.wizard,model_brodher_sn_status_report_wizard,stock.group_stock_user,1,1,1,1
