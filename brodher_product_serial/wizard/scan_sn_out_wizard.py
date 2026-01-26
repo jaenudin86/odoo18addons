@@ -46,7 +46,6 @@ class ScanSNOutWizard(models.TransientModel):
             products = wizard.picking_id.move_ids_without_package.filtered(
                 lambda m: m.product_id.tracking == 'serial' and
                         m.product_id.product_tmpl_id.sn_product_type
-                        m.product_id.product_tmpl_id.sn_product_type
             ).mapped('product_id')
             
             if not products:
