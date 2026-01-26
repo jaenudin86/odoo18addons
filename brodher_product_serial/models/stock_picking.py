@@ -117,18 +117,33 @@ class StockPicking(models.Model):
         
         # Determine wizard based on picking type
         if self.picking_type_code == 'incoming':
-            # INCOMING - Barang Masuk
+            # INCOMING - Receipt from PO
+            # Use IN wizard (filter: status = 'available')
             wizard_model = 'brodher.scan.sn.in.wizard'
             wizard_name = 'Scan Serial Number - INCOMING'
+            _logger.info(f'[SCAN] Opening IN wizard for INCOMING')
+        
         elif self.picking_type_code == 'outgoing':
-            # OUTGOING - Barang Keluar
+            # OUTGOING - Delivery to customer
+            # Use OUT wizard (filter: status = 'used')
             wizard_model = 'brodher.scan.sn.out.wizard'
             wizard_name = 'Scan Serial Number - OUTGOING'
-        else:
-            # INTERNAL - use incoming wizard as default
-            wizard_model = 'brodher.scan.sn.in.wizard'
-            wizard_name = 'Scan Serial Number - INTERNAL'
+            _logger.info(f'[SCAN] Opening OUT wizard for OUTGOING')
         
+        elif self.picking_type_code == 'internal':
+            # INTERNAL - Transfer between warehouses
+            # Use OUT wizard (filter: status = 'used')
+            wizard_model = 'brodher.scan.sn.out.wizard'
+            wizard_name = 'Scan Serial Number - INTERNAL'
+            _logger.info(f'[SCAN] Opening OUT wizard for INTERNAL')
+        
+        else:
+            # Unknown type - default to IN wizard
+            wizard_model = 'brodher.scan.sn.in.wizard'
+            wizard_name = 'Scan Serial Number'
+            _logger.warning(f'[SCAN] Unknown picking type: {self.picking_type_code}, defaulting to IN wizard')
+        
+            
         return {
             'name': _(wizard_name),
             'type': 'ir.actions.act_window',
