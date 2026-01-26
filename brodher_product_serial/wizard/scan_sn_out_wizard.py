@@ -33,54 +33,45 @@ class ScanSNOutWizard(models.TransientModel):
     
     @api.depends('picking_id')
     def _compute_available_sn_ids(self):
-        """Get available SNs for OUTGOING - status 'used' (in stock)"""
+        """
+        Get available SNs for OUTGOING/INTERNAL
+        Show SNs with status 'used' (in stock)
+        """
         for wizard in self:
             if not wizard.picking_id:
                 wizard.available_sn_ids = [(5, 0, 0)]
                 continue
             
+            # Get products
             products = wizard.picking_id.move_ids_without_package.filtered(
-                lambda m: m.product_id.tracking == 'serial' and m.product_id.product_tmpl_id.sn_product_type
+                lambda m: m.product_id.tracking == 'serial' and
+                        m.product_id.product_tmpl_id.sn_product_type
+                        m.product_id.product_tmpl_id.sn_product_type
             ).mapped('product_id')
             
             if not products:
                 wizard.available_sn_ids = [(5, 0, 0)]
                 continue
             
-            # Get SNs that are in stock (received but not yet shipped)
-            received_sns = self.env['brodher.sn.move'].search([
-                ('move_type', '=', 'in'),
-                ('picking_id.state', '=', 'done')
-            ]).mapped('serial_number_id.id')
+            # Already scanned in this picking
+            already_scanned = wizard.picking_id.sn_move_ids.mapped('serial_number_id.id')
             
-            shipped_sns = self.env['brodher.sn.move'].search([
-                ('move_type', '=', 'out'),
-                ('picking_id.state', '=', 'done')
-            ]).mapped('serial_number_id.id')
-            
-            # Available = received but not shipped
-            available_in_stock = list(set(received_sns) - set(shipped_sns))
-            
-            already_scanned_this = wizard.picking_id.sn_move_ids.mapped('serial_number_id.id')
-            
-            # Domain: product match + status = used + in stock
+            # Domain: ONLY 'used' status (for OUTGOING/INTERNAL)
             domain = [
                 ('product_id', 'in', products.ids),
                 ('sn_type', '!=', False),
-                ('sn_status', '=', 'used'),
+                ('sn_status', '=', 'used'),  # ← For internal/delivery, use 'used'
             ]
             
-            if available_in_stock:
-                domain.append(('id', 'in', available_in_stock))
-            else:
-                domain.append(('id', '=', False))
-            
-            if already_scanned_this:
-                domain.append(('id', 'not in', already_scanned_this))
+            if already_scanned:
+                domain.append(('id', 'not in', already_scanned))
             
             available_sns = self.env['stock.lot'].search(domain, order='name')
+            
+            _logger.info(f'[SCAN OUT] Found {len(available_sns)} SNs with status=used')
+
             wizard.available_sn_ids = [(6, 0, available_sns.ids)]
-    
+
     @api.depends('picking_id')
     def _compute_total_scanned(self):
         for wizard in self:
