@@ -77,7 +77,7 @@ class SNStatusReportWizard(models.TransientModel):
             'name': _('Serial Numbers'),
             'type': 'ir.actions.act_window',
             'res_model': 'stock.lot',
-            'view_mode': 'tree,form',
+            'view_mode': 'list,form',
             'domain': domain,
             'context': {'group_by': 'sn_status'},
         }
