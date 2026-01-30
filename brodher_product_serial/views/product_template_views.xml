@@ -12,7 +12,8 @@
                 </button>
             </xpath>
             
-            <xpath expr="//group[@name='group_general']" position="inside">
+            <!-- <xpath expr="//group[@name='group_general']" position="inside"> -->
+            <xpath expr="//field[@name='type']" position="before">
                 <field name="sn_product_type"/>
             </xpath>
             
