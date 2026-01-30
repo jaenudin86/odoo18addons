@@ -21,7 +21,8 @@
                 <button name="%(brodher_product_serial.action_product_qrcode_label_wizard)d" 
                         string="Print QR Labels" 
                         type="action" 
-                        class="oe_highlight"/>
+                        class="oe_highlight"
+                        invisible="not is_article"/>
             </xpath>
         </field>
     </record>
@@ -37,7 +38,8 @@
                 <button name="%(brodher_product_serial.action_product_template_qrcode_label_wizard)d" 
                         string="Print QR Labels" 
                         type="action" 
-                        class="oe_highlight"/>
+                        class="oe_highlight"
+                        invisible="not is_article"/>
             </xpath>
         </field>
     </record>
