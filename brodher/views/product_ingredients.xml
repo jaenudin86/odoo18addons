@@ -45,7 +45,7 @@
             <xpath expr="//field[@name='name']" position="after">
                 <field name="is_article"/>
                 <field name="brand"/>
-                <field name="size"/>
+                <!-- <field name="size"/> -->
             </xpath>
         </field>
     </record>
