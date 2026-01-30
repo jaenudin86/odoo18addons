@@ -14,7 +14,7 @@ class StockLot(models.Model):
     
     sn_type = fields.Selection([
         ('M', 'Man'), ('W', 'Woman')
-    ], string='SN Type', index=True)
+    ], string='Product Type', index=True)
     
     year_code = fields.Char(string='Year Code', size=2, readonly=True, index=True)
     sequence_number = fields.Integer(string='Sequence Number', readonly=True, index=True)
