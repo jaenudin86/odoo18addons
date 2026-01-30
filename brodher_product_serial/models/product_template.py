@@ -8,7 +8,7 @@ class ProductTemplate(models.Model):
     sn_product_type = fields.Selection([
         ('M', 'Man'),
         ('W', 'Woman')
-    ], string='Serial Number Type', default='M')
+    ], string='Product Type', default='M')
     
     serial_number_ids = fields.One2many(
         'stock.lot', 'product_id', string='Serial Numbers',

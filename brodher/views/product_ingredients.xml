@@ -17,10 +17,7 @@
 
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="after">
-                <field name="is_article"
-                       widget="radio"
-                       options="{'terminology': 'yes_no'}"/>
-
+                <field name="is_article" widget="radio"/>
                 <field name="brand"/>
               
             </xpath>
@@ -59,12 +56,8 @@
             </xpath>
 
             <xpath expr="//field[@name='type']" position="after">
-                <field name="is_article"
-                       widget="radio"
-                       options="{'terminology': 'yes_no'}"/>
-
+                <field name="is_article" widget="radio"/>
                 <field name="brand"/>
-           
                 <field name="ingredients"/>
                 <field name="gross_weight"/>
                 <field name="net_weight"/>
