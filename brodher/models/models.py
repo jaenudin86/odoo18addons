@@ -13,7 +13,11 @@ class ProductTemplate(models.Model):
     ingredients = fields.Text(string="Ingredients")
     brand = fields.Char(string="Brand")
     size = fields.Char(string="Size")
-
+    gross_weight = fields.Float(string='Gross Weight')
+    net_weight = fields.Float(string='Net Weight')
+    net_net_weight = fields.Float(string='Net Net Weight')
+    base_colour = fields.Char(string='Base Colour')
+    text_colour = fields.Char(string='Text Colour')
     is_article = fields.Boolean(string='Is Article', default=False)
 
 
