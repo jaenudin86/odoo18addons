@@ -17,7 +17,8 @@
 
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="after">
-                <field name="is_article" widget="radio"/>
+                <!-- <field name="is_article" widget="radio"/> -->
+                <field name="is_article"/>
                 <field name="brand"/>
               
             </xpath>
@@ -34,6 +35,8 @@
         <field name="inherit_id" ref="product.product_template_tree_view"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='name']" position="after">
+                <!-- <field name="is_article"/>
+                <field name="is_article"/> -->
                 <field name="is_article"/>
                 <field name="brand"/>
               
