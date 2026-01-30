@@ -12,7 +12,7 @@ class ProductTemplate(models.Model):
     # =========================
     ingredients = fields.Text(string="Ingredients")
     brand = fields.Char(string="Brand")
-    size = fields.Char(string="Size")
+    # size = fields.Char(string="Size")
 
     is_article = fields.Boolean(string='Is Article', default=False)
 
@@ -74,7 +74,7 @@ class ProductProduct(models.Model):
     net_net_weight = fields.Float(string='Net Net Weight')
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
-    size = fields.Char(related='product_tmpl_id.size', store=True)
+    # size = fields.Char(related='product_tmpl_id.size', store=True)
     is_article = fields.Boolean(related='product_tmpl_id.is_article', store=True)
 
     @api.model
@@ -91,14 +91,14 @@ class ProductProduct(models.Model):
                     'barcode': code,
                 })
 
-            # KHUSUS ARTICLE → BARCODE STATIS
-            if tmpl.is_article:
-                size_val = tmpl.size or ""
-                xx = "".join(re.findall(r'\d+', size_val))
-                m_char = "M"
-                name_clean = (tmpl.name or "")[:3].title()
+            # # KHUSUS ARTICLE → BARCODE STATIS
+            # if tmpl.is_article:
+            #     size_val = tmpl.size or ""
+            #     xx = "".join(re.findall(r'\d+', size_val))
+            #     m_char = "M"
+            #     name_clean = (tmpl.name or "")[:3].title()
 
-                vals['static_barcode'] = f"{xx}{m_char}{name_clean}"
+            #     vals['static_barcode'] = f"{xx}{m_char}{name_clean}"
 
         return super().create(vals)
 
