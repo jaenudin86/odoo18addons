@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-  <data inherit_id="stock.report_deliveryslip_document">
+
+  <template inherit_id="stock.report_deliveryslip_document">
 
     <!-- RESET ISI PAGE -->
     <xpath expr="//div[@class='page']" position="replace">
@@ -25,18 +26,18 @@
         <table style="width:100%; margin-bottom:10px;">
           <tr>
             <td style="width:50%;">
-              NO DO : <span t-esc="o.name"/><br/>
-              DATE : <span t-esc="o.scheduled_date.strftime('%d-%m-%Y') if o.scheduled_date else ''"/><br/>
-              PO NO : <span t-esc="o.origin or ''"/>
+              NO DO : <t t-esc="o.name"/><br/>
+              DATE : <t t-esc="o.scheduled_date.strftime('%d-%m-%Y') if o.scheduled_date else ''"/><br/>
+              PO NO : <t t-esc="o.origin or ''"/>
             </td>
             <td style="width:50%;">
-              DELIVERY TO : <span t-esc="o.partner_id.name"/><br/>
-              ADDRESS : <span t-esc="o.partner_id.contact_address"/>
+              DELIVERY TO : <t t-esc="o.partner_id.name"/><br/>
+              ADDRESS : <t t-esc="o.partner_id.contact_address"/>
             </td>
           </tr>
         </table>
 
-        <!-- ================= TABLE BARANG ================= -->
+        <!-- ================= TABLE ================= -->
         <table style="width:100%; border-collapse:collapse;" border="1">
           <thead>
             <tr style="text-align:center; font-weight:bold;">
@@ -62,27 +63,17 @@
               <t t-set="netnet" t-value="qty * (line.product_id.net_net_weight or 0)"/>
 
               <tr>
-                <td style="text-align:center;">
-                  <t t-esc="no"/>
-                </td>
+                <td style="text-align:center;"><t t-esc="no"/></td>
                 <td>
                   <t t-esc="line.product_id.name"/>
                   <t t-if="line.product_id.size">
                     (<t t-esc="line.product_id.size"/>)
                   </t>
                 </td>
-                <td style="text-align:center;">
-                  <t t-esc="qty"/>
-                </td>
-                <td style="text-align:right;">
-                  <t t-esc="gross"/>
-                </td>
-                <td style="text-align:right;">
-                  <t t-esc="net"/>
-                </td>
-                <td style="text-align:right;">
-                  <t t-esc="netnet"/>
-                </td>
+                <td style="text-align:center;"><t t-esc="qty"/></td>
+                <td style="text-align:right;"><t t-esc="gross"/></td>
+                <td style="text-align:right;"><t t-esc="net"/></td>
+                <td style="text-align:right;"><t t-esc="netnet"/></td>
               </tr>
 
               <t t-set="no" t-value="no + 1"/>
@@ -92,21 +83,12 @@
               <t t-set="total_netnet" t-value="total_netnet + netnet"/>
             </t>
 
-            <!-- TOTAL -->
             <tr style="font-weight:bold;">
               <td colspan="2" style="text-align:center;">TOTAL</td>
-              <td style="text-align:center;">
-                <t t-esc="total_qty"/>
-              </td>
-              <td style="text-align:right;">
-                <t t-esc="total_gross"/>
-              </td>
-              <td style="text-align:right;">
-                <t t-esc="total_net"/>
-              </td>
-              <td style="text-align:right;">
-                <t t-esc="total_netnet"/>
-              </td>
+              <td style="text-align:center;"><t t-esc="total_qty"/></td>
+              <td style="text-align:right;"><t t-esc="total_gross"/></td>
+              <td style="text-align:right;"><t t-esc="total_net"/></td>
+              <td style="text-align:right;"><t t-esc="total_netnet"/></td>
             </tr>
           </tbody>
         </table>
@@ -134,10 +116,7 @@
             <td>RECEIVED BY,</td>
           </tr>
           <tr style="height:80px; text-align:center;">
-            <td></td>
-            <td></td>
-            <td></td>
-            <td style="color:#999;">STAMP</td>
+            <td></td><td></td><td></td><td style="color:#999;">STAMP</td>
           </tr>
           <tr style="text-align:center; font-size:10px;">
             <td>WAREHOUSE</td>
@@ -150,5 +129,6 @@
       </div>
     </xpath>
 
-  </data>
+  </template>
+
 </odoo>
