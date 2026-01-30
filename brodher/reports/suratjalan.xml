@@ -1,162 +1,137 @@
-<?xml version="1.0" encoding="UTF-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <odoo>
+  <data inherit_id="stock.report_deliveryslip_document">
 
-    <!-- INHERIT DELIVERY SLIP -->
-    <template id="report_deliveryslip_custom"
-              inherit_id="stock.report_deliveryslip_document">
+    <xpath expr="//div[@class='page']" position="replace">
+      <div class="page" style="font-size:11px;">
 
-        <!-- ===== RESET ISI REPORT ===== -->
-        <xpath expr="//div[@class='page']" position="replace">
-            <div class="page">
+        <!-- ================= HEADER ================= -->
+        <table style="width:100%; text-align:center;">
+          <tr>
+            <td>
+              <img t-if="o.company_id.logo"
+                   t-att-src="'data:image/png;base64,%s' % o.company_id.logo"
+                   style="max-height:70px;"/><br/>
+              <strong t-esc="o.company_id.name"/><br/>
+              <strong>DELIVERY ORDER</strong>
+            </td>
+          </tr>
+        </table>
 
-                <!-- ================= HEADER ================= -->
-            <!-- ================= HEADER ================= -->
-            <table style="width:100%; margin-bottom:10px;">
-                <tr>
-                    <!-- LOGO -->
-                    <td style="width:20%; text-align:left;">
-                        <img t-if="o.company_id.logo"
-                            t-att-src="'data:image/png;base64,%s' % o.company_id.logo"
-                            style="max-height:80px;"/>
-                    </td>
+        <hr style="border:1px solid black;"/>
 
-                    <!-- TITLE -->
-                    <td style="width:80%; text-align:center;">
-                        <strong style="font-size:16px;">
-                            <t t-esc="o.company_id.name"/>
-                        </strong><br/>
-                        <strong style="font-size:14px;">DELIVERY ORDER</strong>
-                    </td>
-                </tr>
-            </table>
+        <!-- ================= INFO ================= -->
+        <table style="width:100%; margin-bottom:10px;">
+          <tr>
+            <td style="width:50%;">
+              NO DO&nbsp;&nbsp;&nbsp;: <span t-esc="o.name"/><br/>
+              DATE&nbsp;&nbsp;&nbsp;: <span t-esc="o.scheduled_date.strftime('%d-%m-%Y') if o.scheduled_date else ''"/><br/>
+              PO NO&nbsp;: <span t-esc="o.origin or ''"/>
+            </td>
+            <td style="width:50%;">
+              DELIVERY TO : <span t-esc="o.partner_id.name"/><br/>
+              ADDRESS&nbsp;&nbsp;&nbsp;&nbsp;: <span t-esc="o.partner_id.contact_address"/>
+            </td>
+          </tr>
+        </table>
 
+        <!-- ================= TABLE ================= -->
+        <table style="width:100%; border-collapse:collapse;" border="1">
+          <thead>
+            <tr style="text-align:center; font-weight:bold;">
+              <th style="width:5%;">NO</th>
+              <th style="width:35%;">PRODUCT</th>
+              <th style="width:10%;">QTY</th>
+              <th style="width:15%;">GROSS WEIGHT</th>
+              <th style="width:15%;">NET WEIGHT</th>
+              <th style="width:20%;">NET NET WEIGHT</th>
+            </tr>
+          </thead>
+          <tbody>
+            <t t-set="no" t-value="1"/>
+            <t t-set="total_qty" t-value="0"/>
+            <t t-set="total_gross" t-value="0"/>
+            <t t-set="total_net" t-value="0"/>
+            <t t-set="total_netnet" t-value="0"/>
 
+            <t t-foreach="o.move_ids_without_package" t-as="line">
+              <t t-set="qty" t-value="line.quantity_done"/>
+              <t t-set="gross" t-value="qty * (line.product_id.gross_weight or 0)"/>
+              <t t-set="net" t-value="qty * (line.product_id.net_weight or 0)"/>
+              <t t-set="netnet" t-value="qty * (line.product_id.net_net_weight or 0)"/>
 
-                <hr style="border:1px solid black;"/>
+              <tr>
+                <td style="text-align:center;"><t t-esc="no"/></td>
+                <td>
+                  <t t-esc="line.product_id.name"/>
+                  <t t-if="line.product_id.size">
+                    &nbsp;(<t t-esc="line.product_id.size"/>)
+                  </t>
+                </td>
+                <td style="text-align:center;"><t t-esc="qty"/></td>
+                <td style="text-align:right;"><t t-esc="gross"/></td>
+                <td style="text-align:right;"><t t-esc="net"/></td>
+                <td style="text-align:right;"><t t-esc="netnet"/></td>
+              </tr>
 
-                <!-- ================= INFO ================= -->
-                <table style="width:100%; font-size:12px; margin-bottom:10px;">
-                    <tr>
-                        <td style="width:15%;">NO DO</td>
-                        <td style="width:35%;">: <span t-field="o.name"/></td>
-                        <td style="width:15%;">DELIVERY TO</td>
-                        <td style="width:35%;">: <span t-field="o.partner_id.name"/></td>
-                    </tr>
-                    <tr>
-                        <td>DATE</td>
-                        <td>: <span t-field="o.scheduled_date"/></td>
-                        <td>ADDRESS</td>
-                        <td>: <span t-field="o.partner_id.contact_address"/></td>
-                    </tr>
-                    <tr>
-                        <td>PO NO</td>
-                        <td>: <span t-field="o.origin"/></td>
-                        <td></td>
-                        <td></td>
-                    </tr>
-                </table>
+              <t t-set="no" t-value="no + 1"/>
+              <t t-set="total_qty" t-value="total_qty + qty"/>
+              <t t-set="total_gross" t-value="total_gross + gross"/>
+              <t t-set="total_net" t-value="total_net + net"/>
+              <t t-set="total_netnet" t-value="total_netnet + netnet"/>
+            </t>
 
-                <!-- ================= TABLE ================= -->
-                <table style="width:100%; border-collapse:collapse; font-size:12px;"
-                       border="1">
+            <!-- TOTAL -->
+            <tr style="font-weight:bold;">
+              <td colspan="2" style="text-align:center;">TOTAL</td>
+              <td style="text-align:center;"><t t-esc="total_qty"/></td>
+              <td style="text-align:right;"><t t-esc="total_gross"/></td>
+              <td style="text-align:right;"><t t-esc="total_net"/></td>
+              <td style="text-align:right;"><t t-esc="total_netnet"/></td>
+            </tr>
+          </tbody>
+        </table>
 
-                    <thead>
-                        <tr style="text-align:center;">
-                            <th style="width:5%;">NO</th>
-                            <th style="width:35%;">PRODUCT</th>
-                            <th style="width:10%;">QTY</th>
-                            <th style="width:15%;">GROSS WEIGHT</th>
-                            <th style="width:15%;">NET WEIGHT</th>
-                            <th style="width:20%;">NET NET WEIGHT</th>
-                        </tr>
-                    </thead>
+        <!-- ================= NOTES ================= -->
+        <table style="width:100%; border-collapse:collapse; margin-top:10px;" border="1">
+          <tr>
+            <td style="padding:6px;">
+              <span style="color:red; font-weight:bold;">NOTES :</span>
+              <span style="color:red;">
+                FRAGILE - HANDLE WITH EXTREME CARE<br/>
+                (BARANG MUDAH PECAH – HARAP TANGANI DENGAN SANGAT HATI-HATI)<br/><br/>
+                PLEASE CHECK ALL GOODS CAREFULLY BEFORE SHIPMENT AND UPON RECEIPT<br/>
+                (HARAP PERIKSA SEMUA BARANG DENGAN TELITI SEBELUM PENGIRIMAN DAN SAAT PENERIMAAN)<br/><br/>
+                KINDLY ENSURE ALL FIELDS ARE COMPLETED WITH SIGNATURE, DATE, AND FULL NAME
+              </span>
+            </td>
+          </tr>
+        </table>
 
-                    <tbody>
-                        <t t-set="no" t-value="1"/>
-                        <t t-foreach="o.move_ids_without_package" t-as="line">
-                            <tr>
-                                <td style="text-align:center;">
-                                    <t t-esc="no"/>
-                                    <t t-set="no" t-value="no + 1"/>
-                                </td>
+        <!-- ================= FOOTER ================= -->
+        <table style="width:100%; border-collapse:collapse; margin-top:20px;" border="1">
+          <tr style="text-align:center; font-weight:bold;">
+            <td>CREATED BY,</td>
+            <td>APPROVED BY,</td>
+            <td>CHECKED BY,</td>
+            <td>RECEIVED BY,</td>
+          </tr>
+          <tr style="height:80px; text-align:center;">
+            <td></td>
+            <td></td>
+            <td></td>
+            <td style="color:#999;">STAMP</td>
+          </tr>
+          <tr style="text-align:center; font-size:10px;">
+            <td>WAREHOUSE</td>
+            <td>WAREHOUSE HEAD</td>
+            <td>SECURITY</td>
+            <td>VENDOR / LOGISTIC PROVIDER</td>
+          </tr>
+        </table>
 
-                                <!-- PRODUCT + VARIANT -->
-                                <td>
-                                    <t t-esc="line.product_id.display_name"/>
-                                </td>
+      </div>
+    </xpath>
 
-                                <td style="text-align:center;">
-                                    <t t-esc="line.quantity_done"/>
-                                </td>
-
-                                <td></td>
-                                <td></td>
-                                <td></td>
-                            </tr>
-                        </t>
-
-                        <!-- ROW KOSONG (BIAR TINGGI TABEL SAMA) -->
-                        <tr style="height:200px;">
-                            <td colspan="6"></td>
-                        </tr>
-
-                        <!-- TOTAL -->
-                        <tr>
-                            <td colspan="2" style="text-align:center;"><strong>TOTAL</strong></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                            <td></td>
-                        </tr>
-
-                    </tbody>
-                </table>
-
-                <!-- ================= NOTES ================= -->
-                <div style="margin-top:10px; font-size:11px;">
-                    <strong style="color:red;">NOTES :</strong>
-                    <span style="color:red;">
-                        FRAGILE - HANDLE WITH EXTREME CARE
-                    </span><br/>
-
-                    <i>(CATATAN)</i>
-                    <span style="color:red;">
-                        (BARANG MUDAH PECAH – HARAP TANGANI DENGAN SANGAT HATI-HATI)
-                    </span><br/><br/>
-
-                    PLEASE CHECK ALL GOODS CAREFULLY BEFORE SHIPMENT AND UPON RECEIPT<br/>
-                    <i>(HARAP PERIKSA SEMUA BARANG DENGAN TELITI SEBELUM PENGIRIMAN DAN SAAT PENERIMAAN)</i><br/><br/>
-
-                    KINDLY ENSURE ALL FIELDS ARE COMPLETED WITH SIGNATURE, DATE, AND FULL NAME IN EACH COLUMN PROVIDED<br/>
-                    <i>(Mohon pastikan seluruh kolom diisi lengkap dengan tanda tangan, tanggal, dan nama lengkap)</i>
-                </div>
-
-                <!-- ================= SIGN ================= -->
-                <table style="width:100%; margin-top:20px; font-size:11px;"
-                       border="1" cellspacing="0" cellpadding="5">
-                    <tr style="text-align:center;">
-                        <td>CREATED BY,</td>
-                        <td>APPROVED BY,</td>
-                        <td>CHECKED BY,</td>
-                        <td>RECEIVED BY,</td>
-                    </tr>
-                    <tr style="height:80px;">
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td style="text-align:center;">STAMP</td>
-                    </tr>
-                    <tr style="text-align:center;">
-                        <td>WAREHOUSE</td>
-                        <td>WAREHOUSE HEAD</td>
-                        <td>SECURITY</td>
-                        <td>VENDOR / LOGISTIC PROVIDER</td>
-                    </tr>
-                </table>
-
-            </div>
-        </xpath>
-
-    </template>
-
+  </data>
 </odoo>
