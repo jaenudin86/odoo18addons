@@ -12,7 +12,7 @@ class ProductTemplate(models.Model):
     # =========================
     ingredients = fields.Text(string="Ingredients")
     brand = fields.Char(string="Brand")
-    # size = fields.Char(string="Size")
+    size = fields.Char(string="Size")
 
     is_article = fields.Boolean(string='Is Article', default=False)
 
@@ -74,7 +74,7 @@ class ProductProduct(models.Model):
     net_net_weight = fields.Float(string='Net Net Weight')
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
-    # size = fields.Char(related='product_tmpl_id.size', store=True)
+    size = fields.Char(related='product_tmpl_id.size', store=True)
     is_article = fields.Boolean(related='product_tmpl_id.is_article', store=True)
 
     @api.model
