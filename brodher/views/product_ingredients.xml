@@ -22,13 +22,7 @@
                        options="{'terminology': 'yes_no'}"/>
 
                 <field name="brand"/>
-                <!-- <field name="size"/>
-                <field name="ingredients"/>
-                <field name="gross_weight"/>
-                <field name="net_weight"/>
-                <field name="net_net_weight"/>
-                <field name="base_colour"/>
-                <field name="text_colour"/> -->
+              
             </xpath>
 
         </field>
@@ -45,7 +39,7 @@
             <xpath expr="//field[@name='name']" position="after">
                 <field name="is_article"/>
                 <field name="brand"/>
-                <!-- <field name="size"/> -->
+              
             </xpath>
         </field>
     </record>
@@ -70,7 +64,7 @@
                        options="{'terminology': 'yes_no'}"/>
 
                 <field name="brand"/>
-                <!-- <field name="size"/> -->
+           
                 <field name="ingredients"/>
                 <field name="gross_weight"/>
                 <field name="net_weight"/>
