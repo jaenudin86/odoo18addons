@@ -12,15 +12,11 @@ class ProductTemplate(models.Model):
     # =========================
     ingredients = fields.Text(string="Ingredients")
     brand = fields.Char(string="Brand")
-    size = fields.Char(string="Size")
+    # size = fields.Char(string="Size")
 
     is_article = fields.Boolean(string='Is Article', default=False)
 
-    gross_weight = fields.Float(string='Gross Weight')
-    net_weight = fields.Float(string='Net Weight')
-    net_net_weight = fields.Float(string='Net Net Weight')
-    base_colour = fields.Char(string='Base Colour')
-    text_colour = fields.Char(string='Text Colour')
+
 
     # =========================
     # DEFAULT PRODUCT TYPE = GOODS
@@ -73,9 +69,12 @@ class ProductProduct(models.Model):
     # =========================
     # RELATED FIELD
     # =========================
-    ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
-    brand = fields.Char(related='product_tmpl_id.brand', store=True)
-    size = fields.Char(related='product_tmpl_id.size', store=True)
+    gross_weight = fields.Float(string='Gross Weight')
+    net_weight = fields.Float(string='Net Weight')
+    net_net_weight = fields.Float(string='Net Net Weight')
+    base_colour = fields.Char(string='Base Colour')
+    text_colour = fields.Char(string='Text Colour')
+    # size = fields.Char(related='product_tmpl_id.size', store=True)
     is_article = fields.Boolean(related='product_tmpl_id.is_article', store=True)
 
     @api.model
