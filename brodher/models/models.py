@@ -3,12 +3,17 @@ from odoo import api, fields, models
 from datetime import datetime
 import re
 
+
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
+    # =========================
+    # FIELD TAMBAHAN
+    # =========================
     ingredients = fields.Text(string="Ingredients")
     brand = fields.Char(string="Brand")
     size = fields.Char(string="Size")
+
     is_article = fields.Boolean(string='Is Article', default=False)
 
     gross_weight = fields.Float(string='Gross Weight')
@@ -17,39 +22,57 @@ class ProductTemplate(models.Model):
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
 
+    # =========================
+    # DEFAULT PRODUCT TYPE = GOODS
+    # =========================
+    type = fields.Selection(
+        selection_add=[],
+        default='product'
+    )
+
+    # =========================
+    # GENERATE ARTICLE NUMBER
+    # =========================
     def _generate_article_number(self, is_article):
         """
-        - ATC: ATC + DD + MM + YY + XXX (12 Digit)
-        - PSIT: PSIT + YY + XXXX (10 Digit)
+        - ATC  : ATC + DDMMYY + XXX
+        - PSIT : PSIT + YY + XXXX
         """
         now = datetime.today()
         ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
-        
+
         if is_article:
             prefix = 'ATC'
             date_str = now.strftime('%d%m%y')
-            seq_code = 'article.number.sequence'
-            seq = self.env['ir.sequence'].with_context(ctx).next_by_code(seq_code) or '001'
+            seq = self.env['ir.sequence'].with_context(ctx)\
+                .next_by_code('article.number.sequence') or '001'
             return f"{prefix}{date_str}{seq}"
         else:
             prefix = 'PSIT'
             year_str = now.strftime('%y')
-            seq_code = 'pist.number.sequence'
-            seq = self.env['ir.sequence'].with_context(ctx).next_by_code(seq_code) or '0001'
+            seq = self.env['ir.sequence'].with_context(ctx)\
+                .next_by_code('pist.number.sequence') or '0001'
             return f"{prefix}{year_str}{seq}"
 
     @api.model
     def create(self, vals):
-        # Template tidak membuat barcode/default_code (hanya di variant)
-        return super(ProductTemplate, self).create(vals)
+        # Pastikan selalu Goods
+        vals.setdefault('type', 'product')
+        return super().create(vals)
 
 
 class ProductProduct(models.Model):
     _inherit = 'product.product'
 
-    static_barcode = fields.Char(string='Barcode Statis', store=True, readonly=True)
+    static_barcode = fields.Char(
+        string='Barcode Statis',
+        readonly=True,
+        store=True
+    )
 
-    # Sinkronisasi field dari template
+    # =========================
+    # RELATED FIELD
+    # =========================
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
@@ -60,8 +83,8 @@ class ProductProduct(models.Model):
         tmpl_id = vals.get('product_tmpl_id')
         if tmpl_id:
             tmpl = self.env['product.template'].browse(tmpl_id)
-            
-            # 1. Generate default_code & barcode Odoo
+
+            # Generate default_code & barcode
             if not vals.get('default_code'):
                 code = tmpl._generate_article_number(tmpl.is_article)
                 vals.update({
@@ -69,50 +92,21 @@ class ProductProduct(models.Model):
                     'barcode': code,
                 })
 
-            # 2. KHUSUS ATC: Generate Barcode Statis (xxMyyy)
+            # KHUSUS ARTICLE → BARCODE STATIS
             if tmpl.is_article:
-                # xx: Ambil angka saja dari field size
                 size_val = tmpl.size or ""
                 xx = "".join(re.findall(r'\d+', size_val))
-                
-                # M: Konstanta ManasLu
                 m_char = "M"
-                
-                # yyy: 1-3 huruf awal nama parfum
-                # Menggunakan title case agar rapi (Contoh: Elanor -> Ela)
                 name_clean = (tmpl.name or "")[:3].title()
-                
+
                 vals['static_barcode'] = f"{xx}{m_char}{name_clean}"
-        
-        return super(ProductProduct, self).create(vals)
+
+        return super().create(vals)
 
     def write(self, vals):
-        res = super(ProductProduct, self).write(vals)
+        res = super().write(vals)
         if 'default_code' in vals:
             for rec in self:
                 if rec.default_code and rec.barcode != rec.default_code:
                     rec.barcode = rec.default_code
         return res
-
-    # class ResPartner(models.Model):
-    #     _inherit = 'res.partner'
-
-    #     # Field Tambahan sesuai Database Customer di gambar
-    #     customer_ktp = fields.Char(string='Customer ID / KTP')
-    #     date_of_birth = fields.Date(string='Date of Birth')
-    #     # Field penampung code (Internal Reference Odoo biasanya menggunakan 'ref')
-        
-    #     @api.model
-    #     def create(self, vals):
-    #         """
-    #         Generate Customer Code AC0000001 saat create
-    #         """
-    #         if not vals.get('ref'):
-    #             # Memanggil sequence khusus customer
-    #             seq_code = 'customer.code.sequence'
-    #             # Kita gunakan prefix AC langsung di Python agar mudah dikontrol
-    #             seq = self.env['ir.sequence'].next_by_code(seq_code) or '0000001'
-    #             vals['ref'] = f"AC{seq}"
-                
-    #         return super(ResPartner, self).create(vals)
-
