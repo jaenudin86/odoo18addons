@@ -1,0 +1,270 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Enhanced BOM Structure & Cost Report -->
+        <template id="report_mrpbomstructure_enhanced" inherit_id="mrp.report_mrpbomstructure">
+            
+            <!-- Add custom styling -->
+            <xpath expr="//t[@t-call='web.html_container']" position="before">
+                <style>
+                    .bom-overview-report {
+                        font-family: 'Helvetica Neue', Arial, sans-serif;
+                    }
+                    .bom-header-section {
+                        border-bottom: 3px solid #0066cc;
+                        padding-bottom: 15px;
+                        margin-bottom: 25px;
+                    }
+                    .bom-title {
+                        color: #0066cc;
+                        font-weight: bold;
+                        font-size: 24px;
+                        margin: 0;
+                    }
+                    .bom-subtitle {
+                        color: #666;
+                        font-size: 14px;
+                        margin-top: 5px;
+                    }
+                    .company-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: flex-start;
+                        margin-bottom: 20px;
+                        padding: 15px;
+                        background: linear-gradient(to right, #f8f9fa 0%, #ffffff 100%);
+                        border: 1px solid #e0e0e0;
+                        border-radius: 5px;
+                    }
+                    .company-logo {
+                        max-height: 80px;
+                        max-width: 200px;
+                    }
+                    .company-info {
+                        text-align: right;
+                        font-size: 11px;
+                        color: #555;
+                        line-height: 1.6;
+                    }
+                    .company-name {
+                        font-weight: bold;
+                        font-size: 14px;
+                        color: #0066cc;
+                        margin-bottom: 5px;
+                    }
+                    .bom-info-box {
+                        background-color: #f8f9fa;
+                        border-left: 4px solid #0066cc;
+                        padding: 15px;
+                        margin-bottom: 20px;
+                        border-radius: 4px;
+                    }
+                    .bom-info-row {
+                        display: flex;
+                        margin-bottom: 8px;
+                    }
+                    .bom-info-label {
+                        font-weight: 600;
+                        color: #666;
+                        width: 150px;
+                    }
+                    .bom-info-value {
+                        color: #333;
+                    }
+                    .o_mrp_bom_cost {
+                        background: linear-gradient(to bottom, #0066cc 0%, #0052a3 100%) !important;
+                        color: white !important;
+                    }
+                    .o_mrp_bom_cost th {
+                        border: none !important;
+                        padding: 12px 8px !important;
+                        font-weight: 600 !important;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                        font-size: 11px;
+                    }
+                    .o_mrp_prod_cost tbody tr {
+                        border-bottom: 1px solid #e9ecef;
+                    }
+                    .o_mrp_prod_cost tbody tr:hover {
+                        background-color: #f8f9fa;
+                    }
+                    .o_mrp_prod_cost tbody td {
+                        padding: 10px 8px !important;
+                        font-size: 11px;
+                        vertical-align: middle;
+                    }
+                    .badge-custom {
+                        background-color: #0066cc;
+                        color: white;
+                        padding: 4px 10px;
+                        border-radius: 3px;
+                        font-size: 11px;
+                        font-weight: 600;
+                    }
+                    @media print {
+                        .company-header {
+                            page-break-inside: avoid;
+                        }
+                    }
+                </style>
+            </xpath>
+
+            <!-- Replace the page content with enhanced version -->
+            <xpath expr="//div[@class='page']" position="replace">
+                <div class="page bom-overview-report">
+                    
+                    <!-- Company Header with Logo and Address -->
+                    <div class="company-header">
+                        <div class="company-logo-section">
+                            <img t-if="data['company'].logo" 
+                                 t-att-src="image_data_uri(data['company'].logo)" 
+                                 class="company-logo" 
+                                 alt="Company Logo"/>
+                        </div>
+                        <div class="company-info">
+                            <div class="company-name">
+                                <span t-field="data['company'].name"/>
+                            </div>
+                            <div t-if="data['company'].street">
+                                <span t-field="data['company'].street"/>
+                            </div>
+                            <div t-if="data['company'].street2">
+                                <span t-field="data['company'].street2"/>
+                            </div>
+                            <div>
+                                <span t-if="data['company'].city" t-field="data['company'].city"/>
+                                <span t-if="data['company'].state_id">, <span t-field="data['company'].state_id.name"/></span>
+                                <span t-if="data['company'].zip" t-field="data['company'].zip"/>
+                            </div>
+                            <div t-if="data['company'].country_id">
+                                <span t-field="data['company'].country_id.name"/>
+                            </div>
+                            <div t-if="data['company'].phone">
+                                Phone: <span t-field="data['company'].phone"/>
+                            </div>
+                            <div t-if="data['company'].email">
+                                Email: <span t-field="data['company'].email"/>
+                            </div>
+                            <div t-if="data['company'].website">
+                                Website: <span t-field="data['company'].website"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Report Header -->
+                    <div class="bom-header-section text-center">
+                        <h2 class="bom-title">BILL OF MATERIALS</h2>
+                        <p class="bom-subtitle">Structure &amp; Cost Analysis</p>
+                    </div>
+
+                    <!-- BOM Information Box -->
+                    <div class="bom-info-box">
+                        <div class="bom-info-row">
+                            <div class="bom-info-label">Product:</div>
+                            <div class="bom-info-value">
+                                <strong><span t-field="data['bom'].product_tmpl_id.display_name"/></strong>
+                            </div>
+                        </div>
+                        <div class="bom-info-row" t-if="data['bom'].product_id">
+                            <div class="bom-info-label">Product Variant:</div>
+                            <div class="bom-info-value">
+                                <span t-field="data['bom'].product_id.display_name"/>
+                            </div>
+                        </div>
+                        <div class="bom-info-row">
+                            <div class="bom-info-label">Quantity to Produce:</div>
+                            <div class="bom-info-value">
+                                <span t-field="data['quantity']"/>
+                                <span t-field="data['bom'].product_uom_id.name"/>
+                            </div>
+                        </div>
+                        <div class="bom-info-row" t-if="data['bom'].code">
+                            <div class="bom-info-label">Reference:</div>
+                            <div class="bom-info-value">
+                                <span class="badge-custom" t-field="data['bom'].code"/>
+                            </div>
+                        </div>
+                        <div class="bom-info-row">
+                            <div class="bom-info-label">BOM Type:</div>
+                            <div class="bom-info-value">
+                                <span t-field="data['bom'].type"/>
+                            </div>
+                        </div>
+                        <div class="bom-info-row">
+                            <div class="bom-info-label">Report Date:</div>
+                            <div class="bom-info-value">
+                                <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BOM Structure Table -->
+                    <div class="mt-4">
+                        <h4 style="color: #0066cc; font-weight: bold; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; margin-bottom: 15px;">
+                            Components Structure &amp; Cost Breakdown
+                        </h4>
+                        
+                        <t t-call="mrp.report_mrpbomstructure_line"/>
+                        
+                        <!-- Total Cost Summary -->
+                        <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-left: 4px solid #28a745; border-radius: 4px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="font-size: 16px; font-weight: bold; color: #333;">
+                                    TOTAL COST:
+                                </div>
+                                <div style="font-size: 18px; font-weight: bold; color: #28a745;">
+                                    <span t-field="data['currency'].name"/>
+                                    <span t-esc="'{:,.2f}'.format(data['bom_cost'])"/>
+                                </div>
+                            </div>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                Cost per unit: <span t-field="data['currency'].name"/>
+                                <span t-esc="'{:,.2f}'.format(data['bom_cost'] / data['quantity'])"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Operations Section -->
+                    <t t-if="data['operations']">
+                        <div style="page-break-inside: avoid; margin-top: 30px;">
+                            <h4 style="color: #0066cc; font-weight: bold; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; margin-bottom: 15px;">
+                                Manufacturing Operations
+                            </h4>
+                            <table class="table table-sm o_mrp_prod_cost" style="margin-top: 10px;">
+                                <thead class="o_mrp_bom_cost">
+                                    <tr>
+                                        <th>Operation</th>
+                                        <th>Work Center</th>
+                                        <th class="text-end">Duration (min)</th>
+                                        <th class="text-end">Cost</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <t t-foreach="data['operations']" t-as="operation">
+                                        <tr>
+                                            <td><span t-field="operation.name"/></td>
+                                            <td><span t-field="operation.workcenter_id.name"/></td>
+                                            <td class="text-end"><span t-field="operation.time_cycle"/></td>
+                                            <td class="text-end">
+                                                <span t-field="data['currency'].name"/>
+                                                <span t-esc="'{:,.2f}'.format(operation.workcenter_id.costs_hour * operation.time_cycle / 60)"/>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </tbody>
+                            </table>
+                        </div>
+                    </t>
+
+                    <!-- Footer Note -->
+                    <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e0e0e0; text-align: center; color: #999; font-size: 10px;">
+                        <p>This document is computer generated and is valid without signature.</p>
+                        <p>Generated on <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d at %H:%M')"/></p>
+                    </div>
+                </div>
+            </xpath>
+        </template>
+
+    </data>
+</odoo>

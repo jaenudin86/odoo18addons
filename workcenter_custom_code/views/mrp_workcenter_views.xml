@@ -14,21 +14,22 @@
             </xpath>
             
             <!-- Add new group for division fields -->
-            <xpath expr="//group[@name='group_general']" position="after">
-                <group string="Division & Code Configuration" name="group_division">
+            <!-- <xpath expr="//group[@name='group_general']" position="after">
+                <group string="Division &amp; Code Configuration" name="group_division">
                     <group>
                         <field name="tujuan" readonly="1"/>
-                        <field name="division_id"/>
-                        <field name="divisi"/>
-                        <field name="devisi"/>
+                        <field name="division_master"/>
+                        <field name="division_id" readonly="1"/>
+                        <field name="divisi" readonly="1"/>
                     </group>
                     <group>
-                        <field name="department_type" widget="radio"/>
-                        <field name="short_code"/>
+                        <field name="devisi" readonly="1"/>
+                        <field name="department_type" readonly="1" widget="badge" decoration-info="department_type == 'office'" decoration-success="department_type == 'manufacturing'"/>
+                        <field name="short_code" readonly="1"/>
                         <field name="sequence_number"/>
                     </group>
                 </group>
-            </xpath>
+            </xpath> -->
             
         </field>
     </record>
@@ -46,7 +47,7 @@
                 <field name="division_id" optional="show"/>
                 <field name="divisi" optional="show"/>
                 <field name="devisi" optional="show"/>
-                <field name="department_type" optional="hide"/>
+                <field name="department_type" optional="hide" widget="badge" decoration-info="department_type == 'office'" decoration-success="department_type == 'manufacturing'"/>
             </xpath>
             
         </field>
@@ -63,6 +64,7 @@
                 <field name="code"/>
                 <field name="division_id"/>
                 <field name="devisi"/>
+                <field name="division_master"/>
                 <separator/>
                 <filter string="Office Department" name="office_dept" 
                         domain="[('department_type', '=', 'office')]"/>
@@ -71,8 +73,8 @@
                 <group expand="0" string="Group By">
                     <filter string="Department Type" name="group_dept_type" 
                             context="{'group_by': 'department_type'}"/>
-                    <filter string="Division ID" name="group_division" 
-                            context="{'group_by': 'division_id'}"/>
+                    <filter string="Division" name="group_division" 
+                            context="{'group_by': 'division_master'}"/>
                 </group>
             </xpath>
             

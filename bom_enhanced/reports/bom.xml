@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_mrp_bom_inherit_table_fancy" inherit_id="mrp.report_mrp_bom">
+        <xpath expr="//div[contains(@class, 'o_mrp_bom_report_page')]" position="replace">
+            <t t-call="web.external_layout">
+                <style>
+                    .page { font-size: 8px; }
+                    .bom-custom-table {
+                        border: 2px solid #1b4332 !important;
+                        border-collapse: collapse !important;
+                        width: 100%;
+                        table-layout: fixed;
+                    }
+                    .bom-custom-table thead {
+                        background: linear-gradient(to bottom, #2d6a4f 0%, #1b4332 100%) !important;
+                    }
+                    .bom-custom-table thead th {
+                        color: white !important;
+                        border: 1px solid #1b4332 !important;
+                        padding: 8px 4px !important;
+                        text-align: center !important;
+                        vertical-align: middle !important;
+                        font-weight: 600 !important;
+                        font-size: 7px !important;
+                        text-transform: uppercase !important;
+                        line-height: 1.2 !important;
+                    }
+                    .bom-custom-table tbody td {
+                        border: 1px solid #52b788 !important;
+                        padding: 4px !important;
+                        vertical-align: middle !important;
+                        font-size: 7.5px !important;
+                    }
+                    .bom-custom-table tbody tr:nth-child(even) {
+                        background-color: #f1faee !important;
+                    }
+                    .bom-custom-table tbody tr:hover {
+                        background-color: #d8f3dc !important;
+                    }
+                    .bom-custom-table tbody tr:first-child {
+                        background: linear-gradient(to right, #d8f3dc 0%, #b7e4c7 100%) !important;
+                        font-weight: 600 !important;
+                    }
+                    h2.bom-title {
+                        border-bottom: 4px solid #2d6a4f;
+                        padding-bottom: 5px;
+                        display: inline-block;
+                        color: #1b4332;
+                        font-size: 18px;
+                        text-transform: uppercase;
+                        font-weight: 700;
+                    }
+                    h4.bom-product {
+                        color: #2d6a4f;
+                        font-size: 13px;
+                        font-weight: 600;
+                        margin-top: 8px;
+                    }
+                    .text-muted { color: #52b788; font-size: 8px; }
+                </style>
+                
+                <div class="page">
+                    <div class="mb-3">
+                        <h2 class="bom-title">BoM Overview</h2>
+                        <h4 class="bom-product" t-esc="data['name']"/>
+                        <p t-if="data['bom_code']" class="text-muted"><strong>Ref:</strong> <span t-esc="data['bom_code']"/></p>
+                    </div>
+
+                    <t t-set="currency" t-value="data['currency']"/>
+
+                    <table class="bom-custom-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 22%;">Component</th>
+                                <th style="width: 7%;">Quantity</th>
+                                <th style="width: 6%;">UoM</th>
+                                <th style="width: 6%;">Type</th>
+                                <th style="width: 11%;">Available / On Hand</th>
+                                <th style="width: 11%;">Availability</th>
+                                <th style="width: 7%;">Lead Time</th>
+                                <th style="width: 10%;">Unit Cost</th>
+                                <th style="width: 10%;">Total Cost</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="ps-2"><span t-esc="data['name']"/></td>
+                                <td class="text-end px-2">
+                                    <span t-esc="data['quantity']" t-options='{"widget": "float", "decimal_precision": "Product Unit of Measure"}'/>
+                                </td>
+                                <td class="text-center">
+                                    <span t-esc="data['uom_name']"/>
+                                </td>
+                                <td class="text-center">-</td>
+                                <td class="text-center">
+                                    <span t-esc="data.get('quantity_available', 0)"/> / <span t-esc="data.get('quantity_on_hand', 0)"/>
+                                </td>
+                                <td class="text-center">
+                                    <span t-esc="data.get('availability_display', 'Estimated')"/>
+                                </td>
+                                <td class="text-center">-</td>
+                                <td class="text-end px-2">
+                                    <span t-esc="data.get('unit_cost', 0)" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                                </td>
+                                <td class="text-end px-2">
+                                    <span t-esc="data['bom_cost']" t-options='{"widget": "monetary", "display_currency": currency}'/>
+                                </td>
+                            </tr>
+                            
+                            <t t-call="mrp.report_mrp_bom_pdf_line"/>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

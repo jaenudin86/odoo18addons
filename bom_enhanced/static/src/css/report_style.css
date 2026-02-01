@@ -1,0 +1,308 @@
+/* BOM Report Professional Styling */
+
+.bom-report {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #333;
+    line-height: 1.6;
+}
+
+/* Header Styling */
+.report-header {
+    border-bottom: 3px solid #0066cc;
+    padding-bottom: 15px;
+    margin-bottom: 30px;
+}
+
+.report-header h2 {
+    color: #0066cc;
+    font-weight: bold;
+    font-size: 28px;
+    letter-spacing: 1px;
+}
+
+.report-header h5 {
+    font-size: 14px;
+    margin-top: 5px;
+}
+
+/* Info Section Styling */
+.info-table {
+    margin-bottom: 0;
+}
+
+.info-table td {
+    padding: 5px 10px;
+    vertical-align: top;
+}
+
+.info-table .label-cell {
+    width: 40%;
+    color: #666;
+}
+
+.badge {
+    font-size: 11px;
+    padding: 5px 12px;
+    font-weight: 600;
+}
+
+.bg-primary {
+    background-color: #0066cc !important;
+}
+
+.bg-success {
+    background-color: #28a745 !important;
+}
+
+/* Badge for product types */
+.badge-product {
+    background-color: #0066cc !important;
+    color: white;
+}
+
+.badge-consu {
+    background-color: #6c757d !important;
+    color: white;
+}
+
+.badge-service {
+    background-color: #17a2b8 !important;
+    color: white;
+}
+
+/* Section Title */
+.section-title {
+    color: #0066cc;
+    font-size: 18px;
+    font-weight: bold;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 8px;
+    margin-bottom: 15px;
+    margin-top: 20px;
+}
+
+/* Table Styling */
+.bom-table {
+    border: 1px solid #dee2e6;
+    margin-top: 10px;
+}
+
+.bom-table thead.table-header {
+    background: linear-gradient(to bottom, #0066cc 0%, #0052a3 100%);
+    color: white;
+}
+
+.bom-table thead.table-header th {
+    font-weight: 600;
+    padding: 12px 8px;
+    border: none;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bom-table tbody tr {
+    border-bottom: 1px solid #e9ecef;
+    transition: background-color 0.2s;
+}
+
+.bom-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.bom-table tbody td {
+    padding: 10px 8px;
+    font-size: 11px;
+    vertical-align: middle;
+}
+
+.bom-table tfoot.table-footer {
+    background-color: #f8f9fa;
+    border-top: 2px solid #0066cc;
+}
+
+.bom-table tfoot.table-footer td {
+    padding: 12px 8px;
+    font-size: 13px;
+}
+
+/* Hierarchical Structure Indent */
+.product-indent {
+    display: inline-block;
+}
+
+/* Cost Summary Boxes */
+.total-cost-box {
+    background: linear-gradient(to right, #e8f5e9 0%, #c8e6c9 100%);
+    border-left: 5px solid #28a745;
+    padding: 20px;
+    margin-top: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.total-cost-box .total-label {
+    font-size: 16px;
+    color: #2c5f2d;
+}
+
+.total-cost-box .total-value {
+    font-size: 24px;
+    color: #28a745;
+}
+
+.total-cost-box .cost-per-unit {
+    font-size: 13px;
+    color: #555;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(76, 175, 80, 0.3);
+}
+
+.grand-total-box {
+    background: linear-gradient(to right, #fff3cd 0%, #ffeaa7 100%);
+    border-left: 5px solid #ffc107;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.grand-total-box .grand-label {
+    font-size: 18px;
+    color: #856404;
+}
+
+.grand-total-box .grand-value {
+    font-size: 26px;
+    color: #ff9800;
+}
+
+/* Summary Box */
+.summary-box {
+    background-color: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-left: 4px solid #0066cc;
+    padding: 20px;
+    margin-top: 10px;
+    border-radius: 4px;
+}
+
+.summary-item {
+    margin-bottom: 12px;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px dashed #e0e0e0;
+}
+
+.summary-item:last-child {
+    border-bottom: none;
+}
+
+.summary-item strong {
+    color: #555;
+    font-size: 12px;
+}
+
+.summary-value {
+    color: #0066cc;
+    font-weight: 600;
+    font-size: 13px;
+}
+
+/* Notes Box */
+.notes-box {
+    background-color: #f8f9fa;
+    border-left: 4px solid #0066cc;
+    padding: 15px 20px;
+    margin-top: 10px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.manufacturing-notes {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.manufacturing-notes li {
+    margin-bottom: 8px;
+    color: #555;
+}
+
+/* Signature Section */
+.signature-box {
+    margin-top: 20px;
+}
+
+.signature-box p {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 0;
+}
+
+.signature-line {
+    border-top: 1px solid #333;
+    margin-top: 50px;
+    margin-bottom: 5px;
+}
+
+/* Text Utilities */
+.text-end {
+    text-align: right !important;
+}
+
+.text-center {
+    text-align: center !important;
+}
+
+.text-muted {
+    color: #6c757d !important;
+}
+
+.text-primary {
+    color: #0066cc !important;
+}
+
+/* Flexbox Utilities */
+.d-flex {
+    display: flex !important;
+}
+
+.justify-content-between {
+    justify-content: space-between !important;
+}
+
+.align-items-center {
+    align-items: center !important;
+}
+
+/* Print Optimization */
+@media print {
+    .bom-report {
+        font-size: 10pt;
+    }
+    
+    .report-header h2 {
+        font-size: 24pt;
+    }
+    
+    .bom-table {
+        page-break-inside: avoid;
+    }
+    
+    .signature-box {
+        page-break-inside: avoid;
+    }
+    
+    .total-cost-box,
+    .grand-total-box,
+    .summary-box {
+        page-break-inside: avoid;
+    }
+}
+
+/* Responsive adjustments */
+@page {
+    margin: 20mm;
+}

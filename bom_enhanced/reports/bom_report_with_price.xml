@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_bom_with_price_document">
+        <t t-set="data_report_landscape" t-value="True"/>
+        <t t-call="web.basic_layout">
+            <t t-foreach="docs" t-as="bom">
+                <div class="page">
+                    <!-- Company Header with Logo and Address -->
+                    <div class="row mb-4" style="border-bottom: 3px solid #0066cc; padding-bottom: 20px;">
+                        <div class="col-6">
+                            <img t-if="bom.company_id.logo" 
+                                 t-att-src="image_data_uri(bom.company_id.logo)" 
+                                 style="max-height: 90px; max-width: 280px;" 
+                                 alt="Company Logo"/>
+                        </div>
+                        <div class="col-6 text-end" style="font-size: 11px; color: #555; line-height: 1.6;">
+                            <div style="font-weight: bold; font-size: 15px; color: #0066cc; margin-bottom: 8px;">
+                                <span t-field="bom.company_id.name"/>
+                            </div>
+                            <div t-if="bom.company_id.street">
+                                <span t-field="bom.company_id.street"/>
+                            </div>
+                            <div t-if="bom.company_id.street2">
+                                <span t-field="bom.company_id.street2"/>
+                            </div>
+                            <div>
+                                <span t-if="bom.company_id.city" t-field="bom.company_id.city"/>
+                                <span t-if="bom.company_id.state_id">, <span t-field="bom.company_id.state_id.name"/></span>
+                                <span t-if="bom.company_id.zip" t-field="bom.company_id.zip"/>
+                            </div>
+                            <div t-if="bom.company_id.country_id">
+                                <span t-field="bom.company_id.country_id.name"/>
+                            </div>
+                            <div t-if="bom.company_id.phone">
+                                Phone: <span t-field="bom.company_id.phone"/>
+                            </div>
+                            <div t-if="bom.company_id.email">
+                                Email: <span t-field="bom.company_id.email"/>
+                            </div>
+                            <div t-if="bom.company_id.website">
+                                Web: <span t-field="bom.company_id.website"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Styling -->
+                    <style>
+                        .bom-title {
+                            color: #0066cc;
+                            font-weight: bold;
+                            font-size: 24px;
+                        }
+                        .o_mrp_bom_expandable {
+                            border: 1px solid #dee2e6 !important;
+                        }
+                        .o_mrp_bom_expandable thead tr {
+                            background: linear-gradient(to bottom, #0066cc 0%, #0052a3 100%);
+                            color: white;
+                        }
+                        .o_mrp_bom_expandable thead th {
+                            padding: 12px 8px;
+                            font-weight: 600;
+                            font-size: 11px;
+                            text-transform: uppercase;
+                            letter-spacing: 0.5px;
+                            border: none !important;
+                        }
+                        .o_mrp_bom_expandable tbody tr {
+                            border-bottom: 1px solid #e9ecef;
+                        }
+                        .o_mrp_bom_expandable tbody tr:hover {
+                            background-color: #f8f9fa;
+                        }
+                        .o_mrp_bom_expandable tbody td {
+                            padding: 10px 8px;
+                            font-size: 11px;
+                            vertical-align: middle;
+                        }
+                        .o_mrp_bom_expandable tfoot {
+                            background-color: #f8f9fa;
+                            border-top: 2px solid #0066cc !important;
+                        }
+                        .o_mrp_bom_expandable tfoot td {
+                            padding: 12px 8px;
+                            font-weight: bold;
+                            font-size: 12px;
+                        }
+                    </style>
+
+                    <!-- BOM Report Content -->
+                    <div class="container py-3 px-0">
+                        <div class="px-3 mb-4">
+                            <h1 class="bom-title">BoM Overview</h1>
+                            <h3 t-field="bom.product_tmpl_id.display_name"/>
+                            <hr t-if="bom.code"/>
+                            <h6 t-if="bom.code">Reference: <span t-field="bom.code"/></h6>
+                        </div>
+
+                        <table class="o_mrp_bom_expandable table table-borderless">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th class="text-end">Quantity</th>
+                                    <th class="text-end">Unit of Measure</th>
+                                    <th class="text-end">Unit Cost</th>
+                                    <th class="text-end">Total Cost</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Main Product Row -->
+                                <tr style="background-color: #f8f9fa; font-weight: bold;">
+                                    <td t-field="bom.product_tmpl_id.display_name"/>
+                                    <td class="text-end" t-field="bom.product_qty"/>
+                                    <td class="text-end" t-field="bom.product_uom_id.name"/>
+                                    <td class="text-end">
+                                        <span t-esc="'{:,.2f}'.format(bom.product_tmpl_id.standard_price)"/>
+                                    </td>
+                                    <td class="text-end">
+                                        <span t-esc="'{:,.2f}'.format(bom.product_tmpl_id.standard_price * bom.product_qty)"/>
+                                    </td>
+                                </tr>
+
+                                <!-- BOM Lines -->
+                                <t t-set="total_cost" t-value="0"/>
+                                <t t-foreach="bom.bom_line_ids" t-as="line">
+                                    <t t-set="line_cost" t-value="line.product_id.standard_price * line.product_qty"/>
+                                    <t t-set="total_cost" t-value="total_cost + line_cost"/>
+                                    <tr>
+                                        <td style="padding-left: 30px;">
+                                            <span t-field="line.product_id.display_name"/>
+                                        </td>
+                                        <td class="text-end" t-field="line.product_qty"/>
+                                        <td class="text-end" t-field="line.product_uom_id.name"/>
+                                        <td class="text-end">
+                                            <span t-field="bom.company_id.currency_id.symbol"/>
+                                            <span t-esc="'{:,.2f}'.format(line.product_id.standard_price)"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <span t-field="bom.company_id.currency_id.symbol"/>
+                                            <span t-esc="'{:,.2f}'.format(line_cost)"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="text-end"><strong>Total Cost:</strong></td>
+                                    <td class="text-end">
+                                        <strong>
+                                            <span t-field="bom.company_id.currency_id.symbol"/>
+                                            <span t-esc="'{:,.2f}'.format(total_cost)"/>
+                                        </strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="3"></td>
+                                    <td class="text-end"><strong>Unit Cost:</strong></td>
+                                    <td class="text-end">
+                                        <strong>
+                                            <span t-field="bom.company_id.currency_id.symbol"/>
+                                            <span t-esc="'{:,.2f}'.format(total_cost / bom.product_qty if bom.product_qty else 0)"/>
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+                <p style="page-break-before:always;"> </p>
+            </t>
+        </t>
+    </template>
+</odoo>

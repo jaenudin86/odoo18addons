@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Enhanced BOM Form View -->
+        <record id="view_mrp_bom_form_enhanced" model="ir.ui.view">
+            <field name="name">mrp.bom.form.enhanced</field>
+            <field name="model">mrp.bom</field>
+            <field name="inherit_id" ref="mrp.mrp_bom_form_view"/>
+            <field name="arch" type="xml">
+                <!-- Add Serial Number and Sales Order fields -->
+                <field name="product_tmpl_id" position="before">
+                    <field name="serial_number" readonly="1"/>
+                    <field name="sale_order_id" options="{'no_create': True, 'no_open': True}"/>
+                </field>
+            </field>
+        </record>
+        
+        <!-- Enhanced BOM Tree View -->
+        <record id="view_mrp_bom_tree_enhanced" model="ir.ui.view">
+            <field name="name">mrp.bom.tree.enhanced</field>
+            <field name="model">mrp.bom</field>
+            <field name="inherit_id" ref="mrp.mrp_bom_tree_view"/>
+            <field name="arch" type="xml">
+                <field name="product_tmpl_id" position="before">
+                    <field name="serial_number"/>
+                    <field name="sale_order_name" optional="show"/>
+                </field>
+            </field>
+        </record>
+        
+        <!-- Enhanced BOM Search View -->
+        <record id="view_mrp_bom_filter_enhanced" model="ir.ui.view">
+            <field name="name">mrp.bom.filter.enhanced</field>
+            <field name="model">mrp.bom</field>
+            <field name="inherit_id" ref="mrp.view_mrp_bom_filter"/>
+            <field name="arch" type="xml">
+                <field name="product_tmpl_id" position="after">
+                    <field name="serial_number"/>
+                    <field name="sale_order_id"/>
+                </field>
+            </field>
+        </record>
+    </data>
+</odoo>

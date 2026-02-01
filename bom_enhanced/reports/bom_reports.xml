@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Report with Price -->
+        <record id="action_report_bom_with_price" model="ir.actions.report">
+            <field name="name">BOM Report (With Price)</field>
+            <field name="model">mrp.bom</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">bom_enhanced.report_bom_with_price_document</field>
+            <field name="report_file">bom_enhanced.report_bom_with_price_document</field>
+            <field name="binding_model_id" ref="mrp.model_mrp_bom"/>
+            <field name="binding_type">report</field>
+            <field name="print_report_name">'BOM_%s_WithPrice' % (object.serial_number)</field>
+        </record> -->
+        
+        <!-- Report without Price 
+        <record id="action_report_bom_no_price" model="ir.actions.report">
+            <field name="name">BOM Report (No Price)</field>
+            <field name="model">mrp.bom</field>
+            <field name="report_type">qweb-pdf</field>
+            <field name="report_name">bom_enhanced.report_bom_no_price_document</field>
+            <field name="report_file">bom_enhanced.report_bom_no_price_document</field>
+            <field name="binding_model_id" ref="mrp.model_mrp_bom"/>
+            <field name="binding_type">report</field>
+            <field name="print_report_name">'BOM_%s_NoPrice' % (object.serial_number)</field>
+        </record> -->
+    </data>
+</odoo>
