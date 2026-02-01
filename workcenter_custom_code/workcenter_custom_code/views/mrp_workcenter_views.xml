@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Inherit Work Center Form View -->
+    <record id="mrp_workcenter_view_form_inherit" model="ir.ui.view">
+        <field name="name">mrp.workcenter.form.inherit</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_view"/>
+        <field name="arch" type="xml">
+            
+            <!-- Add fields after name field -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="code" readonly="1" class="oe_inline"/>
+            </xpath>
+            
+            <!-- Add new group for division fields -->
+            <xpath expr="//group[@name='group_general']" position="after">
+                <group string="Division & Code Configuration" name="group_division">
+                    <group>
+                        <field name="tujuan" readonly="1"/>
+                        <field name="division_id"/>
+                        <field name="divisi"/>
+                        <field name="devisi"/>
+                    </group>
+                    <group>
+                        <field name="department_type" widget="radio"/>
+                        <field name="short_code"/>
+                        <field name="sequence_number"/>
+                    </group>
+                </group>
+            </xpath>
+            
+        </field>
+    </record>
+
+    <!-- Inherit Work Center Tree View -->
+    <record id="mrp_workcenter_tree_view_inherit" model="ir.ui.view">
+        <field name="name">mrp.workcenter.tree.inherit</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.mrp_workcenter_tree_view"/>
+        <field name="arch" type="xml">
+            
+            <!-- Add code field in tree view -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="code" string="Code"/>
+                <field name="division_id" optional="show"/>
+                <field name="divisi" optional="show"/>
+                <field name="devisi" optional="show"/>
+                <field name="department_type" optional="hide"/>
+            </xpath>
+            
+        </field>
+    </record>
+
+    <!-- Add search view filters -->
+    <record id="view_mrp_workcenter_filter_inherit" model="ir.ui.view">
+        <field name="name">mrp.workcenter.search.inherit</field>
+        <field name="model">mrp.workcenter</field>
+        <field name="inherit_id" ref="mrp.view_mrp_workcenter_filter"/>
+        <field name="arch" type="xml">
+            
+            <xpath expr="//search" position="inside">
+                <field name="code"/>
+                <field name="division_id"/>
+                <field name="devisi"/>
+                <separator/>
+                <filter string="Office Department" name="office_dept" 
+                        domain="[('department_type', '=', 'office')]"/>
+                <filter string="Manufacturing Department" name="mfr_dept" 
+                        domain="[('department_type', '=', 'manufacturing')]"/>
+                <group expand="0" string="Group By">
+                    <filter string="Department Type" name="group_dept_type" 
+                            context="{'group_by': 'department_type'}"/>
+                    <filter string="Division ID" name="group_division" 
+                            context="{'group_by': 'division_id'}"/>
+                </group>
+            </xpath>
+            
+        </field>
+    </record>
+
+</odoo>
