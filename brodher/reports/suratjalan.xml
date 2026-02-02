@@ -2,175 +2,312 @@
 <odoo>
     <data>
         
-        <!-- Inherit Report Template untuk Delivery Order -->
+        <!-- Override Report Template untuk Delivery Order -->
         <template id="report_delivery_document_inherit" inherit_id="stock.report_delivery_document">
             
-            <!-- Tambahkan kolom product info di tabel stock moves -->
-            <xpath expr="//table[@name='stock_move_table']//thead//tr" position="inside">
-                <th class="text-center"><strong>Brand</strong></th>
-                <th class="text-center"><strong>Size</strong></th>
-            </xpath>
-            
-            <xpath expr="//table[@name='stock_move_table']//tbody//tr[contains(@t-foreach, 'o.move_ids_without_package')]//td[last()]" position="after">
-                <td class="text-center">
-                    <span t-field="move.product_id.brand"/>
-                </td>
-                <td class="text-center">
-                    <span t-field="move.product_id.size"/>
-                </td>
-            </xpath>
-            
-            <!-- Tambahkan informasi product details setelah tabel -->
-            <xpath expr="//table[@name='stock_move_table']" position="after">
-                
-                <!-- Loop untuk setiap product yang berbeda dalam delivery -->
-                <t t-set="products" t-value="o.move_ids_without_package.mapped('product_id')"/>
-                
-                <t t-foreach="products" t-as="product">
-                    <div class="row mt-4" style="page-break-inside: avoid;">
-                        <div class="col-12">
-                            <h5 style="border-bottom: 2px solid #000; padding-bottom: 5px;">
-                                Product Details - <span t-field="product.name"/>
-                            </h5>
+            <!-- Replace entire document structure -->
+            <xpath expr="//t[@t-call='web.external_layout']" position="replace">
+                <t t-call="web.basic_layout">
+                    <div class="page">
+                        <!-- Header Section -->
+                        <div class="row" style="border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+                            <div class="col-3 text-center">
+                                <!-- Logo Perusahaan - bisa diganti dengan logo aktual -->
+                                <div style="border: 2px solid #000; padding: 20px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                                    <strong style="font-size: 10pt;">LOGO<br/>PERUSAHAAN</strong>
+                                </div>
+                            </div>
+                            <div class="col-6 text-center">
+                                <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">PT AGUNG SUVARNA BHUMI JAYA</h2>
+                                <h3 style="margin: 5px 0; font-weight: bold; font-size: 18pt;">DELIVERY ORDER</h3>
+                            </div>
+                            <div class="col-3">
+                                <!-- Empty space for balance -->
+                            </div>
                         </div>
-                        
-                        <div class="col-6">
-                            <table class="table table-sm table-borderless">
-                                <tr t-if="product.brand">
-                                    <td style="width: 40%;"><strong>Brand:</strong></td>
-                                    <td><span t-field="product.brand"/></td>
-                                </tr>
-                                <tr t-if="product.size">
-                                    <td><strong>Size:</strong></td>
-                                    <td><span t-field="product.size"/></td>
-                                </tr>
-                                <tr t-if="product.base_colour">
-                                    <td><strong>Base Colour:</strong></td>
-                                    <td><span t-field="product.base_colour"/></td>
-                                </tr>
-                                <tr t-if="product.text_colour">
-                                    <td><strong>Text Colour:</strong></td>
-                                    <td><span t-field="product.text_colour"/></td>
-                                </tr>
-                            </table>
+
+                        <!-- Info Section -->
+                        <div class="row" style="margin-bottom: 15px;">
+                            <div class="col-6">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 30%;"><strong>NO DO</strong></td>
+                                        <td style="width: 5%;">:</td>
+                                        <td><span t-field="o.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>DATE</strong></td>
+                                        <td>:</td>
+                                        <td><span t-field="o.scheduled_date" t-options='{"widget": "date"}'/></td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>PO NO</strong></td>
+                                        <td>:</td>
+                                        <td><span t-field="o.origin"/></td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-6">
+                                <table style="width: 100%;">
+                                    <tr>
+                                        <td style="width: 35%;"><strong>DELIVERY TO</strong></td>
+                                        <td style="width: 5%;">:</td>
+                                        <td><span t-field="o.partner_id.name"/></td>
+                                    </tr>
+                                    <tr>
+                                        <td style="vertical-align: top;"><strong>ADDRESS</strong></td>
+                                        <td style="vertical-align: top;">:</td>
+                                        <td>
+                                            <span t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
                         </div>
-                        
-                        <div class="col-6">
-                            <table class="table table-sm table-borderless">
-                                <tr t-if="product.gross_weight">
-                                    <td style="width: 50%;"><strong>Gross Weight:</strong></td>
-                                    <td><span t-field="product.gross_weight"/> kg</td>
-                                </tr>
-                                <tr t-if="product.net_weight">
-                                    <td><strong>Net Weight:</strong></td>
-                                    <td><span t-field="product.net_weight"/> kg</td>
-                                </tr>
-                                <tr t-if="product.net_net_weight">
-                                    <td><strong>Net Net Weight:</strong></td>
-                                    <td><span t-field="product.net_net_weight"/> kg</td>
-                                </tr>
-                            </table>
+
+                        <!-- Weight Information Row -->
+                        <!-- Logic: Ambil dari variant dulu, kalau tidak ada (0 atau False) ambil dari template -->
+                        <div class="row" style="margin-bottom: 15px; border: 2px solid #000; padding: 10px;">
+                            <t t-set="total_gross" t-value="0"/>
+                            <t t-set="total_net" t-value="0"/>
+                            <t t-set="total_net_net" t-value="0"/>
+                            
+                            <t t-foreach="o.move_ids_without_package" t-as="move">
+                                <!-- Ambil dari variant dulu -->
+                                <t t-set="gross" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight or 0"/>
+                                <t t-set="net" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight or 0"/>
+                                <t t-set="net_net" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight or 0"/>
+                                
+                                <!-- Kalikan dengan quantity -->
+                                <t t-set="total_gross" t-value="total_gross + (gross * move.product_uom_qty)"/>
+                                <t t-set="total_net" t-value="total_net + (net * move.product_uom_qty)"/>
+                                <t t-set="total_net_net" t-value="total_net_net + (net_net * move.product_uom_qty)"/>
+                            </t>
+                            
+                            <div class="col-4 text-center">
+                                <strong style="font-size: 11pt;">GROSS WEIGHT</strong><br/>
+                                <span style="font-size: 14pt;"><strong><t t-esc="'%.2f' % total_gross"/> kg</strong></span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <strong style="font-size: 11pt;">NET WEIGHT</strong><br/>
+                                <span style="font-size: 14pt;"><strong><t t-esc="'%.2f' % total_net"/> kg</strong></span>
+                            </div>
+                            <div class="col-4 text-center">
+                                <strong style="font-size: 11pt;">NET NET WEIGHT</strong><br/>
+                                <span style="font-size: 14pt;"><strong><t t-esc="'%.2f' % total_net_net"/> kg</strong></span>
+                            </div>
                         </div>
-                        
-                        <!-- Ingredients -->
-                        <div class="col-12" t-if="product.ingredients">
-                            <strong>Ingredients:</strong>
-                            <p style="white-space: pre-wrap; margin-left: 20px;"><span t-field="product.ingredients"/></p>
-                        </div>
-                    </div>
-                </t>
-                
-            </xpath>
-            
-            <!-- Tambahkan Footer dengan Notes dan Signature -->
-            <xpath expr="//div[@class='page']" position="inside">
-                
-                <!-- Notes Section -->
-                <div class="row mt-5" style="page-break-inside: avoid;">
-                    <div class="col-12">
-                        <div style="border: 2px solid #000; padding: 10px;">
-                            <p style="margin-bottom: 5px;"><strong>NOTES / CATATAN:</strong></p>
-                            <p style="margin-bottom: 3px;">
-                                <strong>FRAGILE - HANDLE WITH EXTREME CARE</strong><br/>
-                                <em>(BARANG MUDAH PECAH – HARAP TANGANI DENGAN SANGAT HATI-HATI)</em>
-                            </p>
-                            <p style="margin-bottom: 3px;">
-                                <strong>PLEASE CHECK ALL GOODS CAREFULLY BEFORE SHIPMENT AND UPON RECEIPT</strong><br/>
-                                <em>(HARAP PERIKSA SEMUA BARANG DENGAN TELITI SEBELUM PENGIRIMAN DAN SAAT PENERIMAAN)</em>
-                            </p>
-                            <p style="margin-bottom: 0;">
-                                <strong>KINDLY ENSURE ALL FIELDS ARE COMPLETED WITH SIGNATURE, DATE, AND FULL NAME IN EACH COLUMN PROVIDED</strong><br/>
-                                <em>(Mohon pastikan seluruh kolom diisi lengkap dengan tanda tangan, tanggal, dan nama lengkap pada setiap kolom yang tersedia.)</em>
-                            </p>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Signature Section -->
-                <div class="row mt-4" style="page-break-inside: avoid;">
-                    <div class="col-12">
-                        <table class="table table-bordered" style="border: 2px solid #000;">
-                            <thead>
-                                <tr style="background-color: #f0f0f0;">
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;">CREATED BY</th>
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;">APPROVED BY</th>
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;">CHECKED BY<br/>(WAREHOUSE)</th>
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;">WAREHOUSE HEAD</th>
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;">RECEIVED BY<br/>(SECURITY / VENDOR)</th>
+
+                        <!-- Product Table -->
+                        <table class="table table-bordered" style="border: 2px solid #000; margin-bottom: 15px;">
+                            <thead style="background-color: #f0f0f0;">
+                                <tr>
+                                    <th class="text-center" style="width: 5%; border: 1px solid #000;"><strong>NO</strong></th>
+                                    <th class="text-center" style="width: 75%; border: 1px solid #000;"><strong>PRODUCT</strong></th>
+                                    <th class="text-center" style="width: 20%; border: 1px solid #000;"><strong>QTY</strong></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr>
-                                    <td style="height: 100px; border: 1px solid #000; vertical-align: bottom; padding: 5px;">
-                                        <div style="margin-top: 60px; font-size: 9pt;">
-                                            <p style="margin: 2px 0;">Name: _______________</p>
-                                            <p style="margin: 2px 0;">Date: _______________</p>
-                                            <p style="margin: 2px 0;">Sign: _______________</p>
-                                        </div>
+                                <t t-set="line_num" t-value="0"/>
+                                <tr t-foreach="o.move_ids_without_package" t-as="move">
+                                    <t t-set="line_num" t-value="line_num + 1"/>
+                                    
+                                    <!-- Get data dari variant dulu, kalau tidak ada ambil dari template -->
+                                    <t t-set="brand" t-value="move.product_id.brand or move.product_id.product_tmpl_id.brand"/>
+                                    <t t-set="size" t-value="move.product_id.size or move.product_id.product_tmpl_id.size"/>
+                                    <t t-set="ingredients" t-value="move.product_id.ingredients or move.product_id.product_tmpl_id.ingredients"/>
+                                    <t t-set="base_colour" t-value="move.product_id.base_colour or move.product_id.product_tmpl_id.base_colour"/>
+                                    <t t-set="text_colour" t-value="move.product_id.text_colour or move.product_id.product_tmpl_id.text_colour"/>
+                                    <t t-set="gross_w" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight"/>
+                                    <t t-set="net_w" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight"/>
+                                    <t t-set="net_net_w" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight"/>
+                                    
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <span t-esc="line_num"/>
                                     </td>
-                                    <td style="height: 100px; border: 1px solid #000; vertical-align: bottom; padding: 5px;">
-                                        <div style="margin-top: 60px; font-size: 9pt;">
-                                            <p style="margin: 2px 0;">Name: _______________</p>
-                                            <p style="margin: 2px 0;">Date: _______________</p>
-                                            <p style="margin: 2px 0;">Sign: _______________</p>
-                                        </div>
+                                    <td style="border: 1px solid #000; padding: 8px;">
+                                        <strong><span t-field="move.product_id.display_name"/></strong>
+                                        
+                                        <!-- Brand & Size -->
+                                        <t t-if="brand or size">
+                                            <br/>
+                                            <span style="font-size: 9pt;">
+                                                <t t-if="brand">
+                                                    Brand: <span t-esc="brand"/>
+                                                </t>
+                                                <t t-if="size">
+                                                    <t t-if="brand"> | </t>Size: <span t-esc="size"/>
+                                                </t>
+                                            </span>
+                                        </t>
+                                        
+                                        <!-- Ingredients -->
+                                        <t t-if="ingredients">
+                                            <br/>
+                                            <span style="font-size: 9pt;">
+                                                Ingredients: <span t-esc="ingredients"/>
+                                            </span>
+                                        </t>
+                                        
+                                        <!-- Colours -->
+                                        <t t-if="base_colour or text_colour">
+                                            <br/>
+                                            <span style="font-size: 9pt;">
+                                                <t t-if="base_colour">
+                                                    Base Colour: <span t-esc="base_colour"/>
+                                                </t>
+                                                <t t-if="text_colour">
+                                                    <t t-if="base_colour"> | </t>Text Colour: <span t-esc="text_colour"/>
+                                                </t>
+                                            </span>
+                                        </t>
+                                        
+                                        <!-- Weights -->
+                                        <t t-if="gross_w or net_w or net_net_w">
+                                            <br/>
+                                            <span style="font-size: 9pt;">
+                                                <t t-if="gross_w">
+                                                    Gross: <span t-esc="'%.2f' % gross_w"/> kg
+                                                </t>
+                                                <t t-if="net_w">
+                                                    <t t-if="gross_w"> | </t>Net: <span t-esc="'%.2f' % net_w"/> kg
+                                                </t>
+                                                <t t-if="net_net_w">
+                                                    <t t-if="gross_w or net_w"> | </t>Net Net: <span t-esc="'%.2f' % net_net_w"/> kg
+                                                </t>
+                                            </span>
+                                        </t>
                                     </td>
-                                    <td style="height: 100px; border: 1px solid #000; vertical-align: bottom; padding: 5px;">
-                                        <div style="margin-top: 60px; font-size: 9pt;">
-                                            <p style="margin: 2px 0;">Name: _______________</p>
-                                            <p style="margin: 2px 0;">Date: _______________</p>
-                                            <p style="margin: 2px 0;">Sign: _______________</p>
-                                        </div>
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <span t-field="move.product_uom_qty"/>
+                                        <span t-field="move.product_uom" groups="uom.group_uom"/>
                                     </td>
-                                    <td style="height: 100px; border: 1px solid #000; vertical-align: bottom; padding: 5px;">
-                                        <div style="margin-top: 60px; font-size: 9pt;">
-                                            <p style="margin: 2px 0;">Name: _______________</p>
-                                            <p style="margin: 2px 0;">Date: _______________</p>
-                                            <p style="margin: 2px 0;">Sign: _______________</p>
-                                        </div>
+                                </tr>
+                                
+                                <!-- Empty rows for spacing -->
+                                <t t-if="len(o.move_ids_without_package) &lt; 8">
+                                    <t t-foreach="range(8 - len(o.move_ids_without_package))" t-as="i">
+                                        <tr>
+                                            <td style="border: 1px solid #000; height: 40px;">&#160;</td>
+                                            <td style="border: 1px solid #000;">&#160;</td>
+                                            <td style="border: 1px solid #000;">&#160;</td>
+                                        </tr>
+                                    </t>
+                                </t>
+                                
+                                <!-- Total Row -->
+                                <tr style="background-color: #f0f0f0;">
+                                    <td colspan="2" class="text-right" style="border: 1px solid #000; padding: 8px;">
+                                        <strong>TOTAL</strong>
                                     </td>
-                                    <td style="height: 100px; border: 1px solid #000; vertical-align: bottom; padding: 5px;">
-                                        <div style="margin-top: 60px; font-size: 9pt;">
-                                            <p style="margin: 2px 0;">Name: _______________</p>
-                                            <p style="margin: 2px 0;">Date: _______________</p>
-                                            <p style="margin: 2px 0;">Sign: _______________</p>
-                                        </div>
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <strong>
+                                            <t t-set="total_qty" t-value="sum(o.move_ids_without_package.mapped('product_uom_qty'))"/>
+                                            <span t-esc="total_qty"/>
+                                        </strong>
                                     </td>
                                 </tr>
                             </tbody>
                         </table>
-                    </div>
-                </div>
-                
-                <!-- Stamp Section -->
-                <div class="row mt-2 mb-3" style="page-break-inside: avoid;">
-                    <div class="col-6 text-center">
-                        <div style="border: 2px dashed #666; padding: 30px; min-height: 80px;">
-                            <p style="margin: 0; color: #999; font-size: 14pt;"><strong>STAMP</strong></p>
+
+                        <!-- Notes Section -->
+                        <div class="row" style="margin-bottom: 15px; page-break-inside: avoid;">
+                            <div class="col-12">
+                                <div style="border: 2px solid #000; padding: 10px; background-color: #fffacd;">
+                                    <p style="margin-bottom: 5px;"><strong>NOTES / CATATAN:</strong></p>
+                                    <p style="margin-bottom: 3px; font-size: 9pt;">
+                                        <strong>FRAGILE - HANDLE WITH EXTREME CARE</strong><br/>
+                                        <em>(BARANG MUDAH PECAH – HARAP TANGANI DENGAN SANGAT HATI-HATI)</em>
+                                    </p>
+                                    <p style="margin-bottom: 3px; font-size: 9pt;">
+                                        <strong>PLEASE CHECK ALL GOODS CAREFULLY BEFORE SHIPMENT AND UPON RECEIPT</strong><br/>
+                                        <em>(HARAP PERIKSA SEMUA BARANG DENGAN TELITI SEBELUM PENGIRIMAN DAN SAAT PENERIMAAN)</em>
+                                    </p>
+                                    <p style="margin-bottom: 0; font-size: 9pt;">
+                                        <strong>KINDLY ENSURE ALL FIELDS ARE COMPLETED WITH SIGNATURE, DATE, AND FULL NAME IN EACH COLUMN PROVIDED</strong><br/>
+                                        <em>(Mohon pastikan seluruh kolom diisi lengkap dengan tanda tangan, tanggal, dan nama lengkap pada setiap kolom yang tersedia.)</em>
+                                    </p>
+                                </div>
+                            </div>
                         </div>
+
+                        <!-- Signature Section -->
+                        <div class="row" style="page-break-inside: avoid;">
+                            <div class="col-12">
+                                <table class="table table-bordered" style="border: 2px solid #000;">
+                                    <thead>
+                                        <tr style="background-color: #e0e0e0;">
+                                            <th class="text-center" style="width: 20%; border: 1px solid #000; padding: 8px;">
+                                                <strong>CREATED BY,</strong>
+                                            </th>
+                                            <th class="text-center" style="width: 20%; border: 1px solid #000; padding: 8px;">
+                                                <strong>APPROVED BY,</strong>
+                                            </th>
+                                            <th class="text-center" style="width: 20%; border: 1px solid #000; padding: 8px;">
+                                                <strong>CHECKED BY,<br/>WAREHOUSE</strong>
+                                            </th>
+                                            <th class="text-center" style="width: 20%; border: 1px solid #000; padding: 8px;">
+                                                <strong>WAREHOUSE HEAD</strong>
+                                            </th>
+                                            <th class="text-center" style="width: 20%; border: 1px solid #000; padding: 8px;">
+                                                <strong>RECEIVED BY,<br/>SECURITY<br/>VENDOR / LOGISTIC<br/>PROVIDER</strong>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td style="height: 120px; border: 1px solid #000; vertical-align: bottom; padding: 10px;">
+                                                <div style="margin-top: 70px; font-size: 9pt; line-height: 1.8;">
+                                                    <p style="margin: 0;">_________________</p>
+                                                    <p style="margin: 0;">Name:</p>
+                                                    <p style="margin: 0;">Date:</p>
+                                                </div>
+                                            </td>
+                                            <td style="height: 120px; border: 1px solid #000; vertical-align: bottom; padding: 10px;">
+                                                <div style="margin-top: 70px; font-size: 9pt; line-height: 1.8;">
+                                                    <p style="margin: 0;">_________________</p>
+                                                    <p style="margin: 0;">Name:</p>
+                                                    <p style="margin: 0;">Date:</p>
+                                                </div>
+                                            </td>
+                                            <td style="height: 120px; border: 1px solid #000; vertical-align: bottom; padding: 10px;">
+                                                <div style="margin-top: 70px; font-size: 9pt; line-height: 1.8;">
+                                                    <p style="margin: 0;">_________________</p>
+                                                    <p style="margin: 0;">Name:</p>
+                                                    <p style="margin: 0;">Date:</p>
+                                                </div>
+                                            </td>
+                                            <td style="height: 120px; border: 1px solid #000; vertical-align: bottom; padding: 10px;">
+                                                <div style="margin-top: 70px; font-size: 9pt; line-height: 1.8;">
+                                                    <p style="margin: 0;">_________________</p>
+                                                    <p style="margin: 0;">Name:</p>
+                                                    <p style="margin: 0;">Date:</p>
+                                                </div>
+                                            </td>
+                                            <td style="height: 120px; border: 1px solid #000; vertical-align: bottom; padding: 10px;">
+                                                <div style="margin-top: 70px; font-size: 9pt; line-height: 1.8;">
+                                                    <p style="margin: 0;">_________________</p>
+                                                    <p style="margin: 0;">Name:</p>
+                                                    <p style="margin: 0;">Date:</p>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Stamp Section -->
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <div style="border: 2px dashed #666; padding: 30px; text-align: center; min-height: 100px;">
+                                    <strong style="font-size: 14pt; color: #999;">STAMP</strong>
+                                </div>
+                            </div>
+                        </div>
+
                     </div>
-                </div>
-                
+                </t>
             </xpath>
             
         </template>
