@@ -16,11 +16,10 @@
             </xpath>
 
             <!-- FIELD TAMBAHAN -->
-            <xpath expr="//field[@name='type']" position="after">
+            <xpath expr="//field[@name='type']" position="before">
                 <!-- <field name="is_article" widget="radio"/> -->
-                <field name="is_article"/>
+                <field name="is_article" widget="radio"/>
                 <field name="brand"/>
-              
             </xpath>
 
         </field>
@@ -37,7 +36,7 @@
             <xpath expr="//field[@name='name']" position="after">
                 <!-- <field name="is_article"/>
                 <field name="is_article"/> -->
-                <field name="is_article"/>
+                <field name="is_article" widget="radio"/>
                 <field name="brand"/>
               
             </xpath>
@@ -61,12 +60,19 @@
             <xpath expr="//field[@name='type']" position="after">
                 <field name="is_article" widget="radio"/>
                 <field name="brand"/>
-                <field name="ingredients"/>
-                <field name="gross_weight"/>
-                <field name="net_weight"/>
-                <field name="net_net_weight"/>
-                <field name="base_colour"/>
-                <field name="text_colour"/>
+                <field name="dimension" invisible="is_article != 'yes'"/>
+                <field name="base_colour" invisible="is_article != 'yes'"/>
+                <field name="text_colour" invisible="is_article != 'yes'"/>
+                <field name="ingredients" invisible="is_article != 'no'"/>
+                <field name="Edition" invisible="is_article != 'no'"/>
+                <field name="gross_weight" invisible="is_article != 'no'"/>
+                <field name="net_weight" invisible="is_article != 'no'"/>
+                <field name="net_net_weight" invisible="is_article != 'no'"/>
+    
+            </xpath>
+            <xpath expr="//field[@name='default_code']" position="replace">
+                <field name="default_code" string="PSIT Number" invisible="is_article != 'yes'"/>
+                <field name="default_code" string="ATC Number" invisible="is_article != 'no'"/>
             </xpath>
 
         </field>

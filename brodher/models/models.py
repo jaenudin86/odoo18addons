@@ -10,15 +10,27 @@ class ProductTemplate(models.Model):
     # =========================
     # FIELD TAMBAHAN
     # =========================
-    ingredients = fields.Text(string="Ingredients")
+
+# psit
     brand = fields.Char(string="Brand")
+    dimension = fields.Char(string="Dimension")
+    base_colour = fields.Char(string='Base Colour')
+    text_colour = fields.Char(string='Text Colour')
     size = fields.Char(string="Size")
+
+# atc
+    ingredients = fields.Text(string="Ingredients")
+    Edition = fields.Char(string="Edition")     
     gross_weight = fields.Float(string='Gross Weight')
     net_weight = fields.Float(string='Net Weight')
     net_net_weight = fields.Float(string='Net Net Weight')
-    base_colour = fields.Char(string='Base Colour')
-    text_colour = fields.Char(string='Text Colour')
-    is_article = fields.Boolean(string='Is Article', default=False)
+    # is_article = fields.Boolean(string='Is Article', default=False)
+
+    is_article = fields.Selection(
+    [('yes', 'Yes'), ('no', 'No')],
+    string="Is Article",
+    default='no'
+)
 
 
 
@@ -73,13 +85,22 @@ class ProductProduct(models.Model):
     # =========================
     # RELATED FIELD
     # =========================
-    gross_weight = fields.Float(string='Gross Weight')
-    net_weight = fields.Float(string='Net Weight')
-    net_net_weight = fields.Float(string='Net Net Weight')
+    brand = fields.Char(related='product_tmpl_id.brand', store=True)
+# psit
+    # brand = fields.Char(string="Brand")
+    dimension = fields.Char(string="Dimension")
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
     size = fields.Char(related='product_tmpl_id.size', store=True)
-    is_article = fields.Boolean(related='product_tmpl_id.is_article', store=True)
+    # size = fields.Char(string="Size")
+
+# atc
+    ingredients = fields.Text(string="Ingredients")
+    Edition = fields.Char(string="Edition")     
+    gross_weight = fields.Float(string='Gross Weight')
+    net_weight = fields.Float(string='Net Weight')
+    net_net_weight = fields.Float(string='Net Net Weight')
+    is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
 
     @api.model
     def create(self, vals):
