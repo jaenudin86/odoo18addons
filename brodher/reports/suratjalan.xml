@@ -22,9 +22,9 @@
                             <!-- </div> -->
                             <div class="col-6 text-center">
                                 <!-- Nama Perusahaan dari Company Settings -->
-                                <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">
+                                <!-- <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">
                                     <span t-field="o.company_id.name"/>
-                                </h2>
+                                </h2> -->
                                 <h3 style="margin: 5px 0; font-weight: bold; font-size: 18pt;">DELIVERY ORDER</h3>
                             </div>
                             <div class="col-3">
