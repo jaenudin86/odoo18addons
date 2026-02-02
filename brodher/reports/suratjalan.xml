@@ -19,7 +19,7 @@
                                 <div t-else="" style="border: 2px solid #000; padding: 20px; height: 100px; display: flex; align-items: center; justify-content: center;">
                                     <strong style="font-size: 10pt;">LOGO<br/>PERUSAHAAN</strong>
                                 </div> -->
-                            </div>
+                            <!-- </div> -->
                             <div class="col-6 text-center">
                                 <!-- Nama Perusahaan dari Company Settings -->
                                 <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">
