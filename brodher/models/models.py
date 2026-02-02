@@ -53,7 +53,7 @@ class ProductTemplate(models.Model):
         now = datetime.today()
         ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
 
-        if is_article:
+        if is_article == 'yes':
             prefix = 'ATC'
             date_str = now.strftime('%d%m%y')
             seq = self.env['ir.sequence'].with_context(ctx)\
