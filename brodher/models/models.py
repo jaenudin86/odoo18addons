@@ -25,10 +25,10 @@ class ProductTemplate(models.Model):
     # =========================
     # DEFAULT PRODUCT TYPE = GOODS
     # =========================
-    type = fields.Selection(
-        selection_add=[],
-        default='product'
-    )
+    # type = fields.Selection(
+    #     selection_add=[],
+    #     default='product'
+    # )
 
     # =========================
     # GENERATE ARTICLE NUMBER
