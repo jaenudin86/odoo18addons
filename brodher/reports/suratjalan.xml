@@ -12,13 +12,18 @@
                         <!-- Header Section -->
                         <div class="row" style="border-bottom: 3px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
                             <div class="col-3 text-center">
-                                <!-- Logo Perusahaan - bisa diganti dengan logo aktual -->
-                                <div style="border: 2px solid #000; padding: 20px; height: 100px; display: flex; align-items: center; justify-content: center;">
+                                <!-- Logo Perusahaan dari Company Settings -->
+                                <img t-if="o.company_id.logo" t-att-src="image_data_uri(o.company_id.logo)" 
+                                     style="max-height: 100px; max-width: 150px;" alt="Company Logo"/>
+                                <div t-else="" style="border: 2px solid #000; padding: 20px; height: 100px; display: flex; align-items: center; justify-content: center;">
                                     <strong style="font-size: 10pt;">LOGO<br/>PERUSAHAAN</strong>
                                 </div>
                             </div>
                             <div class="col-6 text-center">
-                                <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">PT AGUNG SUVARNA BHUMI JAYA</h2>
+                                <!-- Nama Perusahaan dari Company Settings -->
+                                <h2 style="margin: 0; font-weight: bold; font-size: 20pt;">
+                                    <span t-field="o.company_id.name"/>
+                                </h2>
                                 <h3 style="margin: 5px 0; font-weight: bold; font-size: 18pt;">DELIVERY ORDER</h3>
                             </div>
                             <div class="col-3">
@@ -66,14 +71,13 @@
                         </div>
 
                         <!-- Weight Information Row -->
-                        <!-- Logic: Ambil dari variant dulu, kalau tidak ada (0 atau False) ambil dari template -->
                         <div class="row" style="margin-bottom: 15px; border: 2px solid #000; padding: 10px;">
                             <t t-set="total_gross" t-value="0"/>
                             <t t-set="total_net" t-value="0"/>
                             <t t-set="total_net_net" t-value="0"/>
                             
                             <t t-foreach="o.move_ids_without_package" t-as="move">
-                                <!-- Ambil dari variant dulu -->
+                                <!-- Ambil dari variant dulu, kalau tidak ada ambil dari template -->
                                 <t t-set="gross" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight or 0"/>
                                 <t t-set="net" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight or 0"/>
                                 <t t-set="net_net" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight or 0"/>
@@ -98,13 +102,16 @@
                             </div>
                         </div>
 
-                        <!-- Product Table -->
+                        <!-- Product Table dengan Weight Columns -->
                         <table class="table table-bordered" style="border: 2px solid #000; margin-bottom: 15px;">
                             <thead style="background-color: #f0f0f0;">
                                 <tr>
-                                    <th class="text-center" style="width: 5%; border: 1px solid #000;"><strong>NO</strong></th>
-                                    <th class="text-center" style="width: 75%; border: 1px solid #000;"><strong>PRODUCT</strong></th>
-                                    <th class="text-center" style="width: 20%; border: 1px solid #000;"><strong>QTY</strong></th>
+                                    <th class="text-center" style="width: 3%; border: 1px solid #000;"><strong>NO</strong></th>
+                                    <th class="text-center" style="width: 35%; border: 1px solid #000;"><strong>PRODUCT</strong></th>
+                                    <th class="text-center" style="width: 10%; border: 1px solid #000;"><strong>GROSS<br/>WEIGHT<br/>(kg)</strong></th>
+                                    <th class="text-center" style="width: 10%; border: 1px solid #000;"><strong>NET<br/>WEIGHT<br/>(kg)</strong></th>
+                                    <th class="text-center" style="width: 10%; border: 1px solid #000;"><strong>NET NET<br/>WEIGHT<br/>(kg)</strong></th>
+                                    <th class="text-center" style="width: 12%; border: 1px solid #000;"><strong>QTY</strong></th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -118,14 +125,14 @@
                                     <t t-set="ingredients" t-value="move.product_id.ingredients or move.product_id.product_tmpl_id.ingredients"/>
                                     <t t-set="base_colour" t-value="move.product_id.base_colour or move.product_id.product_tmpl_id.base_colour"/>
                                     <t t-set="text_colour" t-value="move.product_id.text_colour or move.product_id.product_tmpl_id.text_colour"/>
-                                    <t t-set="gross_w" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight"/>
-                                    <t t-set="net_w" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight"/>
-                                    <t t-set="net_net_w" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight"/>
+                                    <t t-set="gross_w" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight or 0"/>
+                                    <t t-set="net_w" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight or 0"/>
+                                    <t t-set="net_net_w" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight or 0"/>
                                     
-                                    <td class="text-center" style="border: 1px solid #000;">
+                                    <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding-top: 8px;">
                                         <span t-esc="line_num"/>
                                     </td>
-                                    <td style="border: 1px solid #000; padding: 8px;">
+                                    <td style="border: 1px solid #000; padding: 8px; vertical-align: top;">
                                         <strong><span t-field="move.product_id.display_name"/></strong>
                                         
                                         <!-- Brand & Size -->
@@ -161,24 +168,34 @@
                                                 </t>
                                             </span>
                                         </t>
-                                        
-                                        <!-- Weights -->
-                                        <t t-if="gross_w or net_w or net_net_w">
-                                            <br/>
-                                            <span style="font-size: 9pt;">
-                                                <t t-if="gross_w">
-                                                    Gross: <span t-esc="'%.2f' % gross_w"/> kg
-                                                </t>
-                                                <t t-if="net_w">
-                                                    <t t-if="gross_w"> | </t>Net: <span t-esc="'%.2f' % net_w"/> kg
-                                                </t>
-                                                <t t-if="net_net_w">
-                                                    <t t-if="gross_w or net_w"> | </t>Net Net: <span t-esc="'%.2f' % net_net_w"/> kg
-                                                </t>
-                                            </span>
-                                        </t>
                                     </td>
-                                    <td class="text-center" style="border: 1px solid #000;">
+                                    
+                                    <!-- Gross Weight Column -->
+                                    <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding-top: 8px;">
+                                        <t t-if="gross_w">
+                                            <span t-esc="'%.2f' % gross_w"/>
+                                        </t>
+                                        <t t-else="">-</t>
+                                    </td>
+                                    
+                                    <!-- Net Weight Column -->
+                                    <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding-top: 8px;">
+                                        <t t-if="net_w">
+                                            <span t-esc="'%.2f' % net_w"/>
+                                        </t>
+                                        <t t-else="">-</t>
+                                    </td>
+                                    
+                                    <!-- Net Net Weight Column -->
+                                    <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding-top: 8px;">
+                                        <t t-if="net_net_w">
+                                            <span t-esc="'%.2f' % net_net_w"/>
+                                        </t>
+                                        <t t-else="">-</t>
+                                    </td>
+                                    
+                                    <!-- Quantity Column -->
+                                    <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding-top: 8px;">
                                         <span t-field="move.product_uom_qty"/>
                                         <span t-field="move.product_uom" groups="uom.group_uom"/>
                                     </td>
@@ -188,7 +205,10 @@
                                 <t t-if="len(o.move_ids_without_package) &lt; 8">
                                     <t t-foreach="range(8 - len(o.move_ids_without_package))" t-as="i">
                                         <tr>
-                                            <td style="border: 1px solid #000; height: 40px;">&#160;</td>
+                                            <td style="border: 1px solid #000; height: 35px;">&#160;</td>
+                                            <td style="border: 1px solid #000;">&#160;</td>
+                                            <td style="border: 1px solid #000;">&#160;</td>
+                                            <td style="border: 1px solid #000;">&#160;</td>
                                             <td style="border: 1px solid #000;">&#160;</td>
                                             <td style="border: 1px solid #000;">&#160;</td>
                                         </tr>
@@ -199,6 +219,15 @@
                                 <tr style="background-color: #f0f0f0;">
                                     <td colspan="2" class="text-right" style="border: 1px solid #000; padding: 8px;">
                                         <strong>TOTAL</strong>
+                                    </td>
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <strong><t t-esc="'%.2f' % total_gross"/></strong>
+                                    </td>
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <strong><t t-esc="'%.2f' % total_net"/></strong>
+                                    </td>
+                                    <td class="text-center" style="border: 1px solid #000;">
+                                        <strong><t t-esc="'%.2f' % total_net_net"/></strong>
                                     </td>
                                     <td class="text-center" style="border: 1px solid #000;">
                                         <strong>
