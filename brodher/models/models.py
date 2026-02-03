@@ -127,10 +127,10 @@ class ProductProduct(models.Model):
 
         return super().create(vals)
 
-    def write(self, vals):
-        res = super().write(vals)
-        if 'default_code' in vals:
-            for rec in self:
-                if rec.default_code and rec.barcode != rec.default_code:
-                    rec.barcode = rec.default_code
-        return res
+    # def write(self, vals):
+    #     res = super().write(vals)
+    #     if 'default_code' in vals:
+    #         for rec in self:
+    #             if rec.default_code and rec.barcode != rec.default_code:
+    #                 rec.barcode = rec.default_code
+    #     return res
