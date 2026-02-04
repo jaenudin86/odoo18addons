@@ -26,15 +26,16 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
+
             <!-- Replenish -->
             <!-- <xpath expr="//button[@name='action_replenish']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath> -->
 
             <!-- Print Labels -->
-            <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
+            <!-- <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
 
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="before">
@@ -55,6 +56,29 @@
                 <field name="text_colour"
                        invisible="is_article != 'no'"
                        required="is_article == 'no'"/>
+
+
+                <!-- ATC -->
+                                <!-- ATC -->
+                <field name="ingredients"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="Edition"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="gross_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="net_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="net_net_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
 
             </xpath>
             <xpath expr="//field[@name='default_code']" position="replace">
@@ -107,14 +131,14 @@
             </xpath>
 
             <!-- Replenish -->
-            <xpath expr="//button[@name='action_replenish']" position="attributes">
+            <!-- <xpath expr="//button[@name='action_replenish']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
 
             <!-- Print Labels -->
-            <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
+            <!-- <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
 
             <xpath expr="//field[@name='type']" position="after">
 
