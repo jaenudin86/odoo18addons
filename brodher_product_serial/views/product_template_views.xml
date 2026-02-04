@@ -17,7 +17,7 @@
                 <field name="sn_product_type" widget="radio" invisible="is_article != 'yes'"/>
             </xpath>
             
-            <xpath expr="//notebook" position="inside">
+            <!-- <xpath expr="//notebook" position="inside">
                 <page string="Serial Numbers" name="serial_numbers">
                     <group>
                         <group>
@@ -42,7 +42,7 @@
                         </list>
                     </field>
                 </page>
-            </xpath>
+            </xpath> -->
             
         </field>
     </record>
@@ -59,7 +59,7 @@
                 </button>
             </xpath>
             
-            <xpath expr="//notebook" position="inside">
+            <!-- <xpath expr="//notebook" position="inside">
                 <page string="Serial Numbers" name="serial_numbers">
                     <group>
                         <group></group>
@@ -82,7 +82,7 @@
                         </list>
                     </field>
                 </page>
-            </xpath>
+            </xpath> -->
             
         </field>
     </record>
