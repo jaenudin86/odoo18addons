@@ -70,7 +70,25 @@ class ProductTemplate(models.Model):
     def create(self, vals):
         # Pastikan selalu Goods
         vals.setdefault('type', 'product')
+        vals.setdefault('type', 'product')
+
+        # Auto tracking
+        if vals.get('is_article') == 'yes':
+            vals['tracking'] = 'serial'
+        else:
+            vals['tracking'] = 'none'
         return super().create(vals)
+    def write(self, vals):
+        res = super().write(vals)
+
+        if 'is_article' in vals:
+            for rec in self:
+                if rec.is_article == 'yes':
+                    rec.tracking = 'serial'
+                else:
+                    rec.tracking = 'none'
+
+        return res
 
 
 class ProductProduct(models.Model):
@@ -88,9 +106,9 @@ class ProductProduct(models.Model):
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
 # psit
     # brand = fields.Char(string="Brand")
-    dimension = fields.Char(string="Dimension")
-    base_colour = fields.Char(string='Base Colour')
-    text_colour = fields.Char(string='Text Colour')
+    dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
+    base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
+    text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
     # size = fields.Char(string="Size")
 
