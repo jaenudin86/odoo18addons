@@ -380,8 +380,146 @@ class StockPicking(models.Model):
         error_msg = '\n'.join(error_lines)
         
         return False, error_msg, True  # can_partial=True
-    
     def button_validate(self):
+        """
+        Override validate - handle SN validation, stock check, and partial receipts
+        """
+        import logging
+        _logger = logging.getLogger(__name__)
+        
+        for picking in self:
+            # Skip SN check if coming from partial wizard
+            skip_wizard = self.env.context.get('skip_sn_wizard', False)
+            
+            if skip_wizard:
+                _logger.info(f'[VALIDATE] Skipping checks (from partial receipt)')
+                return super(StockPicking, self).button_validate()
+            
+            # ==========================================
+            # CHECK 1: Stock Availability (OUT/INTERNAL only, non-SN products)
+            # ==========================================
+            if picking.picking_type_code in ['outgoing', 'internal']:
+                _logger.info(f'[VALIDATE] Checking stock for {picking.name}')
+                
+                # Get non-SN products
+                non_sn_moves = picking.move_ids_without_package.filtered(
+                    lambda m: m.product_id.tracking != 'serial' or 
+                            not m.product_id.product_tmpl_id.sn_product_type
+                )
+                
+                if non_sn_moves:
+                    # Check 1A: Stock belum di-check (OUTGOING only)
+                    if picking.picking_type_code == 'outgoing':
+                        unchecked_moves = non_sn_moves.filtered(
+                            lambda m: m.state in ['waiting', 'confirmed']
+                        )
+                        
+                        if unchecked_moves:
+                            product_names = ', '.join(unchecked_moves.mapped('product_id.display_name')[:3])
+                            if len(unchecked_moves) > 3:
+                                product_names += f' (+{len(unchecked_moves) - 3} lainnya)'
+                            
+                            _logger.warning(f'[VALIDATE] Stock belum di-check: {product_names}')
+                            
+                            raise UserError(_(
+                                '⚠️ Stock Belum Di-Check!\n\n'
+                                'Produk: %s\n\n'
+                                '📋 Silakan klik tombol "Check Availability" terlebih dahulu.\n\n'
+                                'Tombol ini akan mengecek ketersediaan stock dan mereserve '
+                                'barang dari gudang sebelum bisa di-validate.'
+                            ) % product_names)
+                    
+                    # Check 1B: Stock tidak cukup (OUTGOING & INTERNAL)
+                    insufficient_moves = []
+                    
+                    for move in non_sn_moves:
+                        if move.state == 'done':
+                            continue
+                        
+                        # Hitung qty yang sudah di-reserve dari move_lines
+                        reserved_qty = sum(move.move_line_ids.mapped('quantity'))
+                        needed_qty = move.product_uom_qty
+                        
+                        # Cek stock actual di source location
+                        stock_qty = move.product_id.with_context(
+                            location=picking.location_id.id
+                        ).qty_available
+                        
+                        # Kalau stock tidak cukup
+                        if stock_qty < needed_qty:
+                            insufficient_moves.append({
+                                'move': move,
+                                'needed': needed_qty,
+                                'stock': stock_qty,
+                            })
+                    
+                    if insufficient_moves:
+                        error_lines = []
+                        for item in insufficient_moves[:5]:
+                            move = item['move']
+                            needed = item['needed']
+                            stock = item['stock']
+                            unit = move.product_uom.name
+                            kurang = needed - stock
+                            
+                            error_lines.append(
+                                f"• {move.product_id.display_name}\n"
+                                f"  Dibutuhkan: {needed} {unit}\n"
+                                f"  Tersedia di {picking.location_id.display_name}: {stock} {unit}\n"
+                                f"  Kurang: {kurang} {unit}"
+                            )
+                        
+                        if len(insufficient_moves) > 5:
+                            error_lines.append(f"• ... dan {len(insufficient_moves) - 5} produk lainnya")
+                        
+                        transfer_type = "Delivery Order" if picking.picking_type_code == 'outgoing' else "Internal Transfer"
+                        check_button = "Check Availability" if picking.picking_type_code == 'outgoing' else "Check Stock"
+                        
+                        _logger.error(f'[VALIDATE] Stock tidak cukup untuk {len(insufficient_moves)} produk')
+                        
+                        raise UserError(_(
+                            '❌ Stock Tidak Cukup untuk %s!\n\n'
+                            '%s\n\n'
+                            '📋 Pilihan:\n'
+                            '1. Klik "%s" untuk refresh ketersediaan stock\n'
+                            '2. Kurangi quantity sesuai stock yang tersedia\n'
+                            '3. Tunggu stock replenishment\n'
+                            '4. Buat partial transfer (sisanya jadi backorder)'
+                        ) % (transfer_type, '\n\n'.join(error_lines), check_button))
+            
+            # ==========================================
+            # CHECK 2: Serial Number Completion (SN products)
+            # ==========================================
+            has_sn_products = any(
+                move.product_id.tracking == 'serial' and 
+                move.product_id.product_tmpl_id.sn_product_type
+                for move in picking.move_ids_without_package
+            )
+            
+            if has_sn_products:
+                _logger.info(f'[VALIDATE] Checking SN completion for {picking.name}')
+                
+                is_complete, error_msg, can_partial = picking._check_sn_scan_completion()
+                
+                if not is_complete:
+                    _logger.info(f'[VALIDATE] Incomplete scan detected')
+                    
+                    return {
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'brodher.sn.validation.wizard',
+                        'view_mode': 'form',
+                        'target': 'new',
+                        'context': {
+                            'default_picking_id': picking.id,
+                            'default_warning_message': error_msg,
+                            'default_can_create_backorder': True,
+                        }
+                    }
+        
+        _logger.info(f'[VALIDATE] All checks passed, proceeding to standard validation')
+        return super(StockPicking, self).button_validate()
+    
+    def button_validate1(self):
             """
             Override validate - handle SN validation and partial receipts
             """
