@@ -27,7 +27,7 @@ class ProductTemplate(models.Model):
     # is_article = fields.Boolean(string='Is Article', default=False)
 
     is_article = fields.Selection(
-    [('yes', 'Yes'), ('no', 'No')],
+    [('yes', 'ATC'), ('no', 'PSIT')],
     string="Is Article",
     default='no'
 )

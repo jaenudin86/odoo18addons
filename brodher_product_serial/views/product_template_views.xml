@@ -14,7 +14,7 @@
             
             <!-- <xpath expr="//group[@name='group_general']" position="inside"> -->
             <xpath expr="//field[@name='type']" position="before">
-                <field name="sn_product_type" invisible="is_article != 'no'"/>
+                <field name="sn_product_type" widget="radio" invisible="is_article != 'yes'"/>
             </xpath>
             
             <xpath expr="//notebook" position="inside">

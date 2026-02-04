@@ -17,13 +17,25 @@
 
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="before">
-                <!-- <field name="is_article" widget="radio"/> -->
+
                 <field name="is_article" widget="radio"/>
-                <field name="brand"/>
-                <!-- sn_product_type -->
-                <field name="dimension" invisible="is_article != 'no'"/>
-                <field name="base_colour" invisible="is_article != 'no'"/>
-                <field name="text_colour" invisible="is_article != 'no'"/>
+
+                <!-- PSIT -->
+                <field name="brand"
+                       required="is_article == 'no'"/>
+
+                <field name="dimension"
+                       invisible="is_article != 'no'"
+                       required="is_article == 'no'"/>
+
+                <field name="base_colour"
+                       invisible="is_article != 'no'"
+                       required="is_article == 'no'"/>
+
+                <field name="text_colour"
+                       invisible="is_article != 'no'"
+                       required="is_article == 'no'"/>
+
             </xpath>
 
         </field>
@@ -37,14 +49,12 @@
         <field name="model">product.template</field>
         <field name="inherit_id" ref="product.product_template_tree_view"/>
         <field name="arch" type="xml">
+
             <xpath expr="//field[@name='name']" position="after">
-                <!-- <field name="is_article"/>
-                <field name="is_article"/> -->
-                <field name="is_article" widget="radio"/>
+                <field name="is_article"/>
                 <field name="brand"/>
-                
-              
             </xpath>
+
         </field>
     </record>
 
@@ -63,41 +73,70 @@
             </xpath>
 
             <xpath expr="//field[@name='type']" position="after">
-                <field name="is_article" widget="radio"/>
-                <field name="brand"/>
-                
 
-                <field name="ingredients" invisible="is_article != 'yes'"/>
-                <field name="Edition" invisible="is_article != 'yes'"/>
-                <field name="gross_weight" invisible="is_article != 'yes'"/>
-                <field name="net_weight" invisible="is_article != 'yes'"/>
-                <field name="net_net_weight" invisible="is_article != 'yes'"/>
-    
+                <field name="is_article" widget="radio"/>
+
+                <!-- PSIT -->
+                <field name="brand"
+                       required="is_article == 'no'"/>
+
+                <!-- ATC -->
+                <field name="ingredients"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="Edition"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="gross_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="net_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
+                <field name="net_net_weight"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
+
             </xpath>
+
+            <!-- DEFAULT CODE -->
             <xpath expr="//field[@name='default_code']" position="replace">
-                <field name="default_code" string="PSIT Number" invisible="is_article != 'no'"/>
-                <field name="default_code" string="ATC Number" invisible="is_article != 'yes'"/>
+                <field name="default_code"
+                       string="PSIT Number"
+                       invisible="is_article != 'no'"/>
+
+                <field name="default_code"
+                       string="ATC Number"
+                       invisible="is_article != 'yes'"/>
             </xpath>
 
         </field>
     </record>
 
-    <record id="seq_article_number" model="ir.sequence">
-    <field name="name">Article Number</field>
-    <field name="code">article.number.sequence</field>
-    <field name="prefix">ATC%(day)s%(month)s%(year)s</field>
-    <field name="padding">3</field>
-    <field name="implementation">standard</field>
-    <field name="use_date_range">True</field>
-</record>
+    <!-- ========================= -->
+    <!-- SEQUENCES -->
+    <!-- ========================= -->
 
-<record id="seq_psit_number" model="ir.sequence">
-    <field name="name">PSIT Number</field>
-    <field name="code">pist.number.sequence</field>
-    <field name="prefix">PSIT%(year)s</field>
-    <field name="padding">4</field>
-    <field name="implementation">standard</field>
-    <field name="use_date_range">True</field>
-</record>
+    <record id="seq_article_number" model="ir.sequence">
+        <field name="name">Article Number</field>
+        <field name="code">article.number.sequence</field>
+        <field name="prefix">ATC%(day)s%(month)s%(year)s</field>
+        <field name="padding">3</field>
+        <field name="implementation">standard</field>
+        <field name="use_date_range">True</field>
+    </record>
+
+    <record id="seq_psit_number" model="ir.sequence">
+        <field name="name">PSIT Number</field>
+        <field name="code">pist.number.sequence</field>
+        <field name="prefix">PSIT%(year)s</field>
+        <field name="padding">4</field>
+        <field name="implementation">standard</field>
+        <field name="use_date_range">True</field>
+    </record>
 
 </odoo>
