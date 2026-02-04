@@ -32,20 +32,20 @@
             <!-- Add Generate SN buttons after action_assign -->
             <xpath expr="//button[@name='action_assign']" position="after">
                 
-                <!-- Generate Serial Numbers Button -->
+                <!-- Generate Serial Numbers Button (HIDDEN for backorder) -->
                 <button name="action_generate_serial_numbers" 
                         string="Generate SN" 
                         type="object" 
                         class="btn-primary"
-                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or backorder_id"
                         help="Generate serial numbers (must scan after generation)"/>
                 
-                <!-- Quick Generate All Button -->
+                <!-- Quick Generate All Button (HIDDEN for backorder) -->
                 <button name="action_bulk_generate_all" 
                         string="Quick Generate All" 
                         type="object" 
                         class="btn-success"
-                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated or backorder_id"
                         confirm="This will automatically generate serial numbers for all products. Continue?"
                         help="Auto-generate all SNs"/>
                 
@@ -72,10 +72,21 @@
             <!-- Add warning banners at top of sheet -->
             <xpath expr="//sheet" position="before">
                 
-                <!-- Step 1: Generate SN -->
+                <!-- BACKORDER NOTICE (NEW) -->
+                <div class="alert alert-info text-center" 
+                     role="alert" 
+                     invisible="not backorder_id or not has_sn_products">
+                    <p class="mb-0">
+                        <i class="fa fa-info-circle"/> <strong>📦 Backorder Notice</strong><br/>
+                        Serial numbers were already generated in <field name="backorder_id" readonly="1" class="oe_inline"/>.<br/>
+                        Please use <strong>"Scan Serial Number"</strong> to receive remaining items.
+                    </p>
+                </div>
+                
+                <!-- Step 1: Generate SN (HIDDEN for backorder) -->
                 <div class="alert alert-warning" 
                      role="alert" 
-                     invisible="not has_sn_products or serial_numbers_generated">
+                     invisible="not has_sn_products or serial_numbers_generated or backorder_id">
                     <p class="mb-0">
                         <strong>⚠️ Step 1:</strong> Generate serial numbers first by clicking 
                         <strong>"Generate SN"</strong> button above.
@@ -85,7 +96,7 @@
                 <!-- Step 2: Scan SN -->
                 <div class="alert alert-info" 
                      role="alert" 
-                     invisible="not serial_numbers_generated or sn_scan_complete">
+                     invisible="(not serial_numbers_generated and not backorder_id) or sn_scan_complete">
                     <p class="mb-0">
                         <strong>📱 Step 2:</strong> Scan serial numbers. 
                         Progress: <strong><field name="scanned_sn_count"/> / <field name="generated_sn_count"/></strong> scanned.
@@ -124,6 +135,18 @@
                         invisible="scanned_sn_count == 0">
                     <field name="scanned_sn_count" widget="statinfo" string="Scanned SNs"/>
                 </button>
+                
+                <!-- Backorder Button (NEW) -->
+                <button name="action_view_backorder"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-truck"
+                        invisible="not backorder_id">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">View</span>
+                        <span class="o_stat_text">Backorder</span>
+                    </div>
+                </button>
             </xpath>
             
             <!-- Update Operations tab -->
@@ -142,6 +165,7 @@
                         <group string="Generation Status">
                             <field name="serial_numbers_generated" readonly="1"/>
                             <field name="generated_sn_count" readonly="1"/>
+                            <field name="backorder_id" readonly="1" invisible="not backorder_id"/>
                         </group>
                         <group string="Scan Status">
                             <field name="scanned_sn_count" readonly="1"/>
@@ -186,11 +210,17 @@
                         </field>
                     </group>
                     
-                    <div class="alert alert-warning" invisible="sn_scan_complete or not serial_numbers_generated">
+                    <div class="alert alert-warning" invisible="sn_scan_complete or (not serial_numbers_generated and not backorder_id)">
                         <h5>⚠️ Incomplete Scan</h5>
                         <p>
-                            You have generated <strong><field name="generated_sn_count"/></strong> serial numbers, 
-                            but only scanned <strong><field name="scanned_sn_count"/></strong>.
+                            <span invisible="backorder_id">
+                                You have generated <strong><field name="generated_sn_count"/></strong> serial numbers, 
+                                but only scanned <strong><field name="scanned_sn_count"/></strong>.
+                            </span>
+                            <span invisible="not backorder_id">
+                                This backorder requires <strong><field name="generated_sn_count"/></strong> serial numbers, 
+                                but only <strong><field name="scanned_sn_count"/></strong> scanned.
+                            </span>
                         </p>
                         <p>
                             <strong>Remaining: <field name="sn_remaining"/></strong>
