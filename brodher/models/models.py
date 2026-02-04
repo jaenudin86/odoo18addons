@@ -68,25 +68,39 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        # Pastikan selalu Goods
-        vals.setdefault('type', 'product')
+        # selalu stockable
+        vals.setdefault('is_storable', True)
         vals.setdefault('type', 'product')
 
-        # Auto tracking
+        # AUTO TRACK INVENTORY
         if vals.get('is_article') == 'yes':
-            vals['tracking'] = 'serial'
+            vals.update({
+                'is_storable': True,
+                'tracking': 'serial',   # ATC
+            })
         else:
-            vals['tracking'] = 'none'
+            vals.update({
+                'is_storable': True,
+                'tracking': 'none',     # PSIT (qty)
+            })
+
         return super().create(vals)
+
     def write(self, vals):
         res = super().write(vals)
 
         if 'is_article' in vals:
             for rec in self:
                 if rec.is_article == 'yes':
-                    rec.tracking = 'serial'
+                    rec.write({
+                        'is_storable': True,
+                        'tracking': 'serial',
+                    })
                 else:
-                    rec.tracking = 'none'
+                    rec.write({
+                        'is_storable': True,
+                        'tracking': 'none',
+                    })
 
         return res
 
