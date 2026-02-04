@@ -21,6 +21,21 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
+                    <!-- Update Quantity -->
+            <xpath expr="//button[@name='action_update_quantity_on_hand']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Replenish -->
+            <xpath expr="//button[@name='action_replenish']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Print Labels -->
+            <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="before">
 
@@ -83,6 +98,21 @@
 
             <!-- HIDE TYPE -->
             <xpath expr="//field[@name='type']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+                        <!-- Update Quantity -->
+            <xpath expr="//button[@name='action_update_quantity_on_hand']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Replenish -->
+            <xpath expr="//button[@name='action_replenish']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Print Labels -->
+            <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
