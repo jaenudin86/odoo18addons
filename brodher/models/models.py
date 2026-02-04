@@ -73,36 +73,36 @@ class ProductTemplate(models.Model):
         vals.setdefault('type', 'product')
 
         # AUTO TRACK INVENTORY
-        if vals.get('is_article') == 'yes':
-            vals.update({
-                'is_storable': True,
-                'tracking': 'serial',   # ATC
-            })
-        else:
-            vals.update({
-                'is_storable': True,
-                'tracking': 'none',     # PSIT (qty)
-            })
+        # if vals.get('is_article') == 'yes':
+        #     vals.update({
+        #         'is_storable': True,
+        #         'tracking': 'serial',   # ATC
+        #     })
+        # else:
+        #     vals.update({
+        #         'is_storable': True,
+        #         'tracking': 'none',     # PSIT (qty)
+        #     })
 
         return super().create(vals)
 
-    def write(self, vals):
-        res = super().write(vals)
+    # def write(self, vals):
+    #     res = super().write(vals)
 
-        if 'is_article' in vals:
-            for rec in self:
-                if rec.is_article == 'yes':
-                    rec.write({
-                        'is_storable': True,
-                        'tracking': 'serial',
-                    })
-                else:
-                    rec.write({
-                        'is_storable': True,
-                        'tracking': 'none',
-                    })
+    #     if 'is_article' in vals:
+    #         for rec in self:
+    #             if rec.is_article == 'yes':
+    #                 rec.write({
+    #                     'is_storable': True,
+    #                     'tracking': 'serial',
+    #                 })
+    #             else:
+    #                 rec.write({
+    #                     'is_storable': True,
+    #                     'tracking': 'none',
+    #                 })
 
-        return res
+    #     return res
 
 
 class ProductProduct(models.Model):
