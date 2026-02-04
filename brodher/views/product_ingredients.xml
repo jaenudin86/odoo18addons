@@ -20,6 +20,10 @@
                 <!-- <field name="is_article" widget="radio"/> -->
                 <field name="is_article" widget="radio"/>
                 <field name="brand"/>
+                <!-- sn_product_type -->
+                <field name="dimension" invisible="is_article != 'no'"/>
+                <field name="base_colour" invisible="is_article != 'no'"/>
+                <field name="text_colour" invisible="is_article != 'no'"/>
             </xpath>
 
         </field>
@@ -38,6 +42,7 @@
                 <field name="is_article"/> -->
                 <field name="is_article" widget="radio"/>
                 <field name="brand"/>
+                
               
             </xpath>
         </field>
@@ -60,9 +65,8 @@
             <xpath expr="//field[@name='type']" position="after">
                 <field name="is_article" widget="radio"/>
                 <field name="brand"/>
-                <field name="dimension" invisible="is_article != 'no'"/>
-                <field name="base_colour" invisible="is_article != 'no'"/>
-                <field name="text_colour" invisible="is_article != 'no'"/>
+                
+
                 <field name="ingredients" invisible="is_article != 'yes'"/>
                 <field name="Edition" invisible="is_article != 'yes'"/>
                 <field name="gross_weight" invisible="is_article != 'yes'"/>
