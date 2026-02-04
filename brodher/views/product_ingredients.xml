@@ -27,9 +27,9 @@
             </xpath>
 
             <!-- Replenish -->
-            <xpath expr="//button[@name='action_replenish']" position="attributes">
+            <!-- <xpath expr="//button[@name='action_replenish']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
 
             <!-- Print Labels -->
             <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
