@@ -39,7 +39,7 @@
                         string="Print QR Labels" 
                         type="action" 
                         class="oe_highlight"
-                        invisible="is_article == 'no'"/>
+                        invisible="is_article == 'yes'"/>
             </xpath>
         </field>
     </record>
