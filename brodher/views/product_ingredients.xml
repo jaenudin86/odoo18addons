@@ -60,6 +60,9 @@
 
                 <!-- ATC -->
                                 <!-- ATC -->
+                <field name="date_month_year"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
                 <field name="ingredients"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
@@ -149,6 +152,9 @@
                        required="is_article == 'no'"/>
 
                 <!-- ATC -->
+                <field name="date_month_year"
+                       invisible="is_article != 'yes'"
+                       required="is_article == 'yes'"/>
                 <field name="ingredients"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>

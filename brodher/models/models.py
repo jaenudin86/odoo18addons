@@ -24,6 +24,7 @@ class ProductTemplate(models.Model):
     gross_weight = fields.Float(string='Gross Weight')
     net_weight = fields.Float(string='Net Weight')
     net_net_weight = fields.Float(string='Net Net Weight')
+    date_month_year = fields.Date(related='product_tmpl_id.date_month_year', store=True)
     # is_article = fields.Boolean(string='Is Article', default=False)
 
     is_article = fields.Selection(
@@ -127,12 +128,13 @@ class ProductProduct(models.Model):
     # size = fields.Char(string="Size")
 
 # atc
-    ingredients = fields.Text(string="Ingredients")
-    Edition = fields.Char(string="Edition")     
-    gross_weight = fields.Float(string='Gross Weight')
-    net_weight = fields.Float(string='Net Weight')
-    net_net_weight = fields.Float(string='Net Net Weight')
+    ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
+    Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
+    gross_weight = fields.Float(related='product_tmpl_id.gross_weight', store=True)
+    net_weight = fields.Float(related='product_tmpl_id.net_weight', store=True)
+    net_net_weight = fields.Float(related='product_tmpl_id.net_net_weight', store=True)
     is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
+    date_month_year = fields.Date(related='product_tmpl_id.date_month_year', store=True)
 
     @api.model
     def create(self, vals):
