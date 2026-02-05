@@ -24,7 +24,7 @@ class ProductTemplate(models.Model):
     gross_weight = fields.Float(string='Gross Weight')
     net_weight = fields.Float(string='Net Weight')
     net_net_weight = fields.Float(string='Net Net Weight')
-    date_month_year = fields.Date(related='product_tmpl_id.date_month_year', store=True)
+    date_month_year = fields.Date()(string='Date (Month/Year) Design')
     # is_article = fields.Boolean(string='Is Article', default=False)
 
     is_article = fields.Selection(
