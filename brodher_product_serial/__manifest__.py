@@ -39,6 +39,7 @@
         'reports/sn_qr_label_report.xml',
         'reports/stock_picking_qrcode_report.xml',
         'wizard/product_qrcode_label_wizard_view.xml',
+        'wizard/sn_print_wizard_views.xml',  # Add this
         'reports/paperformat.xml',
         'reports/product_qrcode_label_report.xml',
         'reports/product_qrcode_label_template.xml',
@@ -49,6 +50,8 @@
          'reports/sn_status_report.xml',
          
          'views/sn_status_report_menu.xml',
+         'wizard/sn_print_wizard_views.xml',
+         'report/sn_print_report.xml',  # Add this
 
          
 

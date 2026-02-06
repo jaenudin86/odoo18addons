@@ -15,6 +15,13 @@ class StockLot(models.Model):
     sn_type = fields.Selection([
         ('M', 'Man'), ('W', 'Woman')
     ], string='Product Type', index=True)
+
+    # Print tracking fields
+    is_printed = fields.Boolean('Sudah Dicetak', default=False, readonly=True)
+    print_count = fields.Integer('Jumlah Cetak', default=0, readonly=True)
+    last_print_date = fields.Datetime('Terakhir Dicetak', readonly=True)
+    last_print_user = fields.Many2one('res.users', 'Dicetak Oleh', readonly=True)
+    print_history_ids = fields.One2many('stock.lot.print.history', 'lot_id', 'History Cetak')
     
     year_code = fields.Char(string='Year Code', size=2, readonly=True, index=True)
     sequence_number = fields.Integer(string='Sequence Number', readonly=True, index=True)

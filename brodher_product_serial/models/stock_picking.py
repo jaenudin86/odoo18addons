@@ -583,25 +583,33 @@ class StockPicking(models.Model):
         return serial_numbers
 
     def action_print_sn_qrcode(self):
-        """Print QR code labels for generated serial numbers"""
+        """Open wizard to select which SNs to print"""
         self.ensure_one()
         
         if not self.serial_numbers_generated:
             raise UserError(_(
-                '❌ No serial numbers to print!\n\n'
-                'Please generate serial numbers first.'
+                '❌ Belum Ada Serial Number!\n\n'
+                'Silakan generate serial number terlebih dahulu.'
             ))
         
         serial_numbers = self._get_generated_serial_numbers()
         
         if not serial_numbers:
             raise UserError(_(
-                '❌ No serial numbers found!\n\n'
-                'Serial numbers may have been generated but not tracked properly.'
+                '❌ Serial Number Tidak Ditemukan!\n\n'
+                'SN mungkin sudah di-generate tapi belum ter-track dengan benar.'
             ))
         
-        return self.env.ref('brodher_product_serial.action_report_serial_number_qrcode').report_action(self)
-
+        return {
+            'name': _('Print QR Code - %s') % self.name,
+            'type': 'ir.actions.act_window',
+            'res_model': 'brodher.sn.print.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_picking_id': self.id,
+            }
+        }
     def _create_backorder(self):
         """
         Override to ensure backorder is created for partial receipts

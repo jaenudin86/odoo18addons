@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <record id="view_sn_print_wizard_form" model="ir.ui.view">
+        <field name="name">brodher.sn.print.wizard.form</field>
+        <field name="model">brodher.sn.print.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Print Serial Number QR Code">
+                <sheet>
+                    <div class="oe_title">
+                        <h1><i class="fa fa-print"/> Print QR Code Labels</h1>
+                        <h2><field name="picking_name" readonly="1" class="oe_inline"/></h2>
+                    </div>
+                    
+                    <field name="picking_id" invisible="1"/>
+                    <field name="step" invisible="1"/>
+                    
+                    <!-- ========================================== -->
+                    <!-- STEP 1: Select Products -->
+                    <!-- ========================================== -->
+                    <div invisible="step != 'product'">
+                        <group>
+                            <div class="alert alert-info">
+                                <strong>📦 Step 1: Pilih Produk</strong>
+                                <p class="mb-0">Pilih produk mana yang ingin dicetak QR code-nya</p>
+                            </div>
+                        </group>
+                        
+                        <group>
+                            <field name="total_products_selected" string="Produk Dipilih"/>
+                        </group>
+                        
+                        <field name="product_line_ids" nolabel="1">
+                            <tree editable="top" decoration-success="selected">
+                                <field name="selected" widget="boolean_toggle"/>
+                                <field name="product_name"/>
+                                <field name="total_sn" string="Total SN"/>
+                                <field name="unprinted_count" string="Belum Cetak"/>
+                                <field name="printed_count" string="Sudah Cetak"/>
+                                <field name="product_id" column_invisible="1"/>
+                            </tree>
+                        </field>
+                    </div>
+                    
+                    <!-- ========================================== -->
+                    <!-- STEP 2: Select Serial Numbers -->
+                    <!-- ========================================== -->
+                    <div invisible="step != 'serial'">
+                        <group>
+                            <div class="alert alert-success">
+                                <strong>🔢 Step 2: Pilih Serial Numbers</strong>
+                                <p class="mb-0">Centang SN yang ingin dicetak</p>
+                            </div>
+                        </group>
+                        
+                        <group>
+                            <field name="total_sn_selected" string="SN Dipilih"/>
+                        </group>
+                        
+                        <!-- Quick Actions -->
+                        <group>
+                            <button name="action_select_all_sn" 
+                                    string="✓ Pilih Semua" 
+                                    type="object" 
+                                    class="btn-link"/>
+                            <button name="action_deselect_all_sn" 
+                                    string="✗ Batal Semua" 
+                                    type="object" 
+                                    class="btn-link"/>
+                            <button name="action_select_unprinted" 
+                                    string="📄 Pilih Yang Belum Dicetak" 
+                                    type="object" 
+                                    class="btn-link"/>
+                        </group>
+                        
+                        <field name="sn_line_ids" nolabel="1">
+                            <tree editable="top" 
+                                  decoration-muted="is_printed" 
+                                  decoration-success="selected and not is_printed"
+                                  decoration-info="selected and is_printed">
+                                <field name="selected" widget="boolean_toggle"/>
+                                <field name="serial_number_name"/>
+                                <field name="product_name"/>
+                                <field name="sn_type" widget="badge"/>
+                                <field name="is_printed" widget="boolean" readonly="1"/>
+                                <field name="print_count" string="Cetak ke-" readonly="1"/>
+                                <field name="last_print_date" readonly="1" optional="hide"/>
+                                <field name="serial_number_id" column_invisible="1"/>
+                                <field name="product_id" column_invisible="1"/>
+                            </tree>
+                        </field>
+                    </div>
+                    
+                </sheet>
+                
+                <footer>
+                    <!-- STEP 1 Footer -->
+                    <div invisible="step != 'product'">
+                        <button name="action_next_to_serial" 
+                                string="Lanjut ➜" 
+                                type="object" 
+                                class="btn-primary"
+                                invisible="total_products_selected == 0"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </div>
+                    
+                    <!-- STEP 2 Footer -->
+                    <div invisible="step != 'serial'">
+                        <button name="action_print_selected" 
+                                string="🖨️ Print Selected" 
+                                type="object" 
+                                class="btn-primary"
+                                invisible="total_sn_selected == 0"/>
+                        <button name="action_back_to_product" 
+                                string="⬅ Kembali" 
+                                type="object" 
+                                class="btn-secondary"/>
+                        <button string="Cancel" class="btn-secondary" special="cancel"/>
+                    </div>
+                </footer>
+            </form>
+        </field>
+    </record>
+    
+</odoo>

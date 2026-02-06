@@ -12,3 +12,8 @@ access_product_qrcode_label_wizard_manager,access.product.qrcode.label.wizard.ma
 access_brodher_stock_picking_sn_wizard,brodher.stock.picking.sn.wizard,model_brodher_stock_picking_sn_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_sn_status_report_wizard,brodher.sn.status.report.wizard,model_brodher_sn_status_report_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_sn_status_report_wizard_manager,brodher.sn.status.report.wizard.manager,model_brodher_sn_status_report_wizard,stock.group_stock_manager,1,1,1,1
+
+access_stock_lot_print_history,stock.lot.print.history,model_stock_lot_print_history,stock.group_stock_user,1,1,1,1
+access_brodher_sn_print_wizard,brodher.sn.print.wizard,model_brodher_sn_print_wizard,stock.group_stock_user,1,1,1,1
+access_brodher_sn_print_wizard_line,brodher.sn.print.wizard.line,model_brodher_sn_print_wizard_line,stock.group_stock_user,1,1,1,1
+access_brodher_sn_print_wizard_product,brodher.sn.print.wizard.product,model_brodher_sn_print_wizard_product,stock.group_stock_user,1,1,1,1

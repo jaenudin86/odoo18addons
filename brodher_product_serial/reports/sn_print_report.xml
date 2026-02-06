@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    
+    <!-- Report Action -->
+    <record id="action_report_sn_print_rekap" model="ir.actions.report">
+        <field name="name">Rekap Cetak Serial Number</field>
+        <field name="model">stock.picking</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.sn_print_rekap_template</field>
+        <field name="report_file">brodher_product_serial.sn_print_rekap_template</field>
+        <field name="binding_model_id" ref="stock.model_stock_picking"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+    
+    <!-- Report Template -->
+    <template id="sn_print_rekap_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    
+                    <t t-foreach="docs" t-as="picking">
+                        
+                        <!-- Header -->
+                        <div class="text-center mb-4">
+                            <h2>Rekap Cetak Serial Number</h2>
+                            <h3>Transfer: <span t-esc="picking.name"/></h3>
+                            <p>
+                                Tanggal: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%d %B %Y %H:%M')"/>
+                            </p>
+                        </div>
+                        
+                        <!-- Summary Statistics -->
+                        <t t-set="all_sns" t-value="picking._get_generated_serial_numbers()"/>
+                        <t t-set="printed_sns" t-value="all_sns.filtered(lambda s: s.is_printed)"/>
+                        <t t-set="unprinted_sns" t-value="all_sns.filtered(lambda s: not s.is_printed)"/>
+                        
+                        <div class="row mb-4">
+                            <div class="col-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h1 class="text-primary" t-esc="len(all_sns)"/>
+                                        <p class="mb-0">Total SN</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h1 class="text-success" t-esc="len(printed_sns)"/>
+                                        <p class="mb-0">Sudah Dicetak</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <h1 class="text-danger" t-esc="len(unprinted_sns)"/>
+                                        <p class="mb-0">Belum Dicetak</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Group by Product -->
+                        <t t-set="products" t-value="all_sns.mapped('product_id')"/>
+                        
+                        <t t-foreach="products" t-as="product">
+                            <div class="mt-4">
+                                <h4 style="background: #f0f0f0; padding: 10px;">
+                                    <i class="fa fa-box"/> 
+                                    <span t-esc="product.display_name"/>
+                                </h4>
+                                
+                                <t t-set="product_sns" t-value="all_sns.filtered(lambda s: s.product_id == product)"/>
+                                
+                                <table class="table table-sm table-bordered">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>No</th>
+                                            <th>Serial Number</th>
+                                            <th>Type</th>
+                                            <th>Status Cetak</th>
+                                            <th>Jumlah Cetak</th>
+                                            <th>Terakhir Dicetak</th>
+                                            <th>Dicetak Oleh</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <t t-foreach="product_sns" t-as="sn">
+                                            <tr>
+                                                <td><t t-esc="sn_index + 1"/></td>
+                                                <td><strong t-esc="sn.name"/></td>
+                                                <td>
+                                                    <span t-if="sn.sn_type == 'M'" class="badge badge-info">Man</span>
+                                                    <span t-if="sn.sn_type == 'W'" class="badge badge-danger">Woman</span>
+                                                </td>
+                                                <td>
+                                                    <span t-if="sn.is_printed" class="badge badge-success">✓ Sudah</span>
+                                                    <span t-else="" class="badge badge-secondary">✗ Belum</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    <span t-if="sn.print_count &gt; 0" t-esc="sn.print_count"/>
+                                                    <span t-else="">-</span>
+                                                </td>
+                                                <td>
+                                                    <span t-if="sn.last_print_date" t-esc="sn.last_print_date.strftime('%d/%m/%Y %H:%M')"/>
+                                                    <span t-else="">-</span>
+                                                </td>
+                                                <td>
+                                                    <span t-if="sn.last_print_user" t-esc="sn.last_print_user.name"/>
+                                                    <span t-else="">-</span>
+                                                </td>
+                                            </tr>
+                                        </t>
+                                    </tbody>
+                                    <tfoot class="table-light">
+                                        <tr>
+                                            <td colspan="3"><strong>Subtotal</strong></td>
+                                            <td colspan="4">
+                                                <strong t-esc="len(product_sns)"/> SN 
+                                                (<span t-esc="len(product_sns.filtered(lambda s: s.is_printed))"/> dicetak, 
+                                                <span t-esc="len(product_sns.filtered(lambda s: not s.is_printed))"/> belum)
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </t>
+                        
+                        <!-- Footer -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-muted">
+                                <small>
+                                    Dicetak oleh: <span t-esc="user.name"/> | 
+                                    Perusahaan: <span t-esc="user.company_id.name"/>
+                                </small>
+                            </div>
+                        </div>
+                        
+                    </t>
+                    
+                </div>
+            </t>
+        </t>
+    </template>
+    
+</odoo>

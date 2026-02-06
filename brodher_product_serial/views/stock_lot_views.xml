@@ -48,6 +48,38 @@
                     </field>
                 </page>
             </xpath>
+            <xpath expr="//group[@name='main_group']" position="after">
+                <group string="Print Information" name="print_info">
+                    <field name="is_printed" widget="boolean"/>
+                    <field name="print_count"/>
+                    <field name="last_print_date"/>
+                    <field name="last_print_user"/>
+                </group>
+            </xpath>
+
+            <xpath expr="//notebook" position="inside">
+                <page string="Print History" name="print_history">
+                    <field name="print_history_ids" nolabel="1">
+                        <tree>
+                            <field name="print_date"/>
+                            <field name="print_user"/>
+                            <field name="print_count_at_time" string="Print Ke-"/>
+                            <field name="picking_id"/>
+                            <field name="notes"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+            <xpath expr="//button[@name='action_print_sn_qrcode']" position="after">
+                <!-- Print Rekap -->
+                <button name="%(brodher_product_serial.action_report_sn_print_rekap)d" 
+                        string="📊 Print Rekap" 
+                        type="action"
+                        class="btn-info"
+                        invisible="not serial_numbers_generated"
+                        help="Print rekap status cetak serial numbers"/>
+                
+            </xpath>
             
         </field>
     </record>

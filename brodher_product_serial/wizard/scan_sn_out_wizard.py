@@ -195,7 +195,7 @@ class ScanSNOutWizard(models.TransientModel):
         else:
             self.scanned_sn = False
     
-    def action_confirm_scan(self):
+    def action_confirm_scan1(self):
         """Confirm scan - OUTGOING (simplified)"""
         self.ensure_one()
         
@@ -350,7 +350,178 @@ class ScanSNOutWizard(models.TransientModel):
                 'default_input_method': self.input_method,
             }
         }
-    
+    def action_confirm_scan(self):
+        """Confirm scan - OUTGOING (simplified)"""
+        self.ensure_one()
+        
+        # Get SN
+        sn = None
+        if self.input_method == 'scan':
+            if not self.scanned_sn:
+                raise UserError(_('Please scan serial number!'))
+            sn = self.env['stock.lot'].search([('name', '=', self.scanned_sn.strip())], limit=1)
+            if not sn:
+                raise ValidationError(_('Serial Number %s not found!') % self.scanned_sn)
+        else:
+            if not self.serial_number_id:
+                raise UserError(_('Please select serial number!'))
+            sn = self.serial_number_id
+        
+        # ✨ VALIDASI 1: Cek apakah SN sudah di-scan di picking ini
+        already_scanned = self.picking_id.sn_move_ids.filtered(
+            lambda sm: sm.serial_number_id == sn
+        )
+        
+        if already_scanned:
+            raise UserError(_(
+                '⚠️ SN %s SUDAH DI-SCAN!\n\n'
+                'Serial number ini sudah di-input pada picking ini.\n'
+                'Scanned at: %s\n\n'
+                'Silakan scan SN yang lain.'
+            ) % (sn.name, already_scanned[0].move_date.strftime("%Y-%m-%d %H:%M:%S")))
+        
+        # Validate: Status must be 'used'
+        if sn.sn_status != 'used':
+            raise UserError(_(
+                '❌ SN %s cannot be shipped!\n\n'
+                'Status: %s\n\n'
+                'Only SNs with status "USED" (in stock) can be shipped.'
+            ) % (sn.name, sn.sn_status.upper()))
+        
+        # Validate: Must be received but not shipped
+        received = self.env['brodher.sn.move'].search([
+            ('serial_number_id', '=', sn.id),
+            ('move_type', '=', 'in'),
+            ('picking_id.state', '=', 'done')
+        ], limit=1)
+        
+        if not received:
+            raise UserError(_('❌ SN %s not in stock!') % sn.name)
+        
+        shipped = self.env['brodher.sn.move'].search([
+            ('serial_number_id', '=', sn.id),
+            ('move_type', '=', 'out'),
+            ('picking_id.state', '=', 'done')
+        ], limit=1)
+        
+        if shipped:
+            raise UserError(_(
+                '❌ SN %s already shipped!\n\nShipped in: %s'
+            ) % (sn.name, shipped.picking_id.name))
+        
+        # Validate: Product match
+        picking_products = self.picking_id.move_ids_without_package.mapped('product_id')
+        if sn.product_id not in picking_products:
+            raise UserError(_(
+                '❌ Product mismatch!\n\nSN: %s\nProduct: %s'
+            ) % (sn.name, sn.product_id.display_name))
+        
+        # ✨ VALIDASI 2: Cek apakah sudah mencapai expected quantity
+        stock_move = self.picking_id.move_ids_without_package.filtered(
+            lambda m: m.product_id == sn.product_id
+        )[:1]
+        
+        if stock_move:
+            expected_qty = int(stock_move.product_uom_qty)
+            scanned_qty = len(self.picking_id.sn_move_ids.filtered(
+                lambda sm: sm.serial_number_id.product_id == sn.product_id
+            ))
+            
+            if scanned_qty >= expected_qty:
+                raise UserError(_(
+                    '⚠️ PRODUCT %s SUDAH LENGKAP!\n\n'
+                    'Expected: %d\n'
+                    'Sudah di-scan: %d\n\n'
+                    'Tidak bisa menambah SN lagi untuk product ini.'
+                ) % (sn.product_id.name, expected_qty, scanned_qty))
+        
+        # ==========================================
+        # 1. Create brodher.sn.move (tracking)
+        # ==========================================
+        self.env['brodher.sn.move'].create({
+            'serial_number_id': sn.id,
+            'move_type': 'out',
+            'location_src_id': self.location_src_id.id if self.location_src_id else False,
+            'location_dest_id': self.location_dest_id.id,
+            'picking_id': self.picking_id.id,
+            'notes': self.notes,
+            'user_id': self.env.user.id,
+            'move_date': fields.Datetime.now(),
+        })
+        
+        _logger.info(f'[SCAN OUT] ✓ Created sn_move for {sn.name}')
+        
+        # ==========================================
+        # 2. Create stock.move.line
+        # ==========================================
+        
+        if not stock_move:
+            raise UserError(_('Stock move not found for %s') % sn.product_id.display_name)
+        
+        # Create move_line
+        loc_src = self.location_src_id if self.location_src_id else stock_move.location_id
+        loc_dest = self.location_dest_id
+        
+        self.env['stock.move.line'].create({
+            'picking_id': self.picking_id.id,
+            'move_id': stock_move.id,
+            'product_id': sn.product_id.id,
+            'product_uom_id': sn.product_id.uom_id.id,
+            'location_id': loc_src.id,
+            'location_dest_id': loc_dest.id,
+            'lot_id': sn.id,
+            'lot_name': sn.name,
+            'quantity': 1.0,
+            'company_id': self.env.company.id,
+        })
+        
+        _logger.info(f'[SCAN OUT] ✓ Created move_line for {sn.name}')
+        
+        # ==========================================
+        # 3. Update SN status ONLY if external (not internal)
+        # ==========================================
+        
+        # Check if destination is external (customer)
+        if loc_dest.usage == 'customer':
+            # External delivery → change to 'reserved' (shipped out)
+            sn.write({
+                'sn_status': 'reserved',
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} status → RESERVED (external delivery)')
+        
+        elif loc_dest.usage == 'internal':
+            # Internal transfer → status stays 'used' (still in warehouse)
+            sn.write({
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} status → USED (internal transfer, no status change)')
+        
+        else:
+            # Other location types (e.g., supplier return)
+            sn.write({
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] ✓ SN {sn.name} last_sn_move_date updated (location: {loc_dest.usage})')
+        
+        
+        # Clear input
+        self.scanned_sn = ''
+        self.serial_number_id = False
+        
+        # Return to wizard
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'brodher.scan.sn.out.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_picking_id': self.picking_id.id,
+                'default_location_src_id': self.location_src_id.id if self.location_src_id else False,
+                'default_location_dest_id': self.location_dest_id.id,
+                'default_input_method': self.input_method,
+            }
+        }
     def action_done(self):
         """Close wizard"""
         return {'type': 'ir.actions.act_window_close'}

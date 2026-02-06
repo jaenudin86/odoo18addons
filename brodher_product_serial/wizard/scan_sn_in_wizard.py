@@ -169,8 +169,153 @@ class ScanSNInWizard(models.TransientModel):
             self.serial_number_id = False
         else:
             self.scanned_sn = False
-    
     def action_confirm_scan(self):
+        """Confirm scan - INCOMING"""
+        self.ensure_one()
+        
+        # Get SN
+        sn = None
+        if self.input_method == 'scan':
+            if not self.scanned_sn:
+                raise UserError(_('Please scan serial number!'))
+            sn = self.env['stock.lot'].search([('name', '=', self.scanned_sn), ('sn_type', '!=', False)], limit=1)
+            if not sn:
+                raise ValidationError(_('Serial Number %s not found!') % self.scanned_sn)
+        else:
+            if not self.serial_number_id:
+                raise UserError(_('Please select serial number!'))
+            sn = self.serial_number_id
+        
+        # ✨ VALIDASI 1: Cek apakah SN sudah di-scan di picking ini
+        already_scanned_here = self.env['brodher.sn.move'].search([
+            ('serial_number_id', '=', sn.id),
+            ('picking_id', '=', self.picking_id.id),
+        ], limit=1)
+        
+        if already_scanned_here:
+            raise UserError(_(
+                '⚠️ SN %s SUDAH DI-SCAN!\n\n'
+                'Serial number ini sudah di-input pada picking ini.\n'
+                'Silakan scan SN yang lain.'
+            ) % sn.name)
+        
+        # Validate: Status harus available
+        if sn.sn_status != 'available':
+            raise UserError(_(
+                '❌ SN %s TIDAK AVAILABLE!\n\nStatus saat ini: %s\n\nHanya SN dengan status AVAILABLE yang bisa masuk gudang.'
+            ) % (sn.name, sn.sn_status.upper()))
+        
+        # Validate: Already received?
+        existing_in = self.env['brodher.sn.move'].search([
+            ('serial_number_id', '=', sn.id),
+            ('move_type', '=', 'in'),
+            ('picking_id.state', '=', 'done')
+        ], limit=1)
+        
+        if existing_in:
+            raise UserError(_(
+                '❌ SN %s SUDAH MASUK GUDANG!\n\nReceived in: %s\nDate: %s'
+            ) % (sn.name, existing_in.picking_id.name, existing_in.move_date))
+        
+        # ✨ VALIDASI 2: Cek apakah sudah mencapai expected quantity
+        stock_move = self.picking_id.move_ids_without_package.filtered(lambda m: m.product_id == sn.product_id)
+        if stock_move:
+            stock_move = stock_move[0]
+            expected_qty = int(stock_move.product_uom_qty)
+            scanned_qty = len(self.picking_id.sn_move_ids.filtered(
+                lambda sm: sm.serial_number_id.product_id == sn.product_id
+            ))
+            
+            if scanned_qty >= expected_qty:
+                raise UserError(_(
+                    '⚠️ PRODUCT %s SUDAH LENGKAP!\n\n'
+                    'Expected: %d\n'
+                    'Sudah di-scan: %d\n\n'
+                    'Tidak bisa menambah SN lagi untuk product ini.'
+                ) % (sn.product_id.name, expected_qty, scanned_qty))
+        
+        # Create SN move
+        self.env['brodher.sn.move'].create({
+            'serial_number_id': sn.id,
+            'move_type': 'in',
+            'location_src_id': self.location_src_id.id if self.location_src_id else False,
+            'location_dest_id': self.location_dest_id.id,
+            'picking_id': self.picking_id.id,
+            'notes': self.notes,
+        })
+        
+        # Update SN - UBAH STATUS JADI 'USED' setelah masuk gudang
+        sn.write({
+            'sn_status': 'used',
+            'last_sn_move_date': fields.Datetime.now()
+        })
+        
+        # SOLUSI: Cari atau update move line yang sudah ada, JANGAN buat baru
+        if stock_move:
+            # Cari move line yang sudah ada untuk SN ini
+            existing_move_line = self.env['stock.move.line'].search([
+                ('move_id', '=', stock_move.id),
+                ('lot_id', '=', sn.id),
+            ], limit=1)
+            
+            if existing_move_line:
+                _logger.info(f'✓ Move line already exists for SN {sn.name}, updating quantity')
+                existing_move_line.write({'quantity': 1.0})
+            else:
+                # Cari move line kosong (tanpa lot_id) yang bisa kita gunakan
+                empty_move_line = self.env['stock.move.line'].search([
+                    ('move_id', '=', stock_move.id),
+                    ('lot_id', '=', False),
+                    ('picking_id', '=', self.picking_id.id),
+                ], limit=1)
+                
+                if empty_move_line:
+                    _logger.info(f'✓ Using empty move line for SN {sn.name}')
+                    empty_move_line.write({
+                        'lot_id': sn.id,
+                        'lot_name': sn.name,
+                        'quantity': 1.0,
+                    })
+                else:
+                    # Baru buat move line baru kalau benar-benar tidak ada
+                    location_src = self.location_src_id.id if self.location_src_id else stock_move.location_id.id
+                    
+                    move_line_vals = {
+                        'picking_id': self.picking_id.id,
+                        'move_id': stock_move.id,
+                        'product_id': sn.product_id.id,
+                        'product_uom_id': sn.product_id.uom_id.id,
+                        'location_id': location_src,
+                        'location_dest_id': self.location_dest_id.id,
+                        'lot_id': sn.id,
+                        'lot_name': sn.name,
+                        'quantity': 1.0,
+                        'company_id': self.env.company.id,
+                    }
+                    
+                    try:
+                        move_line = self.env['stock.move.line'].create(move_line_vals)
+                        _logger.info(f'✓ New move line created for SN {sn.name}')
+                    except Exception as e:
+                        _logger.error(f'Error creating move line for SN {sn.name}: {str(e)}')
+                        raise UserError(_('Error creating stock move line: %s') % str(e))
+        
+        _logger.info(f'✓ INCOMING: SN {sn.name} scanned - Status changed to USED')
+        
+        # Return for next scan
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'brodher.scan.sn.in.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_picking_id': self.picking_id.id,
+                'default_location_src_id': self.location_src_id.id if self.location_src_id else False,
+                'default_location_dest_id': self.location_dest_id.id,
+                'default_input_method': self.input_method,
+            }
+        }
+    def action_confirm_scan1(self):
         """Confirm scan - INCOMING"""
         self.ensure_one()
         
