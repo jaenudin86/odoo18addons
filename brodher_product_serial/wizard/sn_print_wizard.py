@@ -83,21 +83,34 @@ class SNPrintWizard(models.TransientModel):
         """Step 1 → Step 2: Load SNs for selected products"""
         self.ensure_one()
         
+        import logging
+        _logger = logging.getLogger(__name__)
+        
         selected_products = self.product_line_ids.filtered('selected')
         
         if not selected_products:
             raise UserError(_('Pilih minimal 1 produk!'))
         
-        # Load serial numbers for selected products
-        sn_lines = []
+        _logger.info(f'[PRINT WIZARD] Loading SNs for {len(selected_products)} products')
+        
+        # Clear existing SN lines
+        if self.sn_line_ids:
+            self.sn_line_ids.unlink()
+        
+        # Prepare SN lines
+        sn_count = 0
+        
         for product_line in selected_products:
             sns = self.env['stock.lot'].search([
                 ('product_id', '=', product_line.product_id.id),
                 ('generated_by_picking_id', '=', self.picking_id.id)
             ], order='name')
             
+            _logger.info(f'[PRINT WIZARD] Found {len(sns)} SNs for {product_line.product_name}')
+            
             for sn in sns:
-                sn_lines.append((0, 0, {
+                self.env['brodher.sn.print.wizard.line'].create({
+                    'wizard_id': self.id,
                     'serial_number_id': sn.id,
                     'serial_number_name': sn.name,
                     'product_id': sn.product_id.id,
@@ -106,22 +119,25 @@ class SNPrintWizard(models.TransientModel):
                     'is_printed': sn.is_printed,
                     'print_count': sn.print_count,
                     'last_print_date': sn.last_print_date,
-                    'selected': not sn.is_printed,  # Default: pilih yang belum dicetak
-                }))
+                    'selected': not sn.is_printed,
+                })
+                sn_count += 1
         
-        self.write({
-            'step': 'serial',
-            'sn_line_ids': [(5, 0, 0)] + sn_lines,  # Clear then add
-        })
+        _logger.info(f'[PRINT WIZARD] Created {sn_count} SN lines')
         
+        # Update step
+        self.step = 'serial'
+        
+        # Reload wizard
         return {
             'type': 'ir.actions.act_window',
+            'name': _('Print QR Code - Select SNs'),
             'res_model': 'brodher.sn.print.wizard',
             'res_id': self.id,
             'view_mode': 'form',
             'target': 'new',
+            'context': dict(self.env.context),
         }
-    
     def action_back_to_product(self):
         """Step 2 → Step 1: Back to product selection"""
         self.ensure_one()
