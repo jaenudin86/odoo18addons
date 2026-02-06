@@ -70,7 +70,7 @@
                     </field>
                 </page>
             </xpath>
-            <!-- <xpath expr="//button[@name='action_print_sn_qrcode']" position="after">
+            <xpath expr="//button[@name='action_print_sn_qrcode']" position="after">
                
                 <button name="%(brodher_product_serial.action_report_sn_print_rekap)d" 
                         string="📊 Print Rekap" 
@@ -79,7 +79,7 @@
                         invisible="not serial_numbers_generated"
                         help="Print rekap status cetak serial numbers"/>
                 
-            </xpath> -->
+            </xpath>
             
         </field>
     </record>

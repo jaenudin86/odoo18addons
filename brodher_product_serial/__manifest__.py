@@ -51,7 +51,7 @@
          
          'views/sn_status_report_menu.xml',
          'wizard/sn_print_wizard_views.xml',
-         'report/sn_print_report.xml',  # Add this
+         'reports/sn_print_report.xml',  # Add this
 
          
 
