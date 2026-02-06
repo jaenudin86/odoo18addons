@@ -29,12 +29,13 @@
         'wizard/message_wizard_views.xml',
         'wizard/product_sn_wizard_views.xml',
         # 'wizard/scan_sn_wizard_views.xml',
-        'reports/sn_print_report.xml',  # Add this
+          # Add this
         'wizard/scan_sn_in_wizard_views.xml',      # BARU
         'wizard/scan_sn_out_wizard_views.xml',     # BARU
         'wizard/sn_validation_wizard_views.xml',
         'views/product_template_views.xml',
         'views/stock_lot_views.xml',
+        'reports/sn_print_report.xml',
         'views/stock_picking_views.xml',
         'views/sn_move_views.xml',
         'reports/sn_qr_label_report.xml',
