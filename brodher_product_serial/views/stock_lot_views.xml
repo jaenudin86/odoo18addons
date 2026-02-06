@@ -60,13 +60,13 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Print History" name="print_history">
                     <field name="print_history_ids" nolabel="1">
-                        <tree>
+                        <list>
                             <field name="print_date"/>
                             <field name="print_user"/>
                             <field name="print_count_at_time" string="Print Ke-"/>
                             <field name="picking_id"/>
                             <field name="notes"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </xpath>
