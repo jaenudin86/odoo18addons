@@ -31,14 +31,14 @@
                         </group>
                         
                         <field name="product_line_ids" nolabel="1">
-                            <tree editable="top" decoration-success="selected">
+                            <list editable="top" decoration-success="selected">
                                 <field name="selected" widget="boolean_toggle"/>
                                 <field name="product_name"/>
                                 <field name="total_sn" string="Total SN"/>
                                 <field name="unprinted_count" string="Belum Cetak"/>
                                 <field name="printed_count" string="Sudah Cetak"/>
                                 <field name="product_id" column_invisible="1"/>
-                            </tree>
+                            </list>
                         </field>
                     </div>
                     
@@ -74,7 +74,7 @@
                         </group>
                         
                         <field name="sn_line_ids" nolabel="1">
-                            <tree editable="top" 
+                            <list editable="top" 
                                   decoration-muted="is_printed" 
                                   decoration-success="selected and not is_printed"
                                   decoration-info="selected and is_printed">
@@ -87,7 +87,7 @@
                                 <field name="last_print_date" readonly="1" optional="hide"/>
                                 <field name="serial_number_id" column_invisible="1"/>
                                 <field name="product_id" column_invisible="1"/>
-                            </tree>
+                            </list>
                         </field>
                     </div>
                     
