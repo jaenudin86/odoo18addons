@@ -32,9 +32,6 @@ class SNPrintWizard(models.TransientModel):
         'Serial Numbers'
     )
     
-    # Store selected product IDs for reference
-    selected_product_ids = fields.Many2many('product.product', string='Selected Products')
-    
     total_products_selected = fields.Integer('Produk Dipilih', compute='_compute_totals')
     total_sn_selected = fields.Integer('SN Dipilih', compute='_compute_totals')
     
@@ -99,13 +96,11 @@ class SNPrintWizard(models.TransientModel):
         
         _logger.info(f'[PRINT WIZARD] Loading SNs for {len(selected_products)} products')
         
-        # Store selected products for back button
-        self.selected_product_ids = [(6, 0, selected_products.ids)]
+        # Clear old SN lines if any
+        if self.sn_line_ids:
+            self.sn_line_ids.unlink()
         
-        # Delete old product lines (to avoid validation error)
-        self.product_line_ids.unlink()
-        
-        # Collect all SN data
+        # Collect all SN data to create
         sn_vals_list = []
         
         for product in selected_products:
@@ -132,7 +127,8 @@ class SNPrintWizard(models.TransientModel):
         if not sn_vals_list:
             raise UserError(_('Tidak ada serial number yang ditemukan untuk produk yang dipilih!'))
         
-        # Update wizard: change step and add SN lines
+        # Update wizard: ONLY change step and add SN lines
+        # DON'T touch product_line_ids!
         self.write({
             'step': 'serial',
             'sn_line_ids': sn_vals_list,
@@ -150,45 +146,12 @@ class SNPrintWizard(models.TransientModel):
         }
     
     def action_back_to_product(self):
-        """Step 2 → Step 1: Recreate product selection"""
+        """Step 2 → Step 1: Just change step back"""
         self.ensure_one()
         
-        # Delete SN lines
-        self.sn_line_ids.unlink()
-        
-        # Recreate product lines from stored selection
-        if self.selected_product_ids:
-            products = self.selected_product_ids
-        else:
-            # Fallback: get all products
-            products = self.picking_id.move_ids_without_package.filtered(
-                lambda m: m.product_id.tracking == 'serial' and 
-                         m.product_id.product_tmpl_id.sn_product_type
-            ).mapped('product_id')
-        
-        lines = []
-        for product in products:
-            sns = self.env['stock.lot'].search([
-                ('product_id', '=', product.id),
-                ('generated_by_picking_id', '=', self.picking_id.id)
-            ])
-            
-            printed_count = len(sns.filtered('is_printed'))
-            unprinted_count = len(sns.filtered(lambda s: not s.is_printed))
-            
-            lines.append((0, 0, {
-                'product_id': product.id,
-                'product_name': product.display_name,
-                'total_sn': len(sns),
-                'printed_count': printed_count,
-                'unprinted_count': unprinted_count,
-                'selected': True,
-            }))
-        
-        self.write({
-            'step': 'product',
-            'product_line_ids': lines,
-        })
+        # Just change step back to product
+        # Product lines are still there, no need to recreate
+        self.step = 'product'
         
         return {
             'type': 'ir.actions.act_window',
@@ -275,7 +238,7 @@ class SNPrintWizardProduct(models.TransientModel):
     _description = 'Print Wizard - Product Selection'
     
     wizard_id = fields.Many2one('brodher.sn.print.wizard', required=True, ondelete='cascade')
-    product_id = fields.Many2one('product.product', 'Product', readonly=True)  # NOT required
+    product_id = fields.Many2one('product.product', 'Product')  # NOT required, NOT readonly
     product_name = fields.Char('Nama Produk', readonly=True)
     total_sn = fields.Integer('Total SN', readonly=True)
     printed_count = fields.Integer('Sudah Dicetak', readonly=True)
