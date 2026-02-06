@@ -35,9 +35,10 @@
         'wizard/sn_validation_wizard_views.xml',
         'views/product_template_views.xml',
          'reports/sn_print_report.xml',
+          'views/stock_picking_views.xml',
         'views/stock_lot_views.xml',
        
-        'views/stock_picking_views.xml',
+       
         'views/sn_move_views.xml',
         'reports/sn_qr_label_report.xml',
         'reports/stock_picking_qrcode_report.xml',
