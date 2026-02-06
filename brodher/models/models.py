@@ -25,23 +25,12 @@ class ProductTemplate(models.Model):
     net_weight = fields.Float(string='Net Weight')
     net_net_weight = fields.Float(string='Net Net Weight')
     date_month_year = fields.Date(string='Date (Month/Year) Design')
-    # is_article = fields.Boolean(string='Is Article', default=False)
 
     is_article = fields.Selection(
-    [('yes', 'ATC'), ('no', 'PSIT')],
-    string="Is Article",
-    default='no'
-)
-
-
-
-    # =========================
-    # DEFAULT PRODUCT TYPE = GOODS
-    # =========================
-    # type = fields.Selection(
-    #     selection_add=[],
-    #     default='product'
-    # )
+        [('yes', 'ATC'), ('no', 'PSIT')],
+        string="Is Article",
+        default='no'
+    )
 
     # =========================
     # GENERATE ARTICLE NUMBER
@@ -69,41 +58,34 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        # selalu stockable
+        # Selalu stockable
         vals.setdefault('is_storable', True)
         vals.setdefault('type', 'product')
 
-        # AUTO TRACK INVENTORY
-        # if vals.get('is_article') == 'yes':
-        #     vals.update({
-        #         'is_storable': True,
-        #         'tracking': 'serial',   # ATC
-        #     })
-        # else:
-        #     vals.update({
-        #         'is_storable': True,
-        #         'tracking': 'none',     # PSIT (qty)
-        #     })
+        # AUTO TRACK INVENTORY berdasarkan is_article
+        if vals.get('is_article') == 'yes':
+            vals.update({
+                'tracking': 'serial',   # ATC → by serial number
+            })
+        else:
+            vals.update({
+                'tracking': 'none',     # PSIT → by quantity
+            })
 
         return super().create(vals)
 
-    # def write(self, vals):
-    #     res = super().write(vals)
+    def write(self, vals):
+        res = super().write(vals)
 
-    #     if 'is_article' in vals:
-    #         for rec in self:
-    #             if rec.is_article == 'yes':
-    #                 rec.write({
-    #                     'is_storable': True,
-    #                     'tracking': 'serial',
-    #                 })
-    #             else:
-    #                 rec.write({
-    #                     'is_storable': True,
-    #                     'tracking': 'none',
-    #                 })
+        # Update tracking jika is_article berubah
+        if 'is_article' in vals:
+            for rec in self:
+                if rec.is_article == 'yes':
+                    rec.tracking = 'serial'
+                else:
+                    rec.tracking = 'none'
 
-    #     return res
+        return res
 
 
 class ProductProduct(models.Model):
@@ -119,15 +101,11 @@ class ProductProduct(models.Model):
     # RELATED FIELD
     # =========================
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
-# psit
-    # brand = fields.Char(string="Brand")
     dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
     base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
     text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
-    # size = fields.Char(string="Size")
 
-# atc
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
     gross_weight = fields.Float(related='product_tmpl_id.gross_weight', store=True)
@@ -150,21 +128,4 @@ class ProductProduct(models.Model):
                     'barcode': code,
                 })
 
-            # # KHUSUS ARTICLE → BARCODE STATIS
-            # if tmpl.is_article:
-            #     size_val = tmpl.size or ""
-            #     xx = "".join(re.findall(r'\d+', size_val))
-            #     m_char = "M"
-            #     name_clean = (tmpl.name or "")[:3].title()
-
-            #     vals['static_barcode'] = f"{xx}{m_char}{name_clean}"
-
         return super().create(vals)
-
-    # def write(self, vals):
-    #     res = super().write(vals)
-    #     if 'default_code' in vals:
-    #         for rec in self:
-    #             if rec.default_code and rec.barcode != rec.default_code:
-    #                 rec.barcode = rec.default_code
-    #     return res
