@@ -37,8 +37,8 @@ class ProductTemplate(models.Model):
     # =========================
     def _generate_article_number(self, is_article):
         """
-        - ATC  : ATC + DDMMYY + XXX
-        - PSIT : PSIT + YY + XXXX
+        - ATC  : ATC + DDMMYY + XXX (3 digit)
+        - PSIT : PSIT + YY + XXXX (4 digit)
         """
         now = datetime.today()
         ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
@@ -48,12 +48,16 @@ class ProductTemplate(models.Model):
             date_str = now.strftime('%d%m%y')
             seq = self.env['ir.sequence'].with_context(ctx)\
                 .next_by_code('article.number.sequence') or '001'
+            # Pastikan 3 digit
+            seq = str(seq).zfill(3)
             return f"{prefix}{date_str}{seq}"
         else:
             prefix = 'PSIT'
             year_str = now.strftime('%y')
             seq = self.env['ir.sequence'].with_context(ctx)\
                 .next_by_code('pist.number.sequence') or '0001'
+            # Pastikan 4 digit
+            seq = str(seq).zfill(4)
             return f"{prefix}{year_str}{seq}"
 
     @api.model
