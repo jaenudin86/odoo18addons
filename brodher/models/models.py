@@ -130,26 +130,17 @@ class ProductProduct(models.Model):
         if tmpl_id:
             tmpl = self.env['product.template'].browse(tmpl_id)
             
-            # Untuk variant, gunakan default_code dari template sebagai base
-            # lalu tambahkan suffix jika ada variant attributes
+            # Generate default_code dan barcode untuk setiap variant
+            # Setiap variant dapat nomor artikel baru yang unik
             if not vals.get('default_code'):
-                base_code = tmpl.default_code
-                
-                # Jika produk punya variant attributes, tambahkan suffix
-                if vals.get('product_template_attribute_value_ids'):
-                    # Generate unique suffix untuk variant
-                    variant_count = self.search_count([('product_tmpl_id', '=', tmpl_id)])
-                    variant_suffix = f"-V{variant_count + 1:02d}"
-                    code = f"{base_code}{variant_suffix}"
-                else:
-                    # Produk tunggal tanpa variant
-                    code = base_code
+                # Generate nomor baru untuk setiap variant
+                code = tmpl._generate_article_number(tmpl.is_article)
                 
                 vals.update({
                     'default_code': code,
                     'barcode': code,
                 })
-            # Jika default_code sudah diisi manual, set barcode sama dengan default_code
+            # Jika default_code sudah diisi manual, pastikan barcode juga terisi
             elif not vals.get('barcode'):
                 vals['barcode'] = vals.get('default_code')
 
