@@ -72,11 +72,6 @@ class ProductTemplate(models.Model):
                 'tracking': 'none',     # PSIT → by quantity
             })
 
-        # Generate default_code di level template jika belum ada
-        if not vals.get('default_code'):
-            is_article = vals.get('is_article', 'no')
-            vals['default_code'] = self._generate_article_number(is_article)
-
         return super().create(vals)
 
     def write(self, vals):
@@ -122,31 +117,15 @@ class ProductProduct(models.Model):
     @api.model
     def create(self, vals):
         tmpl_id = vals.get('product_tmpl_id')
-        
         if tmpl_id:
             tmpl = self.env['product.template'].browse(tmpl_id)
-            
-            # Untuk variant, gunakan default_code dari template sebagai base
-            # lalu tambahkan suffix jika ada variant attributes
+
+            # Generate default_code & barcode
             if not vals.get('default_code'):
-                base_code = tmpl.default_code
-                
-                # Jika produk punya variant attributes, tambahkan suffix
-                if vals.get('product_template_attribute_value_ids'):
-                    # Generate unique suffix untuk variant
-                    variant_count = self.search_count([('product_tmpl_id', '=', tmpl_id)])
-                    variant_suffix = f"-V{variant_count + 1:02d}"
-                    code = f"{base_code}{variant_suffix}"
-                else:
-                    # Produk tunggal tanpa variant
-                    code = base_code
-                
+                code = tmpl._generate_article_number(tmpl.is_article)
                 vals.update({
                     'default_code': code,
                     'barcode': code,
                 })
-            # Jika default_code sudah diisi manual, set barcode sama dengan default_code
-            elif not vals.get('barcode'):
-                vals['barcode'] = vals.get('default_code')
 
         return super().create(vals)
