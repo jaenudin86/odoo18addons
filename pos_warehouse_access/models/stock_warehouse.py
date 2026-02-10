@@ -25,6 +25,27 @@ class StockWarehouse(models.Model):
         for warehouse in self:
             warehouse.user_access_count = len(warehouse.user_access_ids)
     
+    @api.model
+    def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
+        """Override search_read to filter warehouses based on user access"""
+        if domain is None:
+            domain = []
+        
+        # Check if user is Stock Manager or Admin
+        if not self.env.user.has_group('stock.group_stock_manager') and \
+           not self.env.user.has_group('base.group_system'):
+            # Regular user - filter by warehouse access
+            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
+            if allowed_warehouse_ids:
+                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+            else:
+                # No access to any warehouse
+                domain = [('id', '=', False)] + domain
+        
+        return super(StockWarehouse, self).search_read(
+            domain=domain, fields=fields, offset=offset, limit=limit, order=order
+        )
+    
     def action_view_user_access(self):
         """Open list view of users that can access this warehouse"""
         self.ensure_one()
