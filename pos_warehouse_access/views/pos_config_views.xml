@@ -9,12 +9,12 @@
             <field name="inherit_id" ref="pos_sale.res_config_settings_view_form"/>
             <field name="arch" type="xml">
                 
-                <!-- Add Smart Button -->
+                <!-- Add Smart Button
                 <xpath expr="//div[@name='button_box']" position="inside">
                     <button name="action_view_user_access" type="object" class="oe_stat_button" icon="fa-users">
                         <field name="user_access_count" widget="statinfo" string="Users"/>
                     </button>
-                </xpath>
+                </xpath> -->
 
                 <!-- Add User Access Tab -->
                 <xpath expr="//notebook" position="inside">
