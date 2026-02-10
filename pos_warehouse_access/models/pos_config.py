@@ -25,18 +25,6 @@ class PosConfig(models.Model):
         for pos in self:
             pos.user_access_count = len(pos.user_access_ids)
     
-    def action_view_user_access(self):
-        """Open list view of users that can access this POS"""
-        self.ensure_one()
-        return {
-            'name': 'User Access',
-            'type': 'ir.actions.act_window',
-            'res_model': 'res.users',
-            'view_mode': 'list,form',
-            'domain': [('id', 'in', self.user_access_ids.ids)],
-            'context': {'default_pos_access_ids': [(4, self.id)]},
-        }
-    
     @api.model
     def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
         """Override search_read to filter POS based on user access"""

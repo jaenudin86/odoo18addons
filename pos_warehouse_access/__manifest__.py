@@ -35,7 +35,6 @@
         'security/ir.model.access.csv',
         'security/security.xml',
         'views/res_users_views.xml',
-        'views/pos_config_views.xml',
         'views/stock_warehouse_views.xml',
         'views/res_config_settings_views.xml',
     ],

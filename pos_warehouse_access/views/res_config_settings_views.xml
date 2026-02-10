@@ -2,42 +2,31 @@
 <odoo>
     <data>
         
-        <!-- Extend POS Settings (res.config.settings) -->
+        <!-- Extend POS Settings Page (Settings → Point of Sale) -->
         <record id="view_pos_config_settings_user_access" model="ir.ui.view">
             <field name="name">res.config.settings.pos.user.access</field>
             <field name="model">res.config.settings</field>
             <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
             <field name="arch" type="xml">
                 
-                <!-- Add User Access section in POS Interface block -->
-                <xpath expr="//block[@id='pos_interface_section']" position="inside">
-                    <setting id="pos_user_access_control" string="User Access Control" 
-                             help="Restrict which users can access this POS"
+                <!-- Add User Access Control setting in PoS Interface section -->
+                <xpath expr="//block[@id='pos_interface_section']/setting[@string='Hide pictures in POS']" position="after">
+                    <setting string="User Access Control" 
+                             help="Restrict which users can access this Point of Sale"
                              groups="point_of_sale.group_pos_manager">
                         <div class="content-group">
                             <div class="row mt16">
-                                <label string="Allowed Users" for="pos_config_id" class="col-lg-3 o_light_label"/>
-                                <div class="col-lg-9">
-                                    <div class="text-muted">
-                                        Configure user access in the specific POS configuration
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="mt8">
-                                <button name="%(point_of_sale.action_pos_config)d" 
-                                        icon="oi-arrow-right" 
-                                        type="action" 
-                                        string="Configure POS User Access" 
-                                        class="btn-link"/>
+                                <label string="Allowed Users" for="pos_user_access_ids" class="col-lg-3 o_light_label"/>
+                                <field name="pos_user_access_ids" 
+                                       widget="many2many_tags" 
+                                       options="{'no_create': True}"
+                                       placeholder="Select users who can access this POS..."/>
                             </div>
                         </div>
                         <div class="alert alert-info mt-2" role="alert">
-                            <strong>Note:</strong> To restrict user access to specific POS:
-                            <ol class="mb-0 ps-3">
-                                <li>Go to Point of Sale → Configuration → Point of Sale</li>
-                                <li>Select a POS and open the "User Access" tab</li>
-                                <li>Add users who can access this POS</li>
-                            </ol>
+                            <strong>Note:</strong> Only users listed here can access this POS. 
+                            If empty, all users with POS User role can access. 
+                            POS Managers and Administrators always have full access.
                         </div>
                     </setting>
                 </xpath>
