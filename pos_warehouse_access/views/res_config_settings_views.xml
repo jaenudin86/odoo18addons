@@ -9,8 +9,8 @@
             <field name="inherit_id" ref="point_of_sale.res_config_settings_view_form"/>
             <field name="arch" type="xml">
                 
-                <!-- Add User Access Control setting in PoS Interface section -->
-                <xpath expr="//block[@id='pos_interface_section']/setting[@string='Hide pictures in POS']" position="after">
+                <!-- Add User Access Control setting after the last setting in PoS Interface section -->
+                <xpath expr="//block[@id='pos_interface_section']" position="inside">
                     <setting string="User Access Control" 
                              help="Restrict which users can access this Point of Sale"
                              groups="point_of_sale.group_pos_manager">
