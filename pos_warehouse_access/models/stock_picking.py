@@ -7,7 +7,7 @@ class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
     @api.model
-    def search(self, domain, offset=0, limit=None, order=None, count=False):
+    def search(self, args, offset=0, limit=None, order=None):
         """Override search to filter pickings based on warehouse access"""
         # Check if user is Stock Manager or Admin
         if not self.env.user.has_group('stock.group_stock_manager') and \
@@ -21,12 +21,12 @@ class StockPicking(models.Model):
                 ]).ids
                 
                 if allowed_picking_types:
-                    domain = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
+                    args = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
                 else:
-                    domain = [('id', '=', False)] + domain
+                    args = [('id', '=', False)] + domain
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                args = [('id', '=', False)] + domain
         
         return super(StockPicking, self).search(
             domain, offset=offset, limit=limit, order=order, count=count
@@ -36,7 +36,7 @@ class StockPicking(models.Model):
     def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
         """Override search_read to filter pickings based on warehouse access"""
         if domain is None:
-            domain = []
+            args = []
         
         # Check if user is Stock Manager or Admin
         if not self.env.user.has_group('stock.group_stock_manager') and \
@@ -50,12 +50,12 @@ class StockPicking(models.Model):
                 ]).ids
                 
                 if allowed_picking_types:
-                    domain = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
+                    args = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
                 else:
-                    domain = [('id', '=', False)] + domain
+                    args = [('id', '=', False)] + domain
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                args = [('id', '=', False)] + domain
         
         return super(StockPicking, self).search_read(
             domain=domain, fields=fields, offset=offset, limit=limit, order=order

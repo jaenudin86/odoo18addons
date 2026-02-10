@@ -7,7 +7,7 @@ class StockQuant(models.Model):
     _inherit = 'stock.quant'
 
     @api.model
-    def search(self, domain, offset=0, limit=None, order=None, count=False):
+    def search(self, args, offset=0, limit=None, order=None):
         """Override search to filter stock based on warehouse access"""
         # Check if user is Stock Manager or Admin
         if not self.env.user.has_group('stock.group_stock_manager') and \
@@ -21,16 +21,16 @@ class StockQuant(models.Model):
                 ]).ids
                 
                 if allowed_locations:
-                    domain = ['&', ('location_id', 'in', allowed_locations)] + domain
+                    args = ['&', ('location_id', 'in', allowed_locations)] + args
                 else:
                     # No locations found for warehouses
-                    domain = [('id', '=', False)] + domain
+                    args = [('id', '=', False)] + args
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                args = [('id', '=', False)] + args
         
         return super(StockQuant, self).search(
-            domain, offset=offset, limit=limit, order=order, count=count
+            args, offset=offset, limit=limit, order=order
         )
 
     @api.model

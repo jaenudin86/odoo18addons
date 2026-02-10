@@ -26,7 +26,7 @@ class StockWarehouse(models.Model):
             warehouse.user_access_count = len(warehouse.user_access_ids)
     
     @api.model
-    def search(self, domain, offset=0, limit=None, order=None, count=False):
+    def search(self, args, offset=0, limit=None, order=None):
         """Override search to filter warehouses based on user access"""
         # Check if user is Stock Manager or Admin
         if not self.env.user.has_group('stock.group_stock_manager') and \
@@ -34,13 +34,13 @@ class StockWarehouse(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+                args = ['&', ('id', 'in', allowed_warehouse_ids)] + args
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                args = [('id', '=', False)] + args
         
         return super(StockWarehouse, self).search(
-            domain, offset=offset, limit=limit, order=order, count=count
+            args, offset=offset, limit=limit, order=order
         )
     
     @api.model

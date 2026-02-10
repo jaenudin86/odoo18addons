@@ -26,7 +26,7 @@ class PosConfig(models.Model):
             pos.user_access_count = len(pos.user_access_ids)
     
     @api.model
-    def search(self, domain, offset=0, limit=None, order=None, count=False):
+    def search(self, args, offset=0, limit=None, order=None):
         """Override search to filter POS based on user access"""
         # Check if user is POS Manager or Admin
         if not self.env.user.has_group('point_of_sale.group_pos_manager') and \
@@ -34,13 +34,13 @@ class PosConfig(models.Model):
             # Regular user - filter by access
             allowed_pos_ids = self.env.user.pos_access_ids.ids
             if allowed_pos_ids:
-                domain = ['&', ('id', 'in', allowed_pos_ids)] + domain
+                args = ['&', ('id', 'in', allowed_pos_ids)] + args
             else:
                 # No access to any POS
-                domain = [('id', '=', False)] + domain
+                args = [('id', '=', False)] + args
         
         return super(PosConfig, self).search(
-            domain, offset=offset, limit=limit, order=order, count=count
+            args, offset=offset, limit=limit, order=order
         )
     
     @api.model
