@@ -26,6 +26,24 @@ class StockWarehouse(models.Model):
             warehouse.user_access_count = len(warehouse.user_access_ids)
     
     @api.model
+    def search(self, domain, offset=0, limit=None, order=None, count=False):
+        """Override search to filter warehouses based on user access"""
+        # Check if user is Stock Manager or Admin
+        if not self.env.user.has_group('stock.group_stock_manager') and \
+           not self.env.user.has_group('base.group_system'):
+            # Regular user - filter by warehouse access
+            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
+            if allowed_warehouse_ids:
+                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+            else:
+                # No access to any warehouse
+                domain = [('id', '=', False)] + domain
+        
+        return super(StockWarehouse, self).search(
+            domain, offset=offset, limit=limit, order=order, count=count
+        )
+    
+    @api.model
     def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
         """Override search_read to filter warehouses based on user access"""
         if domain is None:
@@ -43,6 +61,27 @@ class StockWarehouse(models.Model):
                 domain = [('id', '=', False)] + domain
         
         return super(StockWarehouse, self).search_read(
+            domain=domain, fields=fields, offset=offset, limit=limit, order=order
+        )
+    
+    @api.model
+    def web_search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
+        """Override web_search_read for web client kanban/list views"""
+        if domain is None:
+            domain = []
+        
+        # Check if user is Stock Manager or Admin  
+        if not self.env.user.has_group('stock.group_stock_manager') and \
+           not self.env.user.has_group('base.group_system'):
+            # Regular user - filter by warehouse access
+            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
+            if allowed_warehouse_ids:
+                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+            else:
+                # No access to any warehouse
+                domain = [('id', '=', False)] + domain
+        
+        return super(StockWarehouse, self).web_search_read(
             domain=domain, fields=fields, offset=offset, limit=limit, order=order
         )
     
