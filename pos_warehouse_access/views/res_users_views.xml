@@ -28,7 +28,7 @@
                                    placeholder="Pilih POS yang bisa diakses user ini..."/>
                         </group>
                         <group string="Detail POS Access">
-                            <field name="pos_access_ids" nolabel="1" widget="many2many" mode="tree">
+                            <field name="pos_access_ids" nolabel="1" widget="many2many" mode="list">
                                 <list string="POS Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
@@ -51,7 +51,7 @@
                                    placeholder="Pilih gudang yang bisa dilihat user ini..."/>
                         </group>
                         <group string="Detail Warehouse Access">
-                            <field name="warehouse_access_ids" nolabel="1" widget="many2many" mode="tree">
+                            <field name="warehouse_access_ids" nolabel="1" widget="many2many" mode="list">
                                 <list string="Warehouse Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="code"/>
