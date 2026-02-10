@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        
+        <!-- Extend User Form View -->
+        <record id="view_users_form_pos_warehouse_access" model="ir.ui.view">
+            <field name="name">res.users.form.pos.warehouse.access</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_form"/>
+            <field name="arch" type="xml">
+                
+                <!-- Add Smart Buttons -->
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button name="action_view_pos_access" type="object" class="oe_stat_button" icon="fa-cash-register">
+                        <field name="pos_access_count" widget="statinfo" string="POS Access"/>
+                    </button>
+                    <button name="action_view_warehouse_access" type="object" class="oe_stat_button" icon="fa-warehouse">
+                        <field name="warehouse_access_count" widget="statinfo" string="Warehouse Access"/>
+                    </button>
+                </xpath>
+
+                <!-- Add POS Access Tab -->
+                <xpath expr="//notebook" position="inside">
+                    <page string="POS Access" name="pos_access">
+                        <group>
+                            <group>
+                                <field name="pos_access_ids" widget="many2many_tags" 
+                                       options="{'color_field': 'color', 'no_create': True}"
+                                       placeholder="Pilih POS yang bisa diakses user ini..."/>
+                            </group>
+                        </group>
+                        <group string="POS yang Bisa Diakses">
+                            <field name="pos_access_ids" nolabel="1" mode="tree">
+                                <list string="POS Access">
+                                    <field name="name"/>
+                                    <field name="company_id" groups="base.group_multi_company"/>
+                                    <field name="warehouse_id"/>
+                                </list>
+                            </field>
+                        </group>
+                        <div class="alert alert-info" role="alert">
+                            <strong>Info:</strong> User hanya bisa mengakses POS yang dipilih di sini. 
+                            Jika tidak ada POS yang dipilih, user tidak akan bisa mengakses POS apapun 
+                            (kecuali user adalah POS Manager atau Administrator).
+                        </div>
+                    </page>
+
+                    <!-- Add Warehouse Access Tab -->
+                    <page string="Warehouse Access" name="warehouse_access">
+                        <group>
+                            <group>
+                                <field name="warehouse_access_ids" widget="many2many_tags"
+                                       options="{'color_field': 'color', 'no_create': True}"
+                                       placeholder="Pilih gudang yang bisa dilihat user ini..."/>
+                            </group>
+                        </group>
+                        <group string="Gudang yang Bisa Diakses">
+                            <field name="warehouse_access_ids" nolabel="1" mode="tree">
+                                <list string="Warehouse Access">
+                                    <field name="name"/>
+                                    <field name="code"/>
+                                    <field name="company_id" groups="base.group_multi_company"/>
+                                    <field name="partner_id"/>
+                                </list>
+                            </field>
+                        </group>
+                        <div class="alert alert-info" role="alert">
+                            <strong>Info:</strong> User hanya bisa melihat stok dari gudang yang dipilih di sini. 
+                            Jika tidak ada gudang yang dipilih, user tidak akan bisa melihat stok apapun 
+                            (kecuali user adalah Stock Manager atau Administrator).
+                        </div>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- User List View with Access Info -->
+        <record id="view_users_tree_pos_warehouse_access" model="ir.ui.view">
+            <field name="name">res.users.tree.pos.warehouse.access</field>
+            <field name="model">res.users</field>
+            <field name="inherit_id" ref="base.view_users_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='login']" position="after">
+                    <field name="pos_access_count" string="POS"/>
+                    <field name="warehouse_access_count" string="Warehouses"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>

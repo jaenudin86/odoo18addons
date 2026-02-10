@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>POS & Warehouse User Access Control</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #875a7b;
+            border-bottom: 3px solid #875a7b;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #875a7b;
+            margin-top: 30px;
+        }
+        .feature-box {
+            background-color: #f9f9f9;
+            border-left: 4px solid #875a7b;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .highlight {
+            background-color: #fff3cd;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        ul {
+            margin-left: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #875a7b;
+            color: white;
+            padding: 10px 20px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔐 POS & Warehouse User Access Control</h1>
+    
+    <div class="highlight">
+        <strong>Kontrol Akses User ke POS dan Gudang Tertentu</strong><br>
+        Atur dengan mudah siapa yang bisa mengakses POS mana dan melihat stok gudang mana.
+    </div>
+
+    <h2>✨ Fitur Utama</h2>
+    
+    <div class="feature-box">
+        <h3>📱 Akses POS per User</h3>
+        <ul>
+            <li>Assign POS tertentu ke user tertentu</li>
+            <li>Satu user bisa akses banyak POS</li>
+            <li>Satu POS bisa diakses banyak user</li>
+            <li>User hanya bisa login ke POS yang di-assign</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>🏭 Akses Gudang per User</h3>
+        <ul>
+            <li>Assign gudang tertentu ke user tertentu</li>
+            <li>Satu user bisa lihat banyak gudang</li>
+            <li>Satu gudang bisa dilihat banyak user</li>
+            <li>User hanya bisa lihat stok dari gudang yang di-assign</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>🔄 Manajemen 2 Arah</h3>
+        <ul>
+            <li><strong>Dari User:</strong> Lihat POS & Gudang apa saja yang user bisa akses</li>
+            <li><strong>Dari POS:</strong> Lihat user mana saja yang bisa pakai POS ini</li>
+            <li><strong>Dari Gudang:</strong> Lihat user mana saja yang bisa lihat gudang ini</li>
+        </ul>
+    </div>
+
+    <div class="feature-box">
+        <h3>🛡️ Keamanan Otomatis</h3>
+        <ul>
+            <li>Auto-filter stok berdasarkan akses gudang</li>
+            <li>Auto-filter POS berdasarkan akses user</li>
+            <li>Menggunakan Record Rules untuk keamanan database</li>
+            <li>Tidak bisa di-bypass dengan direct URL</li>
+        </ul>
+    </div>
+
+    <h2>📋 Cara Penggunaan</h2>
+    
+    <h3>1. Atur dari sisi User</h3>
+    <p>Settings → Users & Companies → Users → Pilih User</p>
+    <ul>
+        <li><strong>Tab "POS Access":</strong> Pilih POS yang bisa diakses</li>
+        <li><strong>Tab "Warehouse Access":</strong> Pilih gudang yang bisa dilihat</li>
+    </ul>
+
+    <h3>2. Atur dari sisi POS</h3>
+    <p>Point of Sale → Configuration → Point of Sale → Pilih POS</p>
+    <ul>
+        <li><strong>Tab "User Access":</strong> Lihat dan atur user yang bisa akses</li>
+    </ul>
+
+    <h3>3. Atur dari sisi Gudang</h3>
+    <p>Inventory → Configuration → Warehouses → Pilih Gudang</p>
+    <ul>
+        <li><strong>Tab "User Access":</strong> Lihat dan atur user yang bisa lihat</li>
+    </ul>
+
+    <h2>💡 Contoh Kasus</h2>
+    
+    <div class="feature-box">
+        <strong>Kasir Cabang:</strong><br>
+        User "Andi" hanya akses POS Toko A dan lihat stok Gudang Jakarta
+    </div>
+
+    <div class="feature-box">
+        <strong>Supervisor Multi Cabang:</strong><br>
+        User "Budi" akses POS Toko A, B, C dan lihat stok Gudang Jakarta & Bandung
+    </div>
+
+    <div class="feature-box">
+        <strong>Staff Gudang:</strong><br>
+        User "Citra" tidak akses POS, tapi bisa kelola stok 3 gudang
+    </div>
+
+    <h2>🎯 Keuntungan</h2>
+    <ul>
+        <li>✅ <strong>Fleksibel:</strong> Atur akses sesuai kebutuhan</li>
+        <li>✅ <strong>Aman:</strong> User tidak bisa lihat data yang bukan haknya</li>
+        <li>✅ <strong>Mudah:</strong> Interface yang user-friendly</li>
+        <li>✅ <strong>Scalable:</strong> Cocok untuk multi-cabang dan multi-gudang</li>
+        <li>✅ <strong>Audit:</strong> Tahu siapa yang bisa akses apa</li>
+    </ul>
+
+    <h2>🔧 Technical Information</h2>
+    <p><strong>Compatible with:</strong> Odoo 18.0</p>
+    <p><strong>Dependencies:</strong> base, point_of_sale, stock</p>
+    <p><strong>License:</strong> LGPL-3</p>
+
+    <div class="highlight" style="margin-top: 30px;">
+        <strong>📞 Support:</strong> Untuk bantuan atau pertanyaan, hubungi support@yourcompany.com
+    </div>
+</body>
+</html>

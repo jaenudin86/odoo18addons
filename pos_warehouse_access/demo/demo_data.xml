@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        
+        <!-- Demo Users -->
+        <record id="demo_user_kasir_a" model="res.users">
+            <field name="name">Andi Kasir Toko A</field>
+            <field name="login">kasir.a@demo.com</field>
+            <field name="password">demo123</field>
+            <field name="groups_id" eval="[(4, ref('point_of_sale.group_pos_user'))]"/>
+        </record>
+
+        <record id="demo_user_supervisor" model="res.users">
+            <field name="name">Budi Supervisor</field>
+            <field name="login">supervisor@demo.com</field>
+            <field name="password">demo123</field>
+            <field name="groups_id" eval="[(4, ref('point_of_sale.group_pos_user')), (4, ref('stock.group_stock_user'))]"/>
+        </record>
+
+        <record id="demo_user_warehouse_staff" model="res.users">
+            <field name="name">Citra Staff Gudang</field>
+            <field name="login">warehouse@demo.com</field>
+            <field name="password">demo123</field>
+            <field name="groups_id" eval="[(4, ref('stock.group_stock_user'))]"/>
+        </record>
+
+        <!-- Demo Warehouses (if not exist) -->
+        <record id="demo_warehouse_jakarta" model="stock.warehouse">
+            <field name="name">Gudang Jakarta</field>
+            <field name="code">JKT</field>
+        </record>
+
+        <record id="demo_warehouse_bandung" model="stock.warehouse">
+            <field name="name">Gudang Bandung</field>
+            <field name="code">BDG</field>
+        </record>
+
+        <record id="demo_warehouse_surabaya" model="stock.warehouse">
+            <field name="name">Gudang Surabaya</field>
+            <field name="code">SBY</field>
+        </record>
+
+        <!-- Demo POS -->
+        <record id="demo_pos_toko_a" model="pos.config">
+            <field name="name">POS Toko A</field>
+            <field name="warehouse_id" ref="demo_warehouse_jakarta"/>
+        </record>
+
+        <record id="demo_pos_toko_b" model="pos.config">
+            <field name="name">POS Toko B</field>
+            <field name="warehouse_id" ref="demo_warehouse_bandung"/>
+        </record>
+
+        <record id="demo_pos_toko_c" model="pos.config">
+            <field name="name">POS Toko C</field>
+            <field name="warehouse_id" ref="demo_warehouse_surabaya"/>
+        </record>
+
+        <!-- Assign Access: Kasir A -->
+        <record id="demo_user_kasir_a" model="res.users">
+            <field name="pos_access_ids" eval="[(4, ref('demo_pos_toko_a'))]"/>
+            <field name="warehouse_access_ids" eval="[(4, ref('demo_warehouse_jakarta'))]"/>
+        </record>
+
+        <!-- Assign Access: Supervisor -->
+        <record id="demo_user_supervisor" model="res.users">
+            <field name="pos_access_ids" eval="[(4, ref('demo_pos_toko_a')), (4, ref('demo_pos_toko_b')), (4, ref('demo_pos_toko_c'))]"/>
+            <field name="warehouse_access_ids" eval="[(4, ref('demo_warehouse_jakarta')), (4, ref('demo_warehouse_bandung'))]"/>
+        </record>
+
+        <!-- Assign Access: Warehouse Staff -->
+        <record id="demo_user_warehouse_staff" model="res.users">
+            <field name="warehouse_access_ids" eval="[(4, ref('demo_warehouse_jakarta')), (4, ref('demo_warehouse_bandung')), (4, ref('demo_warehouse_surabaya'))]"/>
+        </record>
+
+    </data>
+</odoo>

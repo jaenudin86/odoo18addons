@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        
+        <!-- Extend Stock Warehouse Form View -->
+        <record id="view_warehouse_form_user_access" model="ir.ui.view">
+            <field name="name">stock.warehouse.form.user.access</field>
+            <field name="model">stock.warehouse</field>
+            <field name="inherit_id" ref="stock.view_warehouse"/>
+            <field name="arch" type="xml">
+                
+                <!-- Add Smart Button -->
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button name="action_view_user_access" type="object" class="oe_stat_button" icon="fa-users">
+                        <field name="user_access_count" widget="statinfo" string="Users"/>
+                    </button>
+                </xpath>
+
+                <!-- Add User Access Tab -->
+                <xpath expr="//notebook" position="inside">
+                    <page string="User Access" name="user_access">
+                        <group>
+                            <group>
+                                <field name="user_access_ids" widget="many2many_tags"
+                                       options="{'no_create': True}"
+                                       placeholder="Pilih user yang bisa melihat gudang ini..."/>
+                            </group>
+                        </group>
+                        <group string="User yang Bisa Melihat Gudang Ini">
+                            <field name="user_access_ids" nolabel="1" mode="tree">
+                                <list string="User Access">
+                                    <field name="name"/>
+                                    <field name="login"/>
+                                    <field name="groups_id" widget="many2many_tags"/>
+                                    <field name="company_id" groups="base.group_multi_company"/>
+                                </list>
+                            </field>
+                        </group>
+                        <div class="alert alert-info" role="alert">
+                            <strong>Info:</strong> Hanya user yang terdaftar di sini yang bisa melihat stok dari gudang ini. 
+                            Jika list kosong, semua user dengan akses inventory bisa melihat gudang ini.
+                            Stock Manager dan Administrator selalu bisa melihat semua gudang.
+                        </div>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- Warehouse List View with User Count -->
+        <record id="view_warehouse_tree_user_access" model="ir.ui.view">
+            <field name="name">stock.warehouse.tree.user.access</field>
+            <field name="model">stock.warehouse</field>
+            <field name="inherit_id" ref="stock.view_warehouse_tree"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='name']" position="after">
+                    <field name="user_access_count" string="Users"/>
+                </xpath>
+            </field>
+        </record>
+
+    </data>
+</odoo>
