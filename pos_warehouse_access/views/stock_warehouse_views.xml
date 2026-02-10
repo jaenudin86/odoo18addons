@@ -25,7 +25,7 @@
                                    placeholder="Pilih user yang bisa melihat gudang ini..."/>
                         </group>
                         <group string="Detail User Access">
-                            <field name="user_access_ids" nolabel="1" widget="many2many" mode="tree">
+                            <field name="user_access_ids" nolabel="1" widget="many2many" mode="list">
                                 <list string="User Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="login"/>
