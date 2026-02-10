@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 {
     'name': 'POS & Warehouse User Access Control',
-    'version': '18.0.1.0.0',
+    'version': '18.0.1.0.1',
     'category': 'Point of Sale',
     'summary': 'Manage user access to specific POS and Warehouses',
     'description': """
@@ -37,6 +37,7 @@
         'views/res_users_views.xml',
         'views/pos_config_views.xml',
         'views/stock_warehouse_views.xml',
+        'views/res_config_settings_views.xml',
     ],
     'demo': [
         'demo/demo_data.xml',

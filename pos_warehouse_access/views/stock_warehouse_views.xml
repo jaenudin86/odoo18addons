@@ -19,16 +19,14 @@
                 <!-- Add User Access Tab -->
                 <xpath expr="//notebook" position="inside">
                     <page string="User Access" name="user_access">
-                        <group>
-                            <group>
-                                <field name="user_access_ids" widget="many2many_tags"
-                                       options="{'no_create': True}"
-                                       placeholder="Pilih user yang bisa melihat gudang ini..."/>
-                            </group>
-                        </group>
                         <group string="User yang Bisa Melihat Gudang Ini">
-                            <field name="user_access_ids" nolabel="1" mode="tree">
-                                <list string="User Access">
+                            <field name="user_access_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   placeholder="Pilih user yang bisa melihat gudang ini..."/>
+                        </group>
+                        <group string="Detail User Access">
+                            <field name="user_access_ids" nolabel="1" widget="many2many" mode="tree">
+                                <list string="User Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="login"/>
                                     <field name="groups_id" widget="many2many_tags"/>

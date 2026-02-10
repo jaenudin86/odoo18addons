@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.0.1] - 2025-02-11
+
+### Fixed
+- Fixed duplicate field declaration in user, POS, and warehouse views
+- Removed invalid `color_field` widget option
+- Fixed many2many field display issues in Odoo 18
+- Added proper widget attributes for editable lists
+
+### Added
+- Added Settings page extension (res.config.settings view)
+- Added link to User Access configuration from Settings
+- Added editable mode to list views for easier inline editing
+- Added optional field visibility controls
+- Added BUGFIX.md documentation
+
+### Changed
+- Restructured view layouts to avoid duplicate field declarations
+- Improved user experience with better field organization
+- Enhanced list view with editable="bottom" attribute
+
 ## [1.0.0] - 2025-02-11
 
 ### Added

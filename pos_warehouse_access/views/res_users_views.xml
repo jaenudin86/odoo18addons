@@ -22,19 +22,17 @@
                 <!-- Add POS Access Tab -->
                 <xpath expr="//notebook" position="inside">
                     <page string="POS Access" name="pos_access">
-                        <group>
-                            <group>
-                                <field name="pos_access_ids" widget="many2many_tags" 
-                                       options="{'color_field': 'color', 'no_create': True}"
-                                       placeholder="Pilih POS yang bisa diakses user ini..."/>
-                            </group>
-                        </group>
                         <group string="POS yang Bisa Diakses">
-                            <field name="pos_access_ids" nolabel="1" mode="tree">
-                                <list string="POS Access">
+                            <field name="pos_access_ids" widget="many2many_tags" 
+                                   options="{'no_create': True}"
+                                   placeholder="Pilih POS yang bisa diakses user ini..."/>
+                        </group>
+                        <group string="Detail POS Access">
+                            <field name="pos_access_ids" nolabel="1" widget="many2many" mode="tree">
+                                <list string="POS Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
-                                    <field name="warehouse_id"/>
+                                    <field name="warehouse_id" optional="show"/>
                                 </list>
                             </field>
                         </group>
@@ -47,20 +45,18 @@
 
                     <!-- Add Warehouse Access Tab -->
                     <page string="Warehouse Access" name="warehouse_access">
-                        <group>
-                            <group>
-                                <field name="warehouse_access_ids" widget="many2many_tags"
-                                       options="{'color_field': 'color', 'no_create': True}"
-                                       placeholder="Pilih gudang yang bisa dilihat user ini..."/>
-                            </group>
-                        </group>
                         <group string="Gudang yang Bisa Diakses">
-                            <field name="warehouse_access_ids" nolabel="1" mode="tree">
-                                <list string="Warehouse Access">
+                            <field name="warehouse_access_ids" widget="many2many_tags"
+                                   options="{'no_create': True}"
+                                   placeholder="Pilih gudang yang bisa dilihat user ini..."/>
+                        </group>
+                        <group string="Detail Warehouse Access">
+                            <field name="warehouse_access_ids" nolabel="1" widget="many2many" mode="tree">
+                                <list string="Warehouse Access" editable="bottom">
                                     <field name="name"/>
                                     <field name="code"/>
                                     <field name="company_id" groups="base.group_multi_company"/>
-                                    <field name="partner_id"/>
+                                    <field name="partner_id" optional="hide"/>
                                 </list>
                             </field>
                         </group>
