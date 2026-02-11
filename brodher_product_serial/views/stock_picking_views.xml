@@ -37,15 +37,15 @@
                         string="Generate SN" 
                         type="object" 
                         class="btn-primary"
-                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or backorder_id"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or backorder_id or picking_type_code == 'internal'"
                         help="Generate serial numbers (must scan after generation)"/>
-                
+        
                 <!-- Quick Generate All Button (HIDDEN for backorder) -->
                 <button name="action_bulk_generate_all" 
                         string="Quick Generate All" 
                         type="object" 
                         class="btn-success"
-                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated or backorder_id"
+                        invisible="state not in ['confirmed', 'assigned', 'waiting'] or not has_sn_products or serial_numbers_generated or backorder_id or picking_type_code == 'internal'"
                         confirm="This will automatically generate serial numbers for all products. Continue?"
                         help="Auto-generate all SNs"/>
                 
@@ -55,7 +55,7 @@
                         type="object" 
                         class="btn-info"
                         icon="fa-print"
-                        invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting']"
+                        invisible="not serial_numbers_generated or state not in ['confirmed', 'assigned', 'waiting'] or picking_type_code == 'internal'"
                         help="Print QR code labels for generated serial numbers"/>
             </xpath>
             
