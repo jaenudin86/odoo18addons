@@ -1,54 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from odoo import models, api
+from odoo import models
 
 
 class StockLocation(models.Model):
     _inherit = 'stock.location'
-
-    @api.model
-    def search(self, args, offset=0, limit=None, order=None):
-        """Override search to filter locations based on warehouse access"""
-        # Check if user is Stock Manager or Admin
-        if not self.env.user.has_group('stock.group_stock_manager') and \
-           not self.env.user.has_group('base.group_system'):
-            # Regular user - filter by warehouse access
-            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
-            if allowed_warehouse_ids:
-                # Add filter
-                if args:
-                    args = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + args
-                else:
-                    args = [('warehouse_id', 'in', allowed_warehouse_ids)]
-            else:
-                # No access to any warehouse
-                args = [('id', '=', False)] + args
-        
-        return super(StockLocation, self).search(
-            args, offset=offset, limit=limit, order=order
-        )
-
-    @api.model
-    def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
-        """Override search_read to filter locations based on warehouse access"""
-        if domain is None:
-            domain = []
-        
-        # Check if user is Stock Manager or Admin
-        if not self.env.user.has_group('stock.group_stock_manager') and \
-           not self.env.user.has_group('base.group_system'):
-            # Regular user - filter by warehouse access
-            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
-            if allowed_warehouse_ids:
-                # Add filter
-                if domain:
-                    domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
-                else:
-                    domain = [('warehouse_id', 'in', allowed_warehouse_ids)]
-            else:
-                # No access to any warehouse
-                domain = [('id', '=', False)] + domain
-        
-        return super(StockLocation, self).search_read(
-            domain=domain, fields=fields, offset=offset, limit=limit, order=order
-        )
+    
+    # No method override - rely on record rules only
