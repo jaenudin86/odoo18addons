@@ -1,8 +1,6 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
 from datetime import datetime
-import re
-
 
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
@@ -10,15 +8,14 @@ class ProductTemplate(models.Model):
     # =========================
     # FIELD TAMBAHAN
     # =========================
-
-# psit
+    # psit
     brand = fields.Char(string="Brand")
     dimension = fields.Char(string="Dimension")
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
     size = fields.Char(string="Size")
 
-# atc
+    # atc
     ingredients = fields.Text(string="Ingredients")
     Edition = fields.Char(string="Edition")     
     gross_weight = fields.Float(string='Gross Weight')
@@ -46,75 +43,58 @@ class ProductTemplate(models.Model):
         if is_article == 'yes':
             prefix = 'ATC'
             date_str = now.strftime('%d%m%y')
-            seq = self.env['ir.sequence'].with_context(ctx)\
-                .next_by_code('article.number.sequence') or '001'
-            # Pastikan 3 digit
+            seq = self.env['ir.sequence'].with_context(ctx).next_by_code('article.number.sequence') or '001'
             seq = str(seq).zfill(3)
             return f"{prefix}{date_str}{seq}"
         else:
             prefix = 'PSIT'
             year_str = now.strftime('%y')
-            seq = self.env['ir.sequence'].with_context(ctx)\
-                .next_by_code('pist.number.sequence') or '0001'
-            # Pastikan 4 digit
+            seq = self.env['ir.sequence'].with_context(ctx).next_by_code('pist.number.sequence') or '0001'
             seq = str(seq).zfill(4)
             return f"{prefix}{year_str}{seq}"
 
     @api.model
     def create(self, vals):
-        # Selalu stockable
+        # Selalu storable/stockable
         vals.setdefault('is_storable', True)
         vals.setdefault('type', 'product')
 
-        # AUTO TRACK INVENTORY berdasarkan is_article
+        # AUTO TRACK INVENTORY
         if vals.get('is_article') == 'yes':
-            vals.update({
-                'tracking': 'serial',   # ATC → by serial number
-            })
+            vals.update({'tracking': 'serial'})
         else:
-            vals.update({
-                'tracking': 'none',     # PSIT → by quantity
-            })
+            vals.update({'tracking': 'none'})
 
-        # Generate default_code di level template jika belum ada
+        # Generate default_code di level template (Nomor Pertama)
         if not vals.get('default_code'):
             is_article = vals.get('is_article', 'no')
             vals['default_code'] = self._generate_article_number(is_article)
 
-        return super().create(vals)
+        return super(ProductTemplate, self).create(vals)
 
     def write(self, vals):
-        res = super().write(vals)
-
-        # Update tracking jika is_article berubah
+        res = super(ProductTemplate, self).write(vals)
+        # Update tracking di varian jika is_article berubah
         if 'is_article' in vals:
             for rec in self:
-                if rec.is_article == 'yes':
-                    rec.tracking = 'serial'
-                else:
-                    rec.tracking = 'none'
-
+                new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
+                rec.product_variant_ids.write({'tracking': new_tracking})
         return res
 
 
 class ProductProduct(models.Model):
     _inherit = 'product.product'
 
-    static_barcode = fields.Char(
-        string='Barcode Statis',
-        readonly=True,
-        store=True
-    )
+    static_barcode = fields.Char(string='Barcode Statis', readonly=True)
 
     # =========================
-    # RELATED FIELD
+    # RELATED FIELDS (Agar tersimpan di DB/Store=True)
     # =========================
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
     dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
     base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
     text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
-
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
     gross_weight = fields.Float(related='product_tmpl_id.gross_weight', store=True)
@@ -130,18 +110,22 @@ class ProductProduct(models.Model):
         if tmpl_id:
             tmpl = self.env['product.template'].browse(tmpl_id)
             
-            # Generate default_code dan barcode untuk setiap variant
-            # Setiap variant dapat nomor artikel baru yang unik
+            # Cek apakah sudah ada varian lain untuk template ini
+            existing_variant = self.search_count([('product_tmpl_id', '=', tmpl_id)])
+            
             if not vals.get('default_code'):
-                # Generate nomor baru untuk setiap variant
-                code = tmpl._generate_article_number(tmpl.is_article)
-                
-                vals.update({
-                    'default_code': code,
-                    'barcode': code,
-                })
-            # Jika default_code sudah diisi manual, pastikan barcode juga terisi
+                if existing_variant == 0:
+                    # VARIANT PERTAMA: Ambil nomor dari template agar tidak loncat
+                    vals['default_code'] = tmpl.default_code
+                    vals['barcode'] = tmpl.default_code
+                else:
+                    # VARIANT KEDUA dst: Baru panggil sequence untuk nomor baru
+                    new_code = tmpl._generate_article_number(tmpl.is_article)
+                    vals['default_code'] = new_code
+                    vals['barcode'] = new_code
+            
+            # Sinkronisasi barcode jika default_code diisi manual
             elif not vals.get('barcode'):
                 vals['barcode'] = vals.get('default_code')
 
-        return super().create(vals)
+        return super(ProductProduct, self).create(vals)
