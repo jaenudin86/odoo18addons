@@ -25,6 +25,23 @@ class StockWarehouse(models.Model):
         for warehouse in self:
             warehouse.user_access_count = len(warehouse.user_access_ids)
     
+    def _search(self, args, offset=0, limit=None, order=None, count=False, access_rights_uid=None):
+        """Override _search to filter warehouses based on user access at the lowest level"""
+        # Check if user is Stock Manager or Admin
+        if not self.env.user.has_group('stock.group_stock_manager') and \
+           not self.env.user.has_group('base.group_system'):
+            # Regular user - filter by warehouse access
+            allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
+            if allowed_warehouse_ids:
+                args = ['&', ('id', 'in', allowed_warehouse_ids)] + args
+            else:
+                # No access to any warehouse
+                args = [('id', 'in', [])] + args
+        
+        return super(StockWarehouse, self)._search(
+            args, offset=offset, limit=limit, order=order, count=count, access_rights_uid=access_rights_uid
+        )
+    
     @api.model
     def search(self, args, offset=0, limit=None, order=None):
         """Override search to filter warehouses based on user access"""
@@ -37,7 +54,7 @@ class StockWarehouse(models.Model):
                 args = ['&', ('id', 'in', allowed_warehouse_ids)] + args
             else:
                 # No access to any warehouse
-                args = [('id', '=', False)] + args
+                args = [('id', 'in', [])] + args
         
         return super(StockWarehouse, self).search(
             args, offset=offset, limit=limit, order=order
@@ -58,7 +75,7 @@ class StockWarehouse(models.Model):
                 domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                domain = [('id', 'in', [])] + domain
         
         return super(StockWarehouse, self).search_read(
             domain=domain, fields=fields, offset=offset, limit=limit, order=order
@@ -79,7 +96,7 @@ class StockWarehouse(models.Model):
                 domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
             else:
                 # No access to any warehouse
-                domain = [('id', '=', False)] + domain
+                domain = [('id', 'in', [])] + domain
         
         return super(StockWarehouse, self).web_search_read(
             domain=domain, fields=fields, offset=offset, limit=limit, order=order

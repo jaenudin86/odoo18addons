@@ -6,11 +6,7 @@
         <record id="pos_config_user_access_rule" model="ir.rule">
             <field name="name">POS: User Access Only</field>
             <field name="model_id" ref="point_of_sale.model_pos_config"/>
-            <field name="domain_force">[
-                '|',
-                    ('user_access_ids', '=', False),
-                    ('user_access_ids', 'in', [user.id])
-            ]</field>
+            <field name="domain_force">[('user_access_ids', 'in', [user.id])]</field>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -34,11 +30,7 @@
         <record id="stock_warehouse_user_access_rule" model="ir.rule">
             <field name="name">Warehouse: User Access Only</field>
             <field name="model_id" ref="stock.model_stock_warehouse"/>
-            <field name="domain_force">[
-                '|',
-                    ('user_access_ids', '=', False),
-                    ('user_access_ids', 'in', [user.id])
-            ]</field>
+            <field name="domain_force">[('user_access_ids', 'in', [user.id])]</field>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -62,11 +54,8 @@
         <record id="stock_quant_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Quant: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_quant"/>
-            <field name="domain_force">[
-                '|',
-                    ('location_id.warehouse_id.user_access_ids', '=', False),
-                    ('location_id.warehouse_id.user_access_ids', 'in', [user.id])
-            ]</field>
+            <field name="domain_force">[('location_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -90,11 +79,8 @@
         <record id="stock_location_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Location: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_location"/>
-            <field name="domain_force">[
-                '|',
-                    ('warehouse_id.user_access_ids', '=', False),
-                    ('warehouse_id.user_access_ids', 'in', [user.id])
-            ]</field>
+            <field name="domain_force">[('warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
@@ -118,11 +104,8 @@
         <record id="stock_picking_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Picking: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_picking"/>
-            <field name="domain_force">[
-                '|',
-                    ('picking_type_id.warehouse_id.user_access_ids', '=', False),
-                    ('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])
-            ]</field>
+            <field name="domain_force">[('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
