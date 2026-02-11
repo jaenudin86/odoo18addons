@@ -65,7 +65,7 @@ class StockWarehouse(models.Model):
         )
     
     @api.model
-    def web_search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
+    def web_search_read(self, domain=None, specification=None, offset=0, limit=None, order=None, count_limit=None):
         """Override web_search_read for web client kanban/list views"""
         if domain is None:
             domain = []

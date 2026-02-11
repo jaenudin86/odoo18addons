@@ -46,7 +46,7 @@ class StockPickingType(models.Model):
         )
 
     @api.model
-    def web_search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
+    def web_search_read(self, domain=None, specification=None, offset=0, limit=None, order=None, count_limit=None):
         """Override web_search_read for kanban dashboard"""
         if domain is None:
             domain = []
@@ -63,5 +63,5 @@ class StockPickingType(models.Model):
                 domain = [('id', 'in', [])] + domain
         
         return super(StockPickingType, self).web_search_read(
-            domain=domain, fields=fields, offset=offset, limit=limit, order=order
+            domain=domain, specification=specification, offset=offset, limit=limit, order=order, count_limit=count_limit
         )
