@@ -34,7 +34,11 @@ class StockWarehouse(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                args = ['&', ('id', 'in', allowed_warehouse_ids)] + args
+                # Add filter
+                if args:
+                    args = ['&', ('id', 'in', allowed_warehouse_ids)] + args
+                else:
+                    args = [('id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
                 args = [('id', 'in', [])] + args
@@ -55,7 +59,11 @@ class StockWarehouse(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+                # Add filter
+                if domain:
+                    domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+                else:
+                    domain = [('id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
                 domain = [('id', 'in', [])] + domain
@@ -76,7 +84,11 @@ class StockWarehouse(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+                # Add filter
+                if domain:
+                    domain = ['&', ('id', 'in', allowed_warehouse_ids)] + domain
+                else:
+                    domain = [('id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
                 domain = [('id', 'in', [])] + domain

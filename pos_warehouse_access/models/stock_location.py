@@ -15,7 +15,11 @@ class StockLocation(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                args = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + args
+                # Add filter
+                if args:
+                    args = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + args
+                else:
+                    args = [('warehouse_id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
                 args = [('id', '=', False)] + args
@@ -36,7 +40,11 @@ class StockLocation(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                # Add filter
+                if domain:
+                    domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                else:
+                    domain = [('warehouse_id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
                 domain = [('id', '=', False)] + domain

@@ -21,7 +21,11 @@ class StockPicking(models.Model):
                 ]).ids
                 
                 if allowed_picking_types:
+                    # Add filter
+                if args:
                     args = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
+                else:
+                    args = [('picking_type_id', 'in', allowed_picking_types)]
                 else:
                     args = [('id', '=', False)] + domain
             else:
@@ -50,7 +54,11 @@ class StockPicking(models.Model):
                 ]).ids
                 
                 if allowed_picking_types:
+                    # Add filter
+                if args:
                     args = ['&', ('picking_type_id', 'in', allowed_picking_types)] + domain
+                else:
+                    args = [('picking_type_id', 'in', allowed_picking_types)]
                 else:
                     args = [('id', '=', False)] + domain
             else:

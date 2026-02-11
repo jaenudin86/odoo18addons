@@ -34,7 +34,11 @@ class PosConfig(models.Model):
             # Regular user - filter by access
             allowed_pos_ids = self.env.user.pos_access_ids.ids
             if allowed_pos_ids:
-                args = ['&', ('id', 'in', allowed_pos_ids)] + args
+                # Add filter
+                if args:
+                    args = ['&', ('id', 'in', allowed_pos_ids)] + args
+                else:
+                    args = [('id', 'in', allowed_pos_ids)]
             else:
                 # No access to any POS
                 args = [('id', '=', False)] + args
@@ -55,7 +59,11 @@ class PosConfig(models.Model):
             # Regular user - filter by access
             allowed_pos_ids = self.env.user.pos_access_ids.ids
             if allowed_pos_ids:
-                domain = ['&', ('id', 'in', allowed_pos_ids)] + domain
+                # Add filter
+                if domain:
+                    domain = ['&', ('id', 'in', allowed_pos_ids)] + domain
+                else:
+                    domain = [('id', 'in', allowed_pos_ids)]
             else:
                 # No access to any POS
                 domain = [('id', '=', False)] + domain

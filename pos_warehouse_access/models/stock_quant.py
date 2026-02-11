@@ -21,7 +21,11 @@ class StockQuant(models.Model):
                 ]).ids
                 
                 if allowed_locations:
+                    # Add filter
+                if args:
                     args = ['&', ('location_id', 'in', allowed_locations)] + args
+                else:
+                    args = [('location_id', 'in', allowed_locations)]
                 else:
                     # No locations found for warehouses
                     args = [('id', '=', False)] + args
@@ -51,7 +55,11 @@ class StockQuant(models.Model):
                 ]).ids
                 
                 if allowed_locations:
+                    # Add filter
+                if domain:
                     domain = ['&', ('location_id', 'in', allowed_locations)] + domain
+                else:
+                    domain = [('location_id', 'in', allowed_locations)]
                 else:
                     # No locations found for warehouses
                     domain = [('id', '=', False)] + domain

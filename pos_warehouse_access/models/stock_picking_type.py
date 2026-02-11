@@ -15,10 +15,14 @@ class StockPickingType(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                args = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + args
+                # Add filter - check if args is empty
+                if args:
+                    args = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + args
+                else:
+                    args = [('warehouse_id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
-                args = [('id', 'in', [])] + args
+                args = [('id', 'in', [])]
         
         return super(StockPickingType, self).search(
             args, offset=offset, limit=limit, order=order
@@ -36,10 +40,14 @@ class StockPickingType(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                # Add filter - check if domain is empty
+                if domain:
+                    domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                else:
+                    domain = [('warehouse_id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
-                domain = [('id', 'in', [])] + domain
+                domain = [('id', 'in', [])]
         
         return super(StockPickingType, self).search_read(
             domain=domain, fields=fields, offset=offset, limit=limit, order=order
@@ -57,10 +65,14 @@ class StockPickingType(models.Model):
             # Regular user - filter by warehouse access
             allowed_warehouse_ids = self.env.user.warehouse_access_ids.ids
             if allowed_warehouse_ids:
-                domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                # Add filter - check if domain is empty
+                if domain:
+                    domain = ['&', ('warehouse_id', 'in', allowed_warehouse_ids)] + domain
+                else:
+                    domain = [('warehouse_id', 'in', allowed_warehouse_ids)]
             else:
                 # No access to any warehouse
-                domain = [('id', 'in', [])] + domain
+                domain = [('id', 'in', [])]
         
         return super(StockPickingType, self).web_search_read(
             domain=domain, specification=specification, offset=offset, limit=limit, order=order, count_limit=count_limit
