@@ -522,7 +522,7 @@ class ScanSNOutWizard(models.TransientModel):
                 'default_input_method': self.input_method,
             }
         }
-    def action_confirm_scan(self):
+    def action_confirm_scan3(self):
         """Confirm scan - OUTGOING/INTERNAL (with stock check)"""
         self.ensure_one()
         
@@ -668,6 +668,193 @@ class ScanSNOutWizard(models.TransientModel):
                 'default_picking_id': self.picking_id.id,
                 'default_location_src_id': source_location.id,
                 'default_location_dest_id': self.location_dest_id.id,
+                'default_input_method': self.input_method,
+            }
+        }
+    def action_confirm_scan(self):
+        """Confirm scan - OUTGOING/INTERNAL (with stock check)"""
+        self.ensure_one()
+        
+        import logging
+        _logger = logging.getLogger(__name__)
+        
+        # Get SN
+        sn = None
+        if self.input_method == 'scan':
+            if not self.scanned_sn:
+                raise UserError(_('Please scan serial number!'))
+            sn = self.env['stock.lot'].search([('name', '=', self.scanned_sn.strip())], limit=1)
+            if not sn:
+                raise ValidationError(_('Serial Number %s not found!') % self.scanned_sn)
+        else:
+            if not self.serial_number_id:
+                raise UserError(_('Please select serial number!'))
+            sn = self.serial_number_id
+        
+        # Validate: Already scanned in THIS picking?
+        already_scanned = self.picking_id.sn_move_ids.filtered(lambda sm: sm.serial_number_id == sn)
+        if already_scanned:
+            raise UserError(_('⚠️ SN %s already scanned in this transfer!') % sn.name)
+        
+        # Validate: Status must be 'used'
+        if sn.sn_status != 'used':
+            raise UserError(_(
+                '❌ SN %s cannot be used!\n\n'
+                'Status: %s\n\n'
+                'Only SNs with status "USED" (in stock) can be moved.'
+            ) % (sn.name, sn.sn_status.upper()))
+        
+        # Validate: Product match
+        picking_products = self.picking_id.move_ids_without_package.mapped('product_id')
+        if sn.product_id not in picking_products:
+            raise UserError(_('❌ Product mismatch!') % sn.product_id.display_name)
+        
+        # ==========================================
+        # Get source and destination locations
+        # ==========================================
+        source_location = self.location_src_id if self.location_src_id else self.picking_id.location_id
+        dest_location = self.location_dest_id
+        
+        _logger.info(f'[SCAN OUT] Transfer type: {self.picking_id.picking_type_code}')
+        _logger.info(f'[SCAN OUT] From: {source_location.complete_name} (usage: {source_location.usage})')
+        _logger.info(f'[SCAN OUT] To: {dest_location.complete_name} (usage: {dest_location.usage})')
+        
+        # ==========================================
+        # Check stock availability in source location
+        # ==========================================
+        quants = self.env['stock.quant'].search([
+            ('lot_id', '=', sn.id),
+            ('location_id', '=', source_location.id),
+            ('quantity', '>', 0)
+        ])
+        
+        if not quants:
+            # Find where it actually is
+            actual_quants = self.env['stock.quant'].search([
+                ('lot_id', '=', sn.id),
+                ('quantity', '>', 0)
+            ])
+            
+            if actual_quants:
+                actual_location = actual_quants[0].location_id.complete_name
+                raise UserError(_(
+                    '❌ SN %s not in source location!\n\n'
+                    'Required location: %s\n'
+                    'Actual location: %s\n\n'
+                    'Please scan from the correct source location.'
+                ) % (sn.name, source_location.complete_name, actual_location))
+            else:
+                raise UserError(_(
+                    '❌ SN %s has no stock!\n\n'
+                    'This serial number is not available in any location.'
+                ) % sn.name)
+        
+        _logger.info(f'[SCAN OUT] ✓ Stock check passed: {sn.name} available at {source_location.complete_name}')
+        
+        # ==========================================
+        # REMOVED: "Already Shipped" check
+        # For internal transfers, SN can be moved multiple times
+        # Only check if destination is EXTERNAL
+        # ==========================================
+        
+        if dest_location.usage in ['customer', 'supplier']:
+            # For external delivery, check if already shipped
+            shipped = self.env['brodher.sn.move'].search([
+                ('serial_number_id', '=', sn.id),
+                ('move_type', '=', 'out'),
+                ('picking_id.state', '=', 'done'),
+                ('picking_id.picking_type_code', '=', 'outgoing'),  # Only check actual deliveries
+            ], limit=1)
+            
+            if shipped:
+                raise UserError(_(
+                    '❌ Already Shipped!\n\n'
+                    'SN: %s\n'
+                    'Shipped in: %s\n'
+                    'Date: %s'
+                ) % (sn.name, shipped.picking_id.name, shipped.move_date.strftime('%Y-%m-%d %H:%M')))
+        
+        # ==========================================
+        # Create tracking record
+        # ==========================================
+        self.env['brodher.sn.move'].create({
+            'serial_number_id': sn.id,
+            'move_type': 'out',
+            'location_src_id': source_location.id,
+            'location_dest_id': dest_location.id,
+            'picking_id': self.picking_id.id,
+            'notes': self.notes,
+            'user_id': self.env.user.id,
+            'move_date': fields.Datetime.now(),
+        })
+        
+        _logger.info(f'[SCAN OUT] ✓ Created sn_move for {sn.name}')
+        
+        # ==========================================
+        # Create move_line
+        # ==========================================
+        stock_move = self.picking_id.move_ids_without_package.filtered(
+            lambda m: m.product_id == sn.product_id
+        )[:1]
+        
+        if not stock_move:
+            raise UserError(_('Stock move not found'))
+        
+        self.env['stock.move.line'].create({
+            'picking_id': self.picking_id.id,
+            'move_id': stock_move.id,
+            'product_id': sn.product_id.id,
+            'product_uom_id': sn.product_id.uom_id.id,
+            'location_id': source_location.id,
+            'location_dest_id': dest_location.id,
+            'lot_id': sn.id,
+            'lot_name': sn.name,
+            'quantity': 1.0,
+            'company_id': self.env.company.id,
+        })
+        
+        _logger.info(f'[SCAN OUT] ✓ Created move_line for {sn.name}')
+        
+        # ==========================================
+        # Update status based on destination type
+        # ==========================================
+        
+        if dest_location.usage in ['customer', 'supplier', 'transit']:
+            # EXTERNAL delivery → change to 'reserved' (shipped out of warehouse)
+            sn.write({
+                'sn_status': 'reserved',
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] {sn.name} → RESERVED (external delivery)')
+        
+        elif dest_location.usage == 'internal':
+            # INTERNAL transfer → status stays 'used' (still in warehouse)
+            sn.write({
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] {sn.name} → USED (internal transfer, no status change)')
+        
+        else:
+            # Other types (production, inventory, etc.)
+            sn.write({
+                'last_sn_move_date': fields.Datetime.now()
+            })
+            _logger.info(f'[SCAN OUT] {sn.name} → last_sn_move_date updated')
+        
+        # Clear input
+        self.scanned_sn = ''
+        self.serial_number_id = False
+        
+        # Return to wizard
+        return {
+            'type': 'ir.actions.act_window',
+            'res_model': 'brodher.scan.sn.out.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_picking_id': self.picking_id.id,
+                'default_location_src_id': source_location.id,
+                'default_location_dest_id': dest_location.id,
                 'default_input_method': self.input_method,
             }
         }
