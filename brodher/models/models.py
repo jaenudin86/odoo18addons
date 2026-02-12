@@ -9,6 +9,12 @@ class ProductTemplate(models.Model):
     # FIELD TAMBAHAN
     # =========================
     # psit
+    parent_article_id = fields.Many2one(
+        'product.template', 
+        string="Parent ATC", 
+        domain=[('is_article', '=', 'yes')]
+    )
+
     brand = fields.Char(string="Brand")
     dimension = fields.Char(string="Dimension")
     base_colour = fields.Char(string='Base Colour')
@@ -32,6 +38,11 @@ class ProductTemplate(models.Model):
     # =========================
     # GENERATE ARTICLE NUMBER
     # =========================
+    @api.onchange('parent_article_id')
+    def _onchange_parent_article(self):
+        """ Jika memilih parent, ambil default_code-nya """
+        if self.is_article == 'var' and self.parent_article_id:
+            self.default_code = self.parent_article_id.default_code
     def _generate_article_number(self, is_article):
         """
         - ATC  : ATC + DDMMYY + XXX (3 digit)
