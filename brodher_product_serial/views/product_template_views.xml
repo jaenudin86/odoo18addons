@@ -14,10 +14,8 @@
             
             <!-- <xpath expr="//group[@name='group_general']" position="inside"> -->
             <xpath expr="//field[@name='brand']" position="before">
-    <field name="sn_product_type" 
-           widget="radio" 
-           invisible="is_article not in ['yes', 'var']"/>
-</xpath>
+                <field name="sn_product_type" widget="radio" invisible="is_article != 'yes'"/>
+            </xpath>
             
             <!-- <xpath expr="//notebook" position="inside">
                 <page string="Serial Numbers" name="serial_numbers">
