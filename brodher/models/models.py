@@ -36,13 +36,23 @@ class ProductTemplate(models.Model):
     )
 
     # =========================
-    # GENERATE ARTICLE NUMBER
+    # ONCHANGE METHODS
     # =========================
+    @api.onchange('is_article')
+    def _onchange_is_article(self):
+        """Reset default_code ketika is_article berubah ke yes atau no"""
+        if self.is_article in ['yes', 'no']:
+            self.default_code = ''
+
     @api.onchange('parent_article_id')
     def _onchange_parent_article(self):
         """ Jika memilih parent, ambil default_code-nya """
         if self.is_article == 'var' and self.parent_article_id:
             self.default_code = self.parent_article_id.default_code
+
+    # =========================
+    # GENERATE ARTICLE NUMBER
+    # =========================
     def _generate_article_number(self, is_article):
         """
         - ATC  : ATC + DDMMYY + XXX (3 digit)
@@ -113,6 +123,12 @@ class ProductProduct(models.Model):
     net_net_weight = fields.Float(related='product_tmpl_id.net_net_weight', store=True)
     is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
     date_month_year = fields.Date(related='product_tmpl_id.date_month_year', store=True)
+
+    @api.onchange('is_article')
+    def _onchange_is_article(self):
+        """Reset default_code ketika is_article berubah ke yes atau no"""
+        if self.is_article in ['yes', 'no']:
+            self.default_code = ''
 
     @api.model
     def create(self, vals):
