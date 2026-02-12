@@ -128,15 +128,15 @@ class ProductProduct(models.Model):
                 if existing_variant == 0:
                     # VARIANT PERTAMA: Ambil nomor dari template agar tidak loncat
                     vals['default_code'] = tmpl.default_code
-                    vals['barcode'] = tmpl.default_code
+                    # vals['barcode'] = tmpl.default_code
                 else:
                     # VARIANT KEDUA dst: Baru panggil sequence untuk nomor baru
                     new_code = tmpl._generate_article_number(tmpl.is_article)
                     vals['default_code'] = new_code
-                    vals['barcode'] = new_code
+                    # vals['barcode'] = new_code
             
             # Sinkronisasi barcode jika default_code diisi manual
-            elif not vals.get('barcode'):
-                vals['barcode'] = vals.get('default_code')
+            # elif not vals.get('barcode'):
+            #     vals['barcode'] = vals.get('default_code')
 
         return super(ProductProduct, self).create(vals)
