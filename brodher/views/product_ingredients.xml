@@ -113,7 +113,7 @@
             <xpath expr="//field[@name='barcode']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <xpath expr="//field[@name='default_code']" position="replace">
+            <!-- <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"/>
@@ -124,8 +124,8 @@
                 <field name="default_code"
                        string="ATC  Number"
                        invisible="is_article != 'var'"/>
-            </xpath>
-                    <xpath expr="//field[@name='brand']" position="after">
+            </xpath> -->
+            <xpath expr="//field[@name='brand']" position="after">
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"/>
