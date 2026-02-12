@@ -134,7 +134,7 @@
            force_save="1"/>
 </xpath>
 
-                <xpath expr="//field[@name='is_article']" position="after">
+                <xpath expr="//field[@name='default_code']" position="before">
                 <field name="parent_article_id" 
                     invisible="is_article != 'var'" 
                     required="is_article == 'var'"
