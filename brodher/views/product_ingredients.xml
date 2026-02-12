@@ -116,7 +116,7 @@
 <xpath expr="//field[@name='default_code']" position="replace"/>
 
 <!-- Tambahkan default_code dengan kondisi di bawah brand -->
-<xpath expr="//field[@name='brand_id']" position="after">
+<xpath expr="//field[@name='brand']" position="after">
     <field name="default_code"
            string="PSIT Number"
            invisible="is_article != 'no'"
