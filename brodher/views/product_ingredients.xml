@@ -40,13 +40,14 @@
             <!-- FIELD TAMBAHAN -->
             <xpath expr="//field[@name='type']" position="before">
 
-                <field name="is_article" widget="radio"/>
+               
 
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
+                 <field name="is_article" widget="radio"/>
 
                 <field name="dimension"
-                       invisible="is_article != 'no'"
+                       invisible="is_article != 'no' "
                        required="is_article == 'no'"/>
 
                 <field name="base_colour"
@@ -82,6 +83,30 @@
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
+                
+                                 <!-- ATC -->
+                <field name="date_month_year"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+                <field name="ingredients"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="Edition"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="gross_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="net_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="net_net_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
 
             </xpath>
             <xpath expr="//field[@name='default_code']" position="replace">
@@ -92,6 +117,9 @@
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"/>
+                <field name="default_code"
+                       string="ATC  Number"
+                       invisible="is_article != 'var'"/>
             </xpath>
 
         </field>
@@ -145,11 +173,12 @@
 
             <xpath expr="//field[@name='type']" position="after">
 
-                <field name="is_article" widget="radio"/>
+                
 
                 <!-- PSIT -->
                 <field name="brand"
                        required="is_article == 'no'"/>
+                <field name="is_article" widget="radio"/>
 
                 <!-- ATC -->
                 <field name="date_month_year"
@@ -175,6 +204,35 @@
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
+
+            
+                <!-- ATC -->
+                <field name="date_month_year"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+                <field name="ingredients"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="Edition"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="gross_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="net_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                <field name="net_net_weight"
+                       invisible="is_article != 'var'"
+                       required="is_article == 'var'"/>
+
+                
+
+
             </xpath>
 
             <!-- DEFAULT CODE -->
@@ -186,6 +244,10 @@
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"/>
+                
+                <field name="default_code"
+                       string="ATC Variant Number"
+                       invisible="is_article != 'var'"/>
             </xpath>
 
         </field>

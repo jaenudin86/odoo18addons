@@ -24,7 +24,7 @@ class ProductTemplate(models.Model):
     date_month_year = fields.Date(string='Date (Month/Year) Design')
 
     is_article = fields.Selection(
-        [('yes', 'ATC'), ('no', 'PSIT')],
+        [('yes', 'ATC'),('var', 'ATC Variant'), ('no', 'PSIT')],
         string="Is Article",
         default='no'
     )
@@ -40,7 +40,7 @@ class ProductTemplate(models.Model):
         now = datetime.today()
         ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
 
-        if is_article == 'yes':
+        if is_article == 'yes' or is_article == 'var':
             prefix = 'ATC'
             date_str = now.strftime('%d%m%y')
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('article.number.sequence') or '001'
@@ -60,7 +60,7 @@ class ProductTemplate(models.Model):
         vals.setdefault('type', 'product')
 
         # AUTO TRACK INVENTORY
-        if vals.get('is_article') == 'yes':
+        if vals.get('is_article') == 'yes' or vals.get('is_article') == 'var':
             vals.update({'tracking': 'serial'})
         else:
             vals.update({'tracking': 'none'})
@@ -77,7 +77,7 @@ class ProductTemplate(models.Model):
         # Update tracking di varian jika is_article berubah
         if 'is_article' in vals:
             for rec in self:
-                new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
+                new_tracking = 'serial' if rec.is_article == 'yes' or rec.is_article == 'var' else 'none'
                 rec.product_variant_ids.write({'tracking': new_tracking})
         return res
 
