@@ -111,20 +111,28 @@
 
             </xpath>
             
-            <xpath expr="//field[@name='default_code']" position="replace">
-                <xpath expr="//field[@name='brand']" position="after">
-                    <field name="default_code"
-                        string="PSIT Number"
-                        invisible="is_article != 'no'"/>
+                <!-- Hapus default_code dari posisi aslinya -->
+            <!-- Hapus default_code dari posisi aslinya -->
+<xpath expr="//field[@name='default_code']" position="replace"/>
 
-                    <field name="default_code"
-                        string="ATC Number"
-                        invisible="is_article != 'yes'"/>
-                    <field name="default_code"
-                        string="ATC  Number"
-                        invisible="is_article != 'var'"/>
-                </xpath>
-            </xpath>
+<!-- Tambahkan default_code dengan kondisi di bawah brand -->
+<xpath expr="//field[@name='brand_id']" position="after">
+    <field name="default_code"
+           string="PSIT Number"
+           invisible="is_article != 'no'"
+           readonly="is_article == 'var'"
+           force_save="1"/>
+    <field name="default_code"
+           string="ATC Number"
+           invisible="is_article != 'yes'"
+           readonly="is_article == 'var'"
+           force_save="1"/>
+    <field name="default_code"
+           string="ATC Number"
+           invisible="is_article != 'var'"
+           readonly="is_article == 'var'"
+           force_save="1"/>
+</xpath>
 
                 <xpath expr="//field[@name='is_article']" position="after">
                 <field name="parent_article_id" 
@@ -133,10 +141,10 @@
                     options="{'no_create': True}"/>
             </xpath>
 
-            <xpath expr="//field[@name='default_code']" position="attributes">
+            <!-- <xpath expr="//field[@name='default_code']" position="attributes">
                 <attribute name="readonly">is_article == 'var'</attribute>
                 <attribute name="force_save">1</attribute>
-            </xpath>
+            </xpath> -->
 
         </field>
     </record>
