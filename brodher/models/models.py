@@ -86,9 +86,9 @@ class ProductTemplate(models.Model):
             vals['tracking'] = 'none'
             # Generate default_code di level template (Nomor Pertama)
     # DEBUG: Tambahkan logging
-        _logger.info("=== DEBUG CREATE ===")
-        _logger.info("vals before: %s", vals)
-        _logger.info("default_code exists: %s", vals.get('default_code'))
+        # _logger.info("=== DEBUG CREATE ===")
+        # _logger.info("vals before: %s", vals)
+        # _logger.info("default_code exists: %s", vals.get('default_code'))
         # Generate default_code - handle empty string juga
         if not vals.get('default_code', '').strip():
             is_article = vals.get('is_article', 'no')
