@@ -54,11 +54,12 @@
 
                 <field name="base_colour"
                        invisible="is_article != 'no'"
-                       required="is_article == 'no'"/>
+                      />
+                        <!-- required="is_article == 'no'"/> -->
 
                 <field name="text_colour"
                        invisible="is_article != 'no'"
-                       required="is_article == 'no'"/>
+                       />
 
 
                 <!-- ATC -->
