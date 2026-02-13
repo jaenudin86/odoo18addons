@@ -88,7 +88,7 @@
                                     <t t-set="gross_w" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight or 0"/>
                                     <t t-set="net_w" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight or 0"/>
                                     <t t-set="net_net_w" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight or 0"/>
-                                    
+                                    <t t-set="qty" t-value="move.product_uom_qty or 0"/>
                                     <!-- Calculate totals -->
                                     <!-- <t t-set="total_gross" t-value="total_gross"/>
                                     <t t-set="total_net" t-value="total_net"/>
