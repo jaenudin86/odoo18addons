@@ -93,10 +93,10 @@
                                     <!-- <t t-set="total_gross" t-value="total_gross"/>
                                     <t t-set="total_net" t-value="total_net"/>
                                     <t t-set="total_net_net" t-value="total_net_net"/> -->
-                                    <t t-set="total_gross" t-value="total_gross + (gross_w * qty)"/>
-                                    <t t-set="total_net" t-value="total_net + (net_w * qty)"/>
-                                    <t t-set="total_net_net" t-value="total_net_net + (net_net_w * qty)"/>
-                                    
+                                   
+                                        <t t-set="total_gross" t-value="total_gross + ((gross_w or 0) * qty)"/>
+                            <t t-set="total_net" t-value="total_net + ((net_w or 0) * qty)"/>
+                            <t t-set="total_net_net" t-value="total_net_net + ((net_net_w or 0) * qty)"/>
                                     <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding: 8px;">
                                         <span t-esc="line_num"/>
                                     </td>
