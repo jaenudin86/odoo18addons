@@ -47,9 +47,12 @@
                                     <tr>
                                         <td style="vertical-align: top;"><strong>ADDRESS</strong></td>
                                         <td style="vertical-align: top;">:</td>
-                                        <td>
-                                                            <span t-esc="o.partner_id.contact_address_complete"/>
-                                        </td>
+                                       <td>
+                                                    <div t-field="o.partner_id" 
+                                                        t-options-widget="'contact'" 
+                                                        t-options-fields="['address']" 
+                                                        t-options-no_marker="True"/>
+                                                </td>
                                                                             </tr>
                                 </table>
                             </div>
