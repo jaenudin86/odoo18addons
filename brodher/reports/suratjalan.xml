@@ -48,19 +48,7 @@
                                         <td style="vertical-align: top;"><strong>ADDRESS</strong></td>
                                         <td style="vertical-align: top;">:</td>
                                        <td>
-                                        <div>
-                                            <t t-if="o.partner_id.street">
-                                                <span t-field="o.partner_id.street"/><br/>
-                                            </t>
-                                            <t t-if="o.partner_id.street2">
-                                                <span t-field="o.partner_id.street2"/><br/>
-                                            </t>
-                                            <span t-if="o.partner_id.city" t-field="o.partner_id.city"/>
-                                            <span t-if="o.partner_id.state_id">, <span t-field="o.partner_id.state_id.name"/></span>
-                                            <span t-if="o.partner_id.zip" t-field="o.partner_id.zip"/>
-                                            <t t-if="o.partner_id.city or o.partner_id.state_id or o.partner_id.zip"><br/></t>
-                                            <span t-if="o.partner_id.country_id" t-field="o.partner_id.country_id.name"/>
-                                        </div>
+<span t-esc="o.partner_id.contact_address"/>
                                                 </td>
                                                                             </tr>
                                 </table>
