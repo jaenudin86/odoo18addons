@@ -84,17 +84,15 @@ class ProductTemplate(models.Model):
             vals['tracking'] = 'serial'
         else:
             vals['tracking'] = 'none'
-            # Generate default_code di level template (Nomor Pertama)
-    # DEBUG: Tambahkan logging
-        # _logger.info("=== DEBUG CREATE ===")
-        # _logger.info("vals before: %s", vals)
-        # _logger.info("default_code exists: %s", vals.get('default_code'))
-        # Generate default_code - handle empty string juga
-        if not vals.get('default_code', '').strip():
+        
+        # Generate default_code - handle False, None, dan empty string
+        default_code = vals.get('default_code')
+        if not default_code or (isinstance(default_code, str) and not default_code.strip()):
             is_article = vals.get('is_article', 'no')
             vals['default_code'] = self._generate_article_number(is_article)
 
         return super(ProductTemplate, self).create(vals)
+
 
 
     def write(self, vals):
