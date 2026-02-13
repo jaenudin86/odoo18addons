@@ -15,19 +15,19 @@ class ProductTemplate(models.Model):
         domain=[('is_article', '=', 'yes')]
     )
 
-    brand = fields.Char(string="Brand")
-    dimension = fields.Char(string="Dimension")
+    brand = fields.Char(string="Brand*")
+    dimension = fields.Char(string="Dimension*")
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
-    size = fields.Char(string="Size")
+    size = fields.Char(string="Size*")
 
     # atc
-    ingredients = fields.Text(string="Ingredients")
-    Edition = fields.Char(string="Edition")     
-    gross_weight = fields.Float(string='Gross Weight')
-    net_weight = fields.Float(string='Net Weight')
-    net_net_weight = fields.Float(string='Net Net Weight')
-    date_month_year = fields.Date(string='Date (Month/Year) Design')
+    ingredients = fields.Text(string="Ingredients*")
+    Edition = fields.Char(string="Edition*")     
+    gross_weight = fields.Float(string='Gross Weight*')
+    net_weight = fields.Float(string='Net Weight*')
+    net_net_weight = fields.Float(string='Net Net Weight*')
+    date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
     is_article = fields.Selection(
         [('yes', 'ATC'),('var', 'ATC Variant'), ('no', 'PSIT')],
