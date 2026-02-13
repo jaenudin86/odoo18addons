@@ -76,22 +76,26 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        # Selalu storable/stockable
         vals.setdefault('is_storable', True)
         vals.setdefault('type', 'product')
-
+        
         # AUTO TRACK INVENTORY
-        if vals.get('is_article') == 'yes' or vals.get('is_article') == 'var':
-            vals.update({'tracking': 'serial'})
+        if vals.get('is_article') in ['yes', 'var']:
+            vals['tracking'] = 'serial'
         else:
-            vals.update({'tracking': 'none'})
-
-        # Generate default_code di level template (Nomor Pertama)
-        if not vals.get('default_code'):
+            vals['tracking'] = 'none'
+            # Generate default_code di level template (Nomor Pertama)
+    # DEBUG: Tambahkan logging
+        _logger.info("=== DEBUG CREATE ===")
+        _logger.info("vals before: %s", vals)
+        _logger.info("default_code exists: %s", vals.get('default_code'))
+        # Generate default_code - handle empty string juga
+        if not vals.get('default_code', '').strip():
             is_article = vals.get('is_article', 'no')
             vals['default_code'] = self._generate_article_number(is_article)
 
         return super(ProductTemplate, self).create(vals)
+
 
     def write(self, vals):
         res = super(ProductTemplate, self).write(vals)
