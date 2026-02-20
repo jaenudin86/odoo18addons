@@ -45,7 +45,8 @@
 
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
-                 <field name="is_article" widget="radio"/>
+                <field name="size" required="true"/>
+                <field name="is_article" widget="radio"/>
 
                 <field name="dimension"
                        invisible="is_article != 'no' "
@@ -53,11 +54,12 @@
 
                 <field name="base_colour"
                        invisible="is_article != 'no'"
-                       required="is_article == 'no'"/>
+                      />
+                        <!-- required="is_article == 'no'"/> -->
 
                 <field name="text_colour"
                        invisible="is_article != 'no'"
-                       required="is_article == 'no'"/>
+                       />
 
 
                 <!-- ATC -->

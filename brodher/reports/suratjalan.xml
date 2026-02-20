@@ -47,10 +47,10 @@
                                     <tr>
                                         <td style="vertical-align: top;"><strong>ADDRESS</strong></td>
                                         <td style="vertical-align: top;">:</td>
-                                        <td>
-                                            <span t-field="o.partner_id" t-options='{"widget": "contact", "fields": ["address"], "no_marker": true}'/>
-                                        </td>
-                                    </tr>
+                                       <td>
+<span t-esc="o.partner_id.contact_address"/>
+                                                </td>
+                                                                            </tr>
                                 </table>
                             </div>
                         </div>
@@ -85,12 +85,15 @@
                                     <t t-set="gross_w" t-value="move.product_id.gross_weight or move.product_id.product_tmpl_id.gross_weight or 0"/>
                                     <t t-set="net_w" t-value="move.product_id.net_weight or move.product_id.product_tmpl_id.net_weight or 0"/>
                                     <t t-set="net_net_w" t-value="move.product_id.net_net_weight or move.product_id.product_tmpl_id.net_net_weight or 0"/>
-                                    
+                                    <t t-set="qty" t-value="move.product_uom_qty or 0"/>
                                     <!-- Calculate totals -->
-                                    <t t-set="total_gross" t-value="total_gross"/>
+                                    <!-- <t t-set="total_gross" t-value="total_gross"/>
                                     <t t-set="total_net" t-value="total_net"/>
-                                    <t t-set="total_net_net" t-value="total_net_net"/>
-                                    
+                                    <t t-set="total_net_net" t-value="total_net_net"/> -->
+                                   
+                                        <t t-set="total_gross" t-value="total_gross + ((gross_w or 0) * qty)"/>
+                            <t t-set="total_net" t-value="total_net + ((net_w or 0) * qty)"/>
+                            <t t-set="total_net_net" t-value="total_net_net + ((net_net_w or 0) * qty)"/>
                                     <td class="text-center" style="border: 1px solid #000; vertical-align: top; padding: 8px;">
                                         <span t-esc="line_num"/>
                                     </td>

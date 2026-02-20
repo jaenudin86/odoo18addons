@@ -15,19 +15,19 @@ class ProductTemplate(models.Model):
         domain=[('is_article', '=', 'yes')]
     )
 
-    brand = fields.Char(string="Brand")
-    dimension = fields.Char(string="Dimension")
+    brand = fields.Char(string="Brand*")
+    dimension = fields.Char(string="Dimension*")
     base_colour = fields.Char(string='Base Colour')
     text_colour = fields.Char(string='Text Colour')
-    size = fields.Char(string="Size")
+    size = fields.Char(string="Size*")
 
     # atc
-    ingredients = fields.Text(string="Ingredients")
-    Edition = fields.Char(string="Edition")     
-    gross_weight = fields.Float(string='Gross Weight')
-    net_weight = fields.Float(string='Net Weight')
-    net_net_weight = fields.Float(string='Net Net Weight')
-    date_month_year = fields.Date(string='Date (Month/Year) Design')
+    ingredients = fields.Text(string="Ingredients*")
+    Edition = fields.Char(string="Edition*")     
+    gross_weight = fields.Float(string='Gross Weight*')
+    net_weight = fields.Float(string='Net Weight*')
+    net_net_weight = fields.Float(string='Net Net Weight*')
+    date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
     is_article = fields.Selection(
         [('yes', 'ATC'),('var', 'ATC Variant'), ('no', 'PSIT')],
@@ -76,22 +76,24 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        # Selalu storable/stockable
         vals.setdefault('is_storable', True)
         vals.setdefault('type', 'product')
-
+        
         # AUTO TRACK INVENTORY
-        if vals.get('is_article') == 'yes' or vals.get('is_article') == 'var':
-            vals.update({'tracking': 'serial'})
+        if vals.get('is_article') in ['yes', 'var']:
+            vals['tracking'] = 'serial'
         else:
-            vals.update({'tracking': 'none'})
-
-        # Generate default_code di level template (Nomor Pertama)
-        if not vals.get('default_code'):
+            vals['tracking'] = 'none'
+        
+        # Generate default_code - handle False, None, dan empty string
+        default_code = vals.get('default_code')
+        if not default_code or (isinstance(default_code, str) and not default_code.strip()):
             is_article = vals.get('is_article', 'no')
             vals['default_code'] = self._generate_article_number(is_article)
 
         return super(ProductTemplate, self).create(vals)
+
+
 
     def write(self, vals):
         res = super(ProductTemplate, self).write(vals)
