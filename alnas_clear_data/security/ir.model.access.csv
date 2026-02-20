@@ -1,0 +1,2 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_clear_data_transaction_wizard,access.clear.data.transaction.wizard,model_clear_data_transaction_wizard,alnas_clear_data.group_clear_data_access,1,1,1,1

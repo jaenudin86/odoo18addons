@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_clear_data_transaction_wizard" model="ir.ui.view">
+        <field name="name">clear.data.transaction.wizard.form</field>
+        <field name="model">clear.data.transaction.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Clear Data">
+                <group>
+                    <field name="model_id" options="{'no_create': True}"/>
+                    <field name="model_name" invisible="True"/>
+                    <field name="domain" placeholder="[('state', '=', 'cancelled')]" widget="domain" options="{'model': 'model_name'}"/>
+                    <field name="use_sudo"/>
+                    <field name="reset_sequences"/>
+                    <field name="sequence_ids" widget="many2many_tags" invisible="not reset_sequences"/>
+                </group>
+                <footer>
+                    <button name="action_clear" string="Clear" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_clear_data_transaction" model="ir.actions.act_window">
+        <field name="name">Clear Data</field>
+        <field name="res_model">clear.data.transaction.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="alnas_clear_data.view_clear_data_transaction_wizard"/>
+        <field name="target">new</field>
+        <field name="context">{}</field>
+    </record>
+
+    <menuitem
+        id="menu_clear_data_transaction_root"
+        name="Clear Data"
+        parent="base.menu_custom"
+        groups="alnas_clear_data.group_clear_data_access"
+        sequence="90"/>
+
+    <menuitem
+        id="menu_clear_data_transaction_wizard"
+        name="Clear Data Transaction"
+        parent="menu_clear_data_transaction_root"
+        action="action_clear_data_transaction"
+        groups="alnas_clear_data.group_clear_data_access"
+        sequence="10"/>
+
+
+</odoo>
