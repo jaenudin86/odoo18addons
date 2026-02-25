@@ -147,20 +147,24 @@ class ProductProduct(models.Model):
 
     @api.model
     def create(self, vals):
-        # Ambil template_id dari vals
-        tmpl_id = vals.get('product_tmpl_id')
-        
-        if tmpl_id:
-            tmpl = self.env['product.template'].browse(tmpl_id)
+        # Ambil is_article, default ke 'no' jika tidak ada
+        is_article = vals.get('is_article', 'no')
 
-            # LOGIKA ATC: Semua variant HARUS sama dengan template
-            if tmpl.is_article == 'yes':
-                vals['default_code'] = tmpl.default_code
-            
-            # LOGIKA PSIT: Setiap variant generate nomor unik sendiri
-            elif tmpl.is_article == 'no':
-                # Generate hanya jika belum ada default_code yang dikirim
-                if not vals.get('default_code'):
-                    vals['default_code'] = tmpl._generate_article_number('no')
-        
-        return super(ProductProduct, self).create(vals)
+        # LOGIKA ATC (Generate di Template)
+        if is_article == 'yes':
+            # Jika default_code kosong, baru generate
+            if not vals.get('default_code'):
+                # Pastikan memanggil fungsi internal dengan parameter yang benar
+                generated_no = self._generate_article_number('yes')
+                vals['default_code'] = generated_no
+
+        # Logika PSIT (Kosongkan di Template agar diisi di Variant)
+        elif is_article == 'no':
+            vals['default_code'] = False
+
+        # Standar Odoo
+        vals.setdefault('is_storable', True)
+        vals.setdefault('type', 'product')
+        vals['tracking'] = 'serial' if is_article == 'yes' else 'none'
+
+        return super(ProductTemplate, self).create(vals)
