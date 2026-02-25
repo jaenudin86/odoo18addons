@@ -169,7 +169,7 @@
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"
-                       readonly="0"/>
+                       readonly="1"/>
 
                 <field name="default_code"
                        string="ATC Number"
