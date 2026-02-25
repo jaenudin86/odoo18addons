@@ -27,15 +27,29 @@
             </xpath>
 
             <!-- ======================================= -->
-            <!-- SEMBUNYIKAN PRICE DI TEMPLATE          -->
-            <!-- Price dikelola per-variant, bukan di   -->
-            <!-- product template                       -->
+            <!-- HIDE SEMUA DI PRODUCT TEMPLATE:        -->
+            <!-- Price, Pajak, Cost, Unit               -->
+            <!-- Semua dikelola di variant              -->
             <!-- ======================================= -->
             <xpath expr="//field[@name='list_price']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <!-- Sembunyikan label/group harga jika ada -->
             <xpath expr="//field[@name='currency_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='taxes_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='supplier_taxes_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='standard_price']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='uom_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='uom_po_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
@@ -71,7 +85,7 @@
             <!-- Hapus default_code dari posisi aslinya -->
             <xpath expr="//field[@name='default_code']" position="replace"/>
 
-            <!-- Tambahkan default_code dengan kondisi di bawah brand -->
+            <!-- Tambahkan default_code di bawah brand -->
             <xpath expr="//field[@name='brand']" position="after">
                 <field name="default_code"
                        string="PSIT Number"
@@ -126,14 +140,29 @@
             </xpath>
 
             <!-- ======================================= -->
-            <!-- TAMPILKAN PRICE DI VARIANT              -->
-            <!-- lst_price di product.product sudah      -->
-            <!-- native per-variant di Odoo              -->
+            <!-- TAMPILKAN SEMUA DI VARIANT:            -->
+            <!-- Sales Price, Pajak, Cost, Unit         -->
             <!-- ======================================= -->
             <xpath expr="//field[@name='lst_price']" position="attributes">
                 <attribute name="invisible">0</attribute>
                 <attribute name="readonly">0</attribute>
                 <attribute name="string">Sales Price</attribute>
+            </xpath>
+            <xpath expr="//field[@name='taxes_id']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='supplier_taxes_id']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='standard_price']" position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="readonly">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='uom_id']" position="attributes">
+                <attribute name="invisible">0</attribute>
+            </xpath>
+            <xpath expr="//field[@name='uom_po_id']" position="attributes">
+                <attribute name="invisible">0</attribute>
             </xpath>
 
             <!--
@@ -187,7 +216,7 @@
 
             </xpath>
 
-            <!-- DEFAULT CODE di variant - semua readonly karena auto-generate -->
+            <!-- DEFAULT CODE di variant - readonly karena auto-generate -->
             <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
                        string="PSIT Number"
