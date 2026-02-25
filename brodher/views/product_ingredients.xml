@@ -21,135 +21,56 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
-                    <!-- Update Quantity -->
+            <!-- Update Quantity -->
             <xpath expr="//button[@name='action_update_quantity_on_hand']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
-
-            <!-- Replenish -->
-            <!-- <xpath expr="//button[@name='action_replenish']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
-
-            <!-- Print Labels -->
-            <!-- <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
-        
-
-            <!-- FIELD TAMBAHAN -->
-            <!-- <xpath expr="//field[@name='brand']" position="before">
-              
-            </xpath> -->
             <xpath expr="//field[@name='type']" position="before">
+                <field name="is_article" widget="radio"/>
 
-               
-              <field name="is_article" widget="radio"/>
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
-                <!-- <field name="size" required="true"/> -->
-               
 
                 <field name="dimension"
-                       invisible="is_article != 'no' "
+                       invisible="is_article != 'no'"
                        required="is_article == 'no'"/>
 
                 <field name="base_colour"
-                       invisible="is_article != 'no'"
-                      />
-                        <!-- required="is_article == 'no'"/> -->
+                       invisible="is_article != 'no'"/>
 
                 <field name="text_colour"
-                       invisible="is_article != 'no'"
-                       />
-
+                       invisible="is_article != 'no'"/>
 
                 <!-- ATC -->
-                                <!-- ATC -->
                 <field name="date_month_year"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
                 <field name="ingredients"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
-
                 <field name="Edition"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
-
-                <!-- <field name="gross_weight"
-                       invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/>
-
-                <field name="net_weight"
-                       invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/>
-
-                <field name="net_net_weight"
-                       invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/> -->
-                
-                                 <!-- ATC -->
-                <field name="date_month_year"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-                <field name="ingredients"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="Edition"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <!-- <field name="gross_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="net_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="net_net_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/> -->
 
             </xpath>
-            
-                <!-- Hapus default_code dari posisi aslinya -->
+
             <!-- Hapus default_code dari posisi aslinya -->
-<xpath expr="//field[@name='default_code']" position="replace"/>
+            <xpath expr="//field[@name='default_code']" position="replace"/>
 
-<!-- Tambahkan default_code dengan kondisi di bawah brand -->
-<xpath expr="//field[@name='brand']" position="after">
-    <field name="default_code"
-           string="PSIT Number"
-           invisible="is_article != 'no'"
-           readonly="1"
-           force_save="1"/>
-    <field name="default_code"
-           string="ATC Number"
-           invisible="is_article != 'yes'"
-            readonly="1"
-           force_save="1"/>
-    <field name="default_code"
-           string="ATC Number"
-           invisible="is_article != 'var'"
-            readonly="1"
-           force_save="1"/>
-</xpath>
-
-                <xpath expr="//field[@name='default_code']" position="before">
-                <field name="parent_article_id" 
-                    invisible="is_article != 'var'" 
-                    required="is_article == 'var'"
-                    options="{'no_create': True}"/>
+            <!-- Tambahkan default_code dengan kondisi di bawah brand -->
+            <xpath expr="//field[@name='brand']" position="after">
+                <field name="default_code"
+                       string="PSIT Number"
+                       invisible="is_article != 'no'"
+                       readonly="1"
+                       force_save="1"/>
+                <field name="default_code"
+                       string="ATC Number"
+                       invisible="is_article != 'yes'"
+                       readonly="1"
+                       force_save="1"/>
             </xpath>
-
-            <!-- <xpath expr="//field[@name='default_code']" position="attributes">
-                <attribute name="readonly">is_article == 'var'</attribute>
-                <attribute name="force_save">1</attribute>
-            </xpath> -->
 
         </field>
     </record>
@@ -166,6 +87,7 @@
             <xpath expr="//field[@name='name']" position="after">
                 <field name="is_article"/>
                 <field name="brand"/>
+                <field name="default_code" string="Internal Reference"/>
             </xpath>
 
         </field>
@@ -185,34 +107,41 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
-                        <!-- Update Quantity -->
+            <!-- Update Quantity -->
             <xpath expr="//button[@name='action_update_quantity_on_hand']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
-            <!-- Replenish -->
-            <!-- <xpath expr="//button[@name='action_replenish']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
-
-            <!-- Print Labels -->
-            <!-- <xpath expr="//button[contains(@class,'o_button_print')]" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath> -->
-
+            <!--
+                PENTING: is_article harus PERTAMA kali ditampilkan
+                supaya kondisi invisible field lain bisa terbaca saat form di-render.
+                is_article adalah related field dari template (readonly).
+            -->
             <xpath expr="//field[@name='type']" position="after">
 
-                
+                <!-- Tampilkan is_article DULU - ini yang jadi acuan invisible -->
+                <field name="is_article" widget="radio" readonly="1"/>
 
-                <!-- PSIT -->
+                <!-- PSIT fields -->
                 <field name="brand"
+                       invisible="is_article != 'no'"
                        required="is_article == 'no'"/>
-                <field name="is_article" widget="radio"/>
 
-                <!-- ATC -->
+                <field name="dimension"
+                       invisible="is_article != 'no'"
+                       required="is_article == 'no'"/>
+
+                <field name="base_colour"
+                       invisible="is_article != 'no'"/>
+
+                <field name="text_colour"
+                       invisible="is_article != 'no'"/>
+
+                <!-- ATC fields -->
                 <field name="date_month_year"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
+
                 <field name="ingredients"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
@@ -232,51 +161,20 @@
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
-
-
-            
-                <!-- ATC -->
-                <field name="date_month_year"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-                <field name="ingredients"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="Edition"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="gross_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="net_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                <field name="net_net_weight"
-                       invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
-
-                
-
 
             </xpath>
 
-            <!-- DEFAULT CODE -->
+            <!-- DEFAULT CODE di variant -->
             <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
                        string="PSIT Number"
-                       invisible="is_article != 'no'"/>
+                       invisible="is_article != 'no'"
+                       readonly="0"/>
 
                 <field name="default_code"
                        string="ATC Number"
-                       invisible="is_article != 'yes'"/>
-                
-                <field name="default_code"
-                       string="ATC Variant Number"
-                       invisible="is_article != 'var'"/>
+                       invisible="is_article != 'yes'"
+                       readonly="1"/>
             </xpath>
 
         </field>
