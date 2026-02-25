@@ -2,6 +2,7 @@
 from odoo import api, fields, models
 from datetime import datetime
 
+
 class ProductTemplate(models.Model):
     _inherit = 'product.template'
 
@@ -9,8 +10,8 @@ class ProductTemplate(models.Model):
     # FIELD TAMBAHAN
     # =========================
     parent_article_id = fields.Many2one(
-        'product.template', 
-        string="Parent ATC", 
+        'product.template',
+        string="Parent ATC",
         domain=[('is_article', '=', 'yes')]
     )
 
@@ -21,7 +22,7 @@ class ProductTemplate(models.Model):
     size = fields.Char(string="Size*")
 
     ingredients = fields.Text(string="Ingredients*")
-    Edition = fields.Char(string="Edition*")     
+    Edition = fields.Char(string="Edition*")
     gross_weight = fields.Float(string='Gross Weight*')
     net_weight = fields.Float(string='Net Weight*')
     net_net_weight = fields.Float(string='Net Net Weight*')
@@ -67,10 +68,14 @@ class ProductTemplate(models.Model):
         else:
             prefix = 'PSIT'
             year_str = now.strftime('%y')
-            seq = self.env['ir.sequence'].with_context(ctx).next_by_code('pist.number.sequence') or '0001'
+            # FIX: typo diperbaiki dari 'pist.number.sequence' → 'psit.number.sequence'
+            seq = self.env['ir.sequence'].with_context(ctx).next_by_code('psit.number.sequence') or '0001'
             seq = str(seq).zfill(4)
             return f"{prefix}{year_str}{seq}"
 
+    # =========================
+    # CREATE
+    # =========================
     @api.model
     def create(self, vals):
         vals.setdefault('is_storable', True)
@@ -84,28 +89,48 @@ class ProductTemplate(models.Model):
         else:
             vals['tracking'] = 'none'
 
-        # ==============================================
-        # ATC  → generate nomor di TEMPLATE
+        # ================================================================
+        # ATC  → generate nomor di TEMPLATE, nanti di-sync ke variant
         # PSIT → TIDAK generate nomor di template,
-        #         nomor di-generate nanti per variant
-        # ==============================================
-        default_code = vals.get('default_code')
+        #         nomor di-generate nanti per variant di ProductProduct.create
+        # ================================================================
         if is_article == 'yes':
+            default_code = vals.get('default_code')
             if not default_code or (isinstance(default_code, str) and not default_code.strip()):
                 vals['default_code'] = self._generate_article_number('yes')
         else:
             # PSIT: kosongkan default_code di template
             vals['default_code'] = False
 
-        return super(ProductTemplate, self).create(vals)
+        template = super(ProductTemplate, self).create(vals)
 
+        # ================================================================
+        # PENTING: Setelah template ATC dibuat, Odoo otomatis membuat
+        # variant pertama. Kita harus sync default_code ke variant tsb.
+        # ================================================================
+        if is_article == 'yes' and template.default_code:
+            template.product_variant_ids.write({
+                'default_code': template.default_code
+            })
+
+        return template
+
+    # =========================
+    # WRITE
+    # =========================
     def write(self, vals):
         res = super(ProductTemplate, self).write(vals)
-        # Update tracking di varian jika is_article berubah
-        if 'is_article' in vals:
-            for rec in self:
+
+        for rec in self:
+            # Jika is_article berubah → update tracking semua variant
+            if 'is_article' in vals:
                 new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
                 rec.product_variant_ids.write({'tracking': new_tracking})
+
+            # Jika default_code template ATC berubah → sync ke semua variant
+            if 'default_code' in vals and rec.is_article == 'yes':
+                rec.product_variant_ids.write({'default_code': vals['default_code']})
+
         return res
 
 
@@ -118,13 +143,14 @@ class ProductProduct(models.Model):
     # RELATED FIELDS
     # =========================
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
-    # dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
     base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
     text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
     is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
+
+    # Field yang berbeda per variant
     dimension = fields.Char(string="Dimension*")
     gross_weight = fields.Float(string='Gross Weight*')
     net_weight = fields.Float(string='Net Weight*')
@@ -133,8 +159,7 @@ class ProductProduct(models.Model):
 
     # =========================
     # PRICE PER VARIANT
-    # Override lst_price (bawaan Odoo) agar tersimpan di level variant,
-    # tidak sync ke list_price di template.
+    # Override lst_price agar tersimpan di level variant
     # =========================
     lst_price = fields.Float(
         string='Sales Price',
@@ -145,26 +170,30 @@ class ProductProduct(models.Model):
         readonly=False,
     )
 
+    # =========================
+    # CREATE
+    # =========================
     @api.model
     def create(self, vals):
-        # Ambil is_article, default ke 'no' jika tidak ada
-        is_article = vals.get('is_article', 'no')
+        tmpl_id = vals.get('product_tmpl_id')
 
-        # LOGIKA ATC (Generate di Template)
-        if is_article == 'yes':
-            # Jika default_code kosong, baru generate
-            if not vals.get('default_code'):
-                # Pastikan memanggil fungsi internal dengan parameter yang benar
-                generated_no = self._generate_article_number('yes')
-                vals['default_code'] = generated_no
+        if tmpl_id:
+            tmpl = self.env['product.template'].browse(tmpl_id)
 
-        # Logika PSIT (Kosongkan di Template agar diisi di Variant)
-        elif is_article == 'no':
-            vals['default_code'] = False
+            if tmpl.is_article == 'yes':
+                # ATC: semua variant WAJIB pakai nomor yang sama dengan template
+                # Pastikan template sudah punya default_code, jika belum generate
+                if not tmpl.default_code:
+                    new_code = tmpl._generate_article_number('yes')
+                    # Gunakan write langsung ke template (bypass super untuk hindari rekursi)
+                    self.env['product.template'].browse(tmpl_id).write({'default_code': new_code})
+                    vals['default_code'] = new_code
+                else:
+                    vals['default_code'] = tmpl.default_code
 
-        # Standar Odoo
-        vals.setdefault('is_storable', True)
-        vals.setdefault('type', 'product')
-        vals['tracking'] = 'serial' if is_article == 'yes' else 'none'
+            elif tmpl.is_article == 'no':
+                # PSIT: setiap variant generate nomor unik sendiri
+                if not vals.get('default_code'):
+                    vals['default_code'] = tmpl._generate_article_number('no')
 
-        return super(ProductTemplate, self).create(vals)
+        return super(ProductProduct, self).create(vals)
