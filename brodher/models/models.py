@@ -147,17 +147,20 @@ class ProductProduct(models.Model):
 
     @api.model
     def create(self, vals):
+        # Ambil template_id dari vals
         tmpl_id = vals.get('product_tmpl_id')
-
+        
         if tmpl_id:
             tmpl = self.env['product.template'].browse(tmpl_id)
 
+            # LOGIKA ATC: Semua variant HARUS sama dengan template
             if tmpl.is_article == 'yes':
-                # ATC: Semua variant ikut nomor template
                 vals['default_code'] = tmpl.default_code
-            else:
-                # PSIT: Setiap variant dapat nomor sendiri
+            
+            # LOGIKA PSIT: Setiap variant generate nomor unik sendiri
+            elif tmpl.is_article == 'no':
+                # Generate hanya jika belum ada default_code yang dikirim
                 if not vals.get('default_code'):
                     vals['default_code'] = tmpl._generate_article_number('no')
-
+        
         return super(ProductProduct, self).create(vals)
