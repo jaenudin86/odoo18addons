@@ -118,14 +118,14 @@ class ProductProduct(models.Model):
     # RELATED FIELDS
     # =========================
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
-    dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
+    # dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
     base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
     text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
     is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
-
+    dimension = fields.Char(string="Dimension*")
     gross_weight = fields.Float(string='Gross Weight*')
     net_weight = fields.Float(string='Net Weight*')
     net_net_weight = fields.Float(string='Net Net Weight*')
