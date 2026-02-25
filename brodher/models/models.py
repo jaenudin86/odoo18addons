@@ -91,7 +91,6 @@ class ProductTemplate(models.Model):
         # ==============================================
         default_code = vals.get('default_code')
         if is_article == 'yes':
-            # ATC: generate nomor di level template jika belum ada
             if not default_code or (isinstance(default_code, str) and not default_code.strip()):
                 vals['default_code'] = self._generate_article_number('yes')
         else:
@@ -132,6 +131,20 @@ class ProductProduct(models.Model):
     net_net_weight = fields.Float(string='Net Net Weight*')
     date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
+    # =========================
+    # PRICE PER VARIANT
+    # Override lst_price (bawaan Odoo) agar tersimpan di level variant,
+    # tidak sync ke list_price di template.
+    # =========================
+    lst_price = fields.Float(
+        string='Sales Price',
+        digits='Product Price',
+        default=0.0,
+        related=None,   # putus relasi ke template
+        store=True,
+        readonly=False,
+    )
+
     @api.model
     def create(self, vals):
         tmpl_id = vals.get('product_tmpl_id')
@@ -140,15 +153,10 @@ class ProductProduct(models.Model):
             tmpl = self.env['product.template'].browse(tmpl_id)
 
             if tmpl.is_article == 'yes':
-                # ==========================================
                 # ATC: Semua variant ikut nomor template
-                # ==========================================
                 vals['default_code'] = tmpl.default_code
-
             else:
-                # ==========================================
                 # PSIT: Setiap variant dapat nomor sendiri
-                # ==========================================
                 if not vals.get('default_code'):
                     vals['default_code'] = tmpl._generate_article_number('no')
 

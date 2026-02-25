@@ -26,6 +26,19 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
+            <!-- ======================================= -->
+            <!-- SEMBUNYIKAN PRICE DI TEMPLATE          -->
+            <!-- Price dikelola per-variant, bukan di   -->
+            <!-- product template                       -->
+            <!-- ======================================= -->
+            <xpath expr="//field[@name='list_price']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <!-- Sembunyikan label/group harga jika ada -->
+            <xpath expr="//field[@name='currency_id']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
             <xpath expr="//field[@name='type']" position="before">
                 <field name="is_article" widget="radio"/>
 
@@ -112,10 +125,20 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
+            <!-- ======================================= -->
+            <!-- TAMPILKAN PRICE DI VARIANT              -->
+            <!-- lst_price di product.product sudah      -->
+            <!-- native per-variant di Odoo              -->
+            <!-- ======================================= -->
+            <xpath expr="//field[@name='lst_price']" position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="readonly">0</attribute>
+                <attribute name="string">Sales Price</attribute>
+            </xpath>
+
             <!--
                 PENTING: is_article harus PERTAMA kali ditampilkan
                 supaya kondisi invisible field lain bisa terbaca saat form di-render.
-                is_article adalah related field dari template (readonly).
             -->
             <xpath expr="//field[@name='type']" position="after">
 
@@ -164,7 +187,7 @@
 
             </xpath>
 
-            <!-- DEFAULT CODE di variant -->
+            <!-- DEFAULT CODE di variant - semua readonly karena auto-generate -->
             <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
                        string="PSIT Number"
