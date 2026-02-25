@@ -39,6 +39,9 @@
         
 
             <!-- FIELD TAMBAHAN -->
+            <xpath expr="//field[@name='brand']" position="before">
+              <field name="is_article" widget="radio"/>
+            </xpath>
             <xpath expr="//field[@name='type']" position="before">
 
                
@@ -46,7 +49,7 @@
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
                 <!-- <field name="size" required="true"/> -->
-                <field name="is_article" widget="radio"/>
+               
 
                 <field name="dimension"
                        invisible="is_article != 'no' "
