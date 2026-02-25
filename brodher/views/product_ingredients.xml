@@ -39,13 +39,13 @@
         
 
             <!-- FIELD TAMBAHAN -->
-            <xpath expr="//field[@name='brand']" position="before">
-              <field name="is_article" widget="radio"/>
-            </xpath>
+            <!-- <xpath expr="//field[@name='brand']" position="before">
+              
+            </xpath> -->
             <xpath expr="//field[@name='type']" position="before">
 
                
-
+              <field name="is_article" widget="radio"/>
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
                 <!-- <field name="size" required="true"/> -->
