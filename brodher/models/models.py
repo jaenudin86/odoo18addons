@@ -30,7 +30,7 @@ class ProductTemplate(models.Model):
     date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
     is_article = fields.Selection(
-        [('yes', 'ATC'),('var', 'ATC Variant'), ('no', 'PSIT')],
+        [('yes', 'ATC'), ('no', 'PSIT')],
         string="Is Article",
         default='no'
     )
@@ -61,7 +61,7 @@ class ProductTemplate(models.Model):
         now = datetime.today()
         ctx = dict(self._context, ir_sequence_date=now.strftime('%Y-%m-%d'))
 
-        if is_article == 'yes' or is_article == 'var':
+        if is_article == 'yes':
             prefix = 'ATC'
             date_str = now.strftime('%d%m%y')
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('article.number.sequence') or '001'
@@ -100,7 +100,7 @@ class ProductTemplate(models.Model):
         # Update tracking di varian jika is_article berubah
         if 'is_article' in vals:
             for rec in self:
-                new_tracking = 'serial' if rec.is_article == 'yes' or rec.is_article == 'var' else 'none'
+                new_tracking = 'serial' if rec.is_article == 'yes'  else 'none'
                 rec.product_variant_ids.write({'tracking': new_tracking})
         return res
 
@@ -115,16 +115,19 @@ class ProductProduct(models.Model):
     # =========================
     brand = fields.Char(related='product_tmpl_id.brand', store=True)
     dimension = fields.Char(related='product_tmpl_id.dimension', store=True)
+
+
     base_colour = fields.Char(related='product_tmpl_id.base_colour', store=True)
     text_colour = fields.Char(related='product_tmpl_id.text_colour', store=True)
     size = fields.Char(related='product_tmpl_id.size', store=True)
     ingredients = fields.Text(related='product_tmpl_id.ingredients', store=True)
     Edition = fields.Char(related='product_tmpl_id.Edition', store=True)
-    gross_weight = fields.Float(related='product_tmpl_id.gross_weight', store=True)
-    net_weight = fields.Float(related='product_tmpl_id.net_weight', store=True)
-    net_net_weight = fields.Float(related='product_tmpl_id.net_net_weight', store=True)
     is_article = fields.Selection(related='product_tmpl_id.is_article', store=True)
-    date_month_year = fields.Date(related='product_tmpl_id.date_month_year', store=True)
+
+    gross_weight = fields.Float(string='Gross Weight*')
+    net_weight = fields.Float(string='Net Weight*')
+    net_net_weight = fields.Float(string='Net Net Weight*')
+    date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
     @api.onchange('is_article')
     def _onchange_is_article(self):

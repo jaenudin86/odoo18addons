@@ -45,7 +45,7 @@
 
                 <!-- PSIT -->
                 <field name="brand" required="true"/>
-                <field name="size" required="true"/>
+                <!-- <field name="size" required="true"/> -->
                 <field name="is_article" widget="radio"/>
 
                 <field name="dimension"
@@ -75,7 +75,7 @@
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
-                <field name="gross_weight"
+                <!-- <field name="gross_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
@@ -85,7 +85,7 @@
 
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/>
+                       required="is_article == 'yes'"/> -->
                 
                                  <!-- ATC -->
                 <field name="date_month_year"
@@ -99,7 +99,7 @@
                        invisible="is_article != 'var'"
                        required="is_article == 'var'"/>
 
-                <field name="gross_weight"
+                <!-- <field name="gross_weight"
                        invisible="is_article != 'var'"
                        required="is_article == 'var'"/>
 
@@ -109,7 +109,7 @@
 
                 <field name="net_net_weight"
                        invisible="is_article != 'var'"
-                       required="is_article == 'var'"/>
+                       required="is_article == 'var'"/> -->
 
             </xpath>
             
