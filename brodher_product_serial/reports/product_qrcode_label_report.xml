@@ -43,4 +43,18 @@
             </xpath>
         </field>
     </record>
+    <record id="product_product_form_view_qrcode_button" model="ir.ui.view">
+    <field name="name">product.product.form.qrcode.button</field>
+    <field name="model">product.product</field>
+    <field name="inherit_id" ref="product.product_variant_easy_edit_view"/>
+    <field name="arch" type="xml">
+        <xpath expr="//header" position="inside">
+            <button name="%(brodher_product_serial.action_product_qrcode_label_wizard)d" 
+                    string="Print QR Labels" 
+                    type="action" 
+                     class="oe_highlight"
+                        invisible="is_article == 'yes' or is_article == 'var'"/>
+        </xpath>
+    </field>
+</record>
 </odoo>
