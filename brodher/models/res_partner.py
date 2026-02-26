@@ -6,6 +6,33 @@ class ResPartner(models.Model):
     # --- Penomoran Otomatis ---
     customer_code = fields.Char(string='Customer Code', readonly=True, copy=False)
     supplier_code = fields.Char(string='Supplier Code', readonly=True, copy=False)
+    @api.constrains('customer_code')
+    def _check_customer_code_unique(self):
+        for rec in self:
+            if rec.customer_code:
+                duplicate = self.search([
+                    ('customer_code', '=', rec.customer_code),
+                    ('customer_rank', '>', 0),
+                    ('id', '!=', rec.id)
+                ], limit=1)
+                if duplicate:
+                    raise ValidationError(
+                        f"Customer Code '{rec.customer_code}' sudah digunakan oleh {duplicate.name}!"
+                    )
+
+    @api.constrains('supplier_code')
+    def _check_supplier_code_unique(self):
+        for rec in self:
+            if rec.supplier_code:
+                duplicate = self.search([
+                    ('supplier_code', '=', rec.supplier_code),
+                    ('supplier_rank', '>', 0),
+                    ('id', '!=', rec.id)
+                ], limit=1)
+                if duplicate:
+                    raise ValidationError(
+                        f"Supplier Code '{rec.supplier_code}' sudah digunakan oleh {duplicate.name}!"
+                    )
 
     # --- Customer Info ---
     date_of_birth = fields.Date(string='Date of Birth')
