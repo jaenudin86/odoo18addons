@@ -11,7 +11,7 @@
                     <field name="quantity" required="1"/>
                 </group>
                 <footer>
-                    <button name="action_print_labels" string="Print Labels" type="object" class="btn-primary"/>
+                    <button name="action_print_labels" string="Print Labels QR" type="object" class="btn-primary"/>
                     <button string="Cancel" class="btn-secondary" special="cancel"/>
                 </footer>
             </form>
