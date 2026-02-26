@@ -55,12 +55,11 @@
             <xpath expr="//field[@name='uom_po_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-<xpath expr="//field[@name='name']" position="replace">
-    <field name="name" placeholder="e.g. Name Psit or Atc"/>
-    <div style="margin-top: 6px;">
-        <field name="is_article" widget="radio"/>
-    </div>
-</xpath>
+        <xpath expr="//field[@name='name']" position="after">
+            <div class="o_row" style="margin-top: 8px; width: 100%;">
+                <field name="is_article" widget="radio"/>
+            </div>
+        </xpath>
             <xpath expr="//field[@name='type']" position="before">
                 <!-- <field name="is_article" widget="radio"/> -->
 
@@ -181,12 +180,11 @@
                 supaya kondisi invisible field lain bisa terbaca saat form di-render.
             -->
             <!-- Taruh is_article tepat setelah field nama produk -->
-            <xpath expr="//field[@name='name']" position="replace">
-                <field name="name" placeholder="e.g. Cheese Burger"/>
-                <div style="margin-top: 6px;">
-                    <field name="is_article" widget="radio" readonly="1"/>
-                </div>
-            </xpath>
+<xpath expr="//field[@name='name']" position="after">
+    <div class="o_row" style="margin-top: 8px; width: 100%;">
+        <field name="is_article" widget="radio" readonly="1"/>
+    </div>
+</xpath>
             <xpath expr="//field[@name='type']" position="after">
 
                 <!-- Tampilkan is_article DULU - ini yang jadi acuan invisible -->
