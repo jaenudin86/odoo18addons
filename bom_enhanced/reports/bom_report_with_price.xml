@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <template id="report_bom_with_price_document">
+    <template id="action_report_bom_with_price">
         <t t-set="data_report_landscape" t-value="True"/>
         <t t-call="web.basic_layout">
             <t t-foreach="docs" t-as="bom">

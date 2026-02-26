@@ -1,0 +1,63 @@
+<section class="oe_container oe_dark">
+    <div class="oe_row oe_spaced">
+        <h2 class="oe_slogan">Simple Clear Data</h2>
+        <h3 class="oe_slogan">Help you to clear data from a model.</h3>
+        <div class="oe_span12">
+            <img src="screenshot.png" class="oe_picture oe_screenshot">                            
+        </div>        
+    </div>
+</section>
+
+<section class="oe_container ">
+    <div class="oe_row">
+        <div class="oe_quote">
+            <h2>Installation</h2>
+            <p>To install this module:</p>
+            <ol>
+                <li>Download the module and place it in Odoo <strong>Custom Addons</strong> folder.</li>
+                <li>Restart Odoo Server</li>
+                <li>Go to Odoo UI and Enable <strong>Debug Mode</strong> then open the <strong>Apps</strong> menu.</li>
+                <li>Refresh the list by clicking <strong>Update Apps List</strong>. Finally, you will see 'Simple Clear Data' module and click the <strong>Install</strong> button.</li>
+            </ol>
+        </div>
+        
+    </div>
+</section>
+
+<section class="oe_container ">
+    <div class="oe_row">
+        <div class="oe_quote">
+        <h2>Configuration</h2>
+            <p>Navigate to <strong>Users</strong> and assign the permission <strong>Clear Data Access</strong> to the intended user.</p>
+        </div>
+    </div>
+</section>
+
+<section class="oe_container ">
+    <div class="oe_row">
+        <div class="oe_quote">
+        <h2>How To Use</h2>
+            <ol>
+                <li>Go to <strong>Settings</strong> =&gt; <strong>Technical</strong> =&gt; <strong>Clear Data</strong> =&gt; <strong>Clear Data Transaction</strong></li>
+                <li>Choose Model</li>
+                <li>Click <strong>Clear</strong> button</li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+
+<section class="oe_container ">
+    <div class="oe_row">
+        <div class="oe_quote">
+        <h2>Notes</h2>
+            <p>Some Odoo models have additional constraints that prevent direct deletion if dependent records still exist.
+            If you receive an error while deleting a model (for example, <code>stock.picking</code>), remove the related records first, such as:</p>
+            <ul>
+                <li>For <code>stock.picking</code> → delete <code>stock.move</code> and <code>stock.move.line</code>.
+                Once the dependent data is cleared, you can rerun the wizard to remove the main record.</li>
+            </ul>
+            <p>We welcome any feedback and suggestions, especially for improving this module. Thank you!</p>
+        </div>
+    </div>
+</section>
