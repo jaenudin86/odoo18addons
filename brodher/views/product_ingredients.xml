@@ -56,9 +56,9 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 <xpath expr="//div[hasclass('oe_title')]" position="before">
-    <div class="mb-2">
-        <field name="is_article" widget="radio"/>
-    </div>
+    <group>
+        <field name="is_article" widget="radio"  string="Is Artikel"/>
+    </group>
 </xpath>
             <xpath expr="//field[@name='type']" position="before">
                 <!-- <field name="is_article" widget="radio"/> -->
@@ -181,9 +181,9 @@
             -->
             <!-- Taruh is_article tepat setelah field nama produk -->
 <xpath expr="//div[hasclass('oe_title')]" position="before">
-    <div class="mb-2">
-        <field name="is_article" widget="radio" readonly="1"/>
-    </div>
+    <group>
+        <field name="is_article" widget="radio" readonly="1" string="Is Artikel"/>
+    </group>
 </xpath>
             <xpath expr="//field[@name='type']" position="after">
 
