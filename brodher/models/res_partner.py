@@ -1,5 +1,5 @@
 from odoo import api, fields, models
-
+from odoo.exceptions import ValidationError
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
@@ -22,6 +22,7 @@ class ResPartner(models.Model):
 
     @api.constrains('supplier_code')
     def _check_supplier_code_unique(self):
+        
         for rec in self:
             if rec.supplier_code:
                 duplicate = self.search([
