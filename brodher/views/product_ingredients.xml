@@ -55,8 +55,8 @@
             <xpath expr="//field[@name='uom_po_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-                <xpath expr="//field[@name='name']" position="after">
-                <field name="is_article" widget="radio" readonly="1"/>
+                <xpath expr="//field[@name='name']" position="before">
+                <field name="is_article" widget="radio"/>
             </xpath>
             <xpath expr="//field[@name='type']" position="before">
                 <!-- <field name="is_article" widget="radio"/> -->
@@ -178,7 +178,7 @@
                 supaya kondisi invisible field lain bisa terbaca saat form di-render.
             -->
             <!-- Taruh is_article tepat setelah field nama produk -->
-            <xpath expr="//field[@name='name']" position="after">
+            <xpath expr="//field[@name='name']" position="before">
                 <field name="is_article" widget="radio" readonly="1"/>
             </xpath>
             <xpath expr="//field[@name='type']" position="after">
