@@ -100,12 +100,12 @@ class ResPartner(models.Model):
             if is_customer and not vals.get('customer_code'):
                 seq = self.env['ir.sequence'].next_by_code('customer.code.sequence')
                 if seq:
-                    vals['customer_code'] = f"AC{seq}"
+                    vals['customer_code'] = seq  # sudah include prefix AC dari sequence
 
             if is_supplier and not vals.get('supplier_code'):
                 seq = self.env['ir.sequence'].next_by_code('supplier.code.sequence')
                 if seq:
-                    vals['supplier_code'] = f"AS{seq}"
+                    vals['supplier_code'] = seq  # sudah include prefix AS dari sequence
 
-        return super(ResPartner, self).create(vals_list)
+                    return super(ResPartner, self).create(vals_list)
 
