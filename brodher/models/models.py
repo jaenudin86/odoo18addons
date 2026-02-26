@@ -68,7 +68,6 @@ class ProductTemplate(models.Model):
         else:
             prefix = 'PSIT'
             year_str = now.strftime('%y')
-            # FIX: typo diperbaiki dari 'pist.number.sequence' → 'psit.number.sequence'
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('psit.number.sequence') or '0001'
             seq = str(seq).zfill(4)
             return f"{prefix}{year_str}{seq}"
@@ -83,7 +82,10 @@ class ProductTemplate(models.Model):
 
         is_article = vals.get('is_article', 'no')
 
-        # AUTO TRACK INVENTORY
+        # ================================================================
+        # FIX TRACKING:
+        # Set di vals agar Odoo pakai nilai ini saat membuat variant pertama
+        # ================================================================
         if is_article == 'yes':
             vals['tracking'] = 'serial'
         else:
@@ -99,18 +101,23 @@ class ProductTemplate(models.Model):
             if not default_code or (isinstance(default_code, str) and not default_code.strip()):
                 vals['default_code'] = self._generate_article_number('yes')
         else:
-            # PSIT: kosongkan default_code di template
             vals['default_code'] = False
 
         template = super(ProductTemplate, self).create(vals)
 
         # ================================================================
-        # PENTING: Setelah template ATC dibuat, Odoo otomatis membuat
-        # variant pertama. Kita harus sync default_code ke variant tsb.
+        # FIX TRACKING: Force write ulang ke semua variant setelah dibuat
+        # Ini penting karena Odoo kadang override nilai tracking saat
+        # membuat variant pertama secara otomatis
         # ================================================================
-        if is_article == 'yes' and template.default_code:
+        if is_article == 'yes':
             template.product_variant_ids.write({
-                'default_code': template.default_code
+                'default_code': template.default_code,
+                'tracking': 'serial',
+            })
+        else:
+            template.product_variant_ids.write({
+                'tracking': 'none',
             })
 
         return template
@@ -119,6 +126,14 @@ class ProductTemplate(models.Model):
     # WRITE
     # =========================
     def write(self, vals):
+        # ================================================================
+        # FIX TRACKING: Jika is_article berubah, siapkan nilai tracking
+        # SEBELUM super().write() agar tersimpan di template juga
+        # ================================================================
+        if 'is_article' in vals:
+            new_tracking = 'serial' if vals['is_article'] == 'yes' else 'none'
+            vals['tracking'] = new_tracking
+
         res = super(ProductTemplate, self).write(vals)
 
         for rec in self:
@@ -126,6 +141,10 @@ class ProductTemplate(models.Model):
             if 'is_article' in vals:
                 new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
                 rec.product_variant_ids.write({'tracking': new_tracking})
+
+                # Reset default_code PSIT di semua variant jika berubah ke PSIT
+                if rec.is_article == 'no':
+                    rec.product_variant_ids.write({'default_code': False})
 
             # Jika default_code template ATC berubah → sync ke semua variant
             if 'default_code' in vals and rec.is_article == 'yes':
@@ -185,15 +204,24 @@ class ProductProduct(models.Model):
                 # Pastikan template sudah punya default_code, jika belum generate
                 if not tmpl.default_code:
                     new_code = tmpl._generate_article_number('yes')
-                    # Gunakan write langsung ke template (bypass super untuk hindari rekursi)
                     self.env['product.template'].browse(tmpl_id).write({'default_code': new_code})
                     vals['default_code'] = new_code
                 else:
                     vals['default_code'] = tmpl.default_code
 
+                # ================================================================
+                # FIX TRACKING: Pastikan variant ATC selalu by serial number
+                # ================================================================
+                vals['tracking'] = 'serial'
+
             elif tmpl.is_article == 'no':
                 # PSIT: setiap variant generate nomor unik sendiri
                 if not vals.get('default_code'):
                     vals['default_code'] = tmpl._generate_article_number('no')
+
+                # ================================================================
+                # FIX TRACKING: Pastikan variant PSIT selalu by qty (none)
+                # ================================================================
+                vals['tracking'] = 'none'
 
         return super(ProductProduct, self).create(vals)
