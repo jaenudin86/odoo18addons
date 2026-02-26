@@ -46,11 +46,11 @@
                     <t t-foreach="label_data" t-as="label">
                         <div class="qrcode_container">
                             <span class="internal_ref">
+                            tes
                                 <strong>
                                     <t t-esc="label['name']"/>
                                 </strong>
                                 <br/>
-                                <t t-esc="label['variant']"/>
                                 <t t-esc="label['barcode']"/>
                             </span>
                             <img t-if="label['barcode']" 
