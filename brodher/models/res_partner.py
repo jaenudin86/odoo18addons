@@ -1,11 +1,14 @@
 from odoo import api, fields, models
 from odoo.exceptions import ValidationError
+
+
 class ResPartner(models.Model):
     _inherit = 'res.partner'
 
     # --- Penomoran Otomatis ---
     customer_code = fields.Char(string='Customer Code', readonly=True, copy=False)
     supplier_code = fields.Char(string='Supplier Code', readonly=True, copy=False)
+
     @api.constrains('customer_code')
     def _check_customer_code_unique(self):
         for rec in self:
@@ -22,7 +25,6 @@ class ResPartner(models.Model):
 
     @api.constrains('supplier_code')
     def _check_supplier_code_unique(self):
-        
         for rec in self:
             if rec.supplier_code:
                 duplicate = self.search([
@@ -49,7 +51,7 @@ class ResPartner(models.Model):
     contact_pic2_name = fields.Char(string="Contact PIC 2 Name")
     contact_pic2_mobile = fields.Char(string="Mobile Phone (PIC 2)")
 
-    partner_fax = fields.Char(string="Fax") 
+    partner_fax = fields.Char(string="Fax")
     factory_address = fields.Char(string="Factory Address")
     factory_city = fields.Char(string="Factory City")
     factory_state = fields.Char(string="Factory State")
@@ -86,26 +88,33 @@ class ResPartner(models.Model):
                 rec.display_name = f"{rec.supplier_code} - {rec.name}"
             else:
                 rec.display_name = rec.name
+
     @api.model_create_multi
     def create(self, vals_list):
         for vals in vals_list:
             # 1. Cek apakah ini Customer
-            # Kita cek dari context menu ATAU dari nilai rank yang dikirim UI
-            is_customer = self._context.get('res_partner_search_mode') == 'customer' or vals.get('customer_rank', 0) > 0
-            
-            # 2. Cek apakah ini Supplier
-            is_supplier = self._context.get('res_partner_search_mode') == 'supplier' or vals.get('supplier_rank', 0) > 0
+            is_customer = (
+                self._context.get('res_partner_search_mode') == 'customer'
+                or vals.get('customer_rank', 0) > 0
+            )
 
-            # Eksekusi pembuatan nomor saat Save
+            # 2. Cek apakah ini Supplier
+            is_supplier = (
+                self._context.get('res_partner_search_mode') == 'supplier'
+                or vals.get('supplier_rank', 0) > 0
+            )
+
+            # Generate Customer Code
             if is_customer and not vals.get('customer_code'):
                 seq = self.env['ir.sequence'].next_by_code('customer.code.sequence')
                 if seq:
-                    vals['customer_code'] = seq  # sudah include prefix AC dari sequence
+                    vals['customer_code'] = seq
 
+            # Generate Supplier Code
             if is_supplier and not vals.get('supplier_code'):
                 seq = self.env['ir.sequence'].next_by_code('supplier.code.sequence')
                 if seq:
-                    vals['supplier_code'] = seq  # sudah include prefix AS dari sequence
+                    vals['supplier_code'] = seq
 
-                    return super(ResPartner, self).create(vals_list)
-
+        # FIX: return harus di luar loop, bukan di dalam if block
+        return super(ResPartner, self).create(vals_list)
