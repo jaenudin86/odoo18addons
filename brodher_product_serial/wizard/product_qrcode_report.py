@@ -1,5 +1,6 @@
 from odoo import models, api
 
+
 class ProductQrcodeReport(models.AbstractModel):
     _name = 'report.brodher_product_serial.product_qrcode_label_template'
     _description = 'Product QR Code Label Report'
@@ -12,14 +13,8 @@ class ProductQrcodeReport(models.AbstractModel):
         for doc in docs:
             for product in doc.product_ids:
                 for i in range(doc.quantity):
-                    # Ambil variant attributes
-                    variant_values = product.product_template_attribute_value_ids.mapped('name')
-                    variant_str = ' / '.join(variant_values) if variant_values else ''
-                    
                     label_data.append({
-                        'ir_number': product.default_code or '',
-                        'name': product.product_tmpl_id.name,
-                        'variant': variant_str,
+                        'name': product.display_name or product.name,
                         'barcode': product.barcode or product.default_code or '',
                         'product_id': product.id,
                     })
