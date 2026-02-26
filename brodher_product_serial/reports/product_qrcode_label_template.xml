@@ -47,10 +47,11 @@
                         <div class="qrcode_container">
                             <span class="internal_ref">
                             
-                                <strong>
+                                
                                     <t t-esc="label['name']"/>
-                                    <t t-esc="label['name']"/>
-                                </strong>
+                                     <br/>
+                                    <t t-esc="label['variant']"/>
+                                
                                 <br/>
                                 <t t-esc="label['barcode']"/>
                             </span>

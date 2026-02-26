@@ -5,16 +5,19 @@
         <field name="name">product.qrcode.label.wizard.form</field>
         <field name="model">product.qrcode.label.wizard</field>
         <field name="arch" type="xml">
-            <form string="Print QR Code Labels">
-                <group>
-                    <field name="product_ids" widget="many2many_tags" readonly="1"/>
-                    <field name="quantity" required="1"/>
-                </group>
-                <footer>
-                    <button name="action_print_labels" string="Print Labels QR" type="object" class="btn-primary"/>
-                    <button string="Cancel" class="btn-secondary" special="cancel"/>
-                </footer>
-            </form>
+<form string="Print QR Code Labels">
+    <group>
+        <field name="product_ids" widget="many2many_tags" readonly="1"/>
+        <field name="variant_ids" widget="many2many_tags" 
+               domain="[('id', 'in', product_ids)]"
+               options="{'no_create': True}"/>
+        <field name="quantity" required="1"/>
+    </group>
+    <footer>
+        <button name="action_print_labels" string="Print Labels QR" type="object" class="btn-primary"/>
+        <button string="Cancel" class="btn-secondary" special="cancel"/>
+    </footer>
+</form>
         </field>
     </record>
 
