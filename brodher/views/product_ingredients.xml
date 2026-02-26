@@ -55,6 +55,10 @@
             <xpath expr="//field[@name='uom_po_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <!-- Di product template form -->
+            <xpath expr="//field[@name='tracking']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
 <xpath expr="//div[hasclass('oe_title')]" position="before">
     <group>
         <field name="is_article" widget="radio"  string="Is Artikel"/>

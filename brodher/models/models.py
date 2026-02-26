@@ -151,6 +151,12 @@ class ProductTemplate(models.Model):
                 rec.product_variant_ids.write({'default_code': vals['default_code']})
 
         return res
+    @api.onchange('is_article')
+    def _onchange_is_article_tracking(self):
+        if self.is_article == 'yes':
+            self.tracking = 'serial'
+        else:
+            self.tracking = 'none'
 
 
 class ProductProduct(models.Model):
