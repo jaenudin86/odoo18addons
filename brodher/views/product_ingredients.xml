@@ -46,23 +46,13 @@
             <xpath expr="//field[@name='standard_price']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <xpath expr="//field[@name='uom_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='uom_po_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
 
+            <!-- FIX: Cukup invisible field-nya saja, tidak perlu xpath label terpisah -->
+            <!-- Label akan otomatis ikut tersembunyi ketika field invisible -->
             <xpath expr="//field[@name='uom_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <xpath expr="//label[@for='uom_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
             <xpath expr="//field[@name='uom_po_id']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//label[@for='uom_po_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
 
@@ -263,7 +253,7 @@
 
     <record id="seq_psit_number" model="ir.sequence">
         <field name="name">PSIT Number</field>
-        <field name="code">pist.number.sequence</field>
+        <field name="code">psit.number.sequence</field>
         <field name="prefix">PSIT%(year)s</field>
         <field name="padding">4</field>
         <field name="implementation">standard</field>
