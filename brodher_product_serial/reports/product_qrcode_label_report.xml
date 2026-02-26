@@ -7,7 +7,7 @@
         <field name="report_name">brodher_product_serial.product_qrcode_label_template</field>
         <field name="report_file">brodher_product_serial.product_qrcode_label_template</field>
         <field name="paperformat_id" ref="brodher_product_serial.paperformat_product_qrcode_label_a4"/>
-        <field name="print_report_name">'QR_Labels_%s' % (time.strftime('%Y%m%d_%H%M%S'))</field>
+        <field name="print_report_name">'QR_Labelsxx_%s' % (time.strftime('%Y%m%d_%H%M%S'))</field>
     </record>
 
     <!-- Add Print QR Labels button to product.product form view -->
@@ -39,7 +39,7 @@
                         string="Print QR Labels" 
                         type="action" 
                         class="oe_highlight"
-                        invisible="is_article == 'yes' or is_article == 'var'"/>
+                        invisible="is_article == 'yes'"/>
             </xpath>
         </field>
     </record>
@@ -53,7 +53,7 @@
                     string="Print QR Labels" 
                     type="action" 
                      class="oe_highlight"
-                        invisible="is_article == 'yes' or is_article == 'var'"/>
+                        invisible="is_article == 'yes'"/>
         </xpath>
     </field>
 </record>
