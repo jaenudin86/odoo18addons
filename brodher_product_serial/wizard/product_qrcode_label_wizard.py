@@ -81,7 +81,7 @@ class ProductQRCodeLabelWizard(models.TransientModel):
         }
         
         # Generate report
-        return self.env.ref('your_module.action_report_product_qrcode').report_action(
+        return self.env.ref('brodher_product_serial.action_report_product_qrcode').report_action(
             products_to_print, 
             data=data
         )
