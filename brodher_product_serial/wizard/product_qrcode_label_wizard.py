@@ -14,25 +14,19 @@ class ProductQrcodeLabelWizard(models.TransientModel):
         required=True
     )
     
-    product_tmpl_id = fields.Many2one(
-        'product.template',
-        string='Product Template',
-        help='Set jika dibuka dari product template'
-    )
-    
     variant_ids = fields.Many2many(
         'product.product',
         'product_qr_wizard_variant_rel',
         'wizard_id',
         'variant_id',
         string='Select Variants',
-        help='Pilih variant tertentu. Kosongkan untuk cetak semua variant.'
+        help='Pilih variant tertentu. Kosongkan untuk cetak semua.'
     )
     
-    variant_count = fields.Integer(
-        string='Variant Count',
-        compute='_compute_variant_count',
-        help='Jumlah variant dari product template'
+    show_variant_selection = fields.Boolean(
+        string='Show Variant Selection',
+        compute='_compute_show_variant_selection',
+        help='Show variant selection if multiple variants from same template'
     )
     
     quantity = fields.Integer(
@@ -48,28 +42,26 @@ class ProductQrcodeLabelWizard(models.TransientModel):
         help='Total jumlah label yang akan dicetak'
     )
     
-    @api.depends('product_tmpl_id')
-    def _compute_variant_count(self):
-        """Count variants of product template"""
+    @api.depends('product_ids')
+    def _compute_show_variant_selection(self):
+        """Show variant selection if products are from same template"""
         for wizard in self:
-            if wizard.product_tmpl_id:
-                wizard.variant_count = len(wizard.product_tmpl_id.product_variant_ids)
+            if len(wizard.product_ids) > 0:
+                # Check if all products are from the same template
+                templates = wizard.product_ids.mapped('product_tmpl_id')
+                wizard.show_variant_selection = (len(templates) == 1 and len(wizard.product_ids) > 1)
             else:
-                wizard.variant_count = 0
+                wizard.show_variant_selection = False
     
-    @api.depends('product_ids', 'variant_ids', 'product_tmpl_id', 'quantity')
+    @api.depends('product_ids', 'variant_ids', 'quantity')
     def _compute_total_labels(self):
         """Calculate total labels to print"""
         for wizard in self:
-            # Determine which products will be printed
+            # If specific variants selected, use those
             if wizard.variant_ids:
-                # User selected specific variants
                 count = len(wizard.variant_ids)
-            elif wizard.product_tmpl_id:
-                # All variants of template
-                count = len(wizard.product_tmpl_id.product_variant_ids)
             else:
-                # Selected products
+                # Use all products
                 count = len(wizard.product_ids)
             
             wizard.total_labels = count * wizard.quantity
@@ -81,17 +73,16 @@ class ProductQrcodeLabelWizard(models.TransientModel):
         
         active_model = self.env.context.get('active_model')
         active_ids = self.env.context.get('active_ids', [])
-        active_id = self.env.context.get('active_id')
         
-        # Opened from product.product (variants)
+        # From product.product (variants)
         if active_model == 'product.product' and active_ids:
             res['product_ids'] = [(6, 0, active_ids)]
         
-        # Opened from product.template
-        elif active_model == 'product.template' and active_id:
-            template = self.env['product.template'].browse(active_id)
-            res['product_tmpl_id'] = active_id
-            res['product_ids'] = [(6, 0, template.product_variant_ids.ids)]
+        # From product.template
+        elif active_model == 'product.template' and active_ids:
+            templates = self.env['product.template'].browse(active_ids)
+            variant_ids = templates.mapped('product_variant_ids').ids
+            res['product_ids'] = [(6, 0, variant_ids)]
         
         return res
     
@@ -101,13 +92,8 @@ class ProductQrcodeLabelWizard(models.TransientModel):
         
         # Determine which products to print
         if self.variant_ids:
-            # User selected specific variants
             products_to_print = self.variant_ids
-        elif self.product_tmpl_id:
-            # All variants of template
-            products_to_print = self.product_tmpl_id.product_variant_ids
         else:
-            # Selected products
             products_to_print = self.product_ids
         
         # Duplicate products by quantity

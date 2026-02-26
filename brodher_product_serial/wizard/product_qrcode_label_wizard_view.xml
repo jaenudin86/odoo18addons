@@ -14,7 +14,7 @@
                     
                     <group>
                         <group>
-                            <field name="product_tmpl_id" invisible="1"/>
+                            <field name="show_variant_selection" invisible="1"/>
                             <field name="product_ids" 
                                    widget="many2many_tags" 
                                    string="Products"
@@ -26,14 +26,13 @@
                         </group>
                     </group>
                     
-                    <!-- Variant Selection (only show if from template with multiple variants) -->
-                    <group string="Select Variants (Optional)" 
-                           invisible="not product_tmpl_id or variant_count &lt;= 1">
-                        <field name="variant_count" invisible="1"/>
+                    <!-- Variant Selection (show if multiple variants from same template) -->
+                    <group string="Select Specific Variants (Optional)" 
+                           invisible="not show_variant_selection">
                         <field name="variant_ids" 
                                widget="many2many_tags"
                                nolabel="1"
-                               domain="[('product_tmpl_id', '=', product_tmpl_id)]"
+                               domain="[('id', 'in', product_ids)]"
                                options="{'no_create': True}"
                                placeholder="Kosongkan untuk cetak semua variant..."/>
                     </group>
@@ -43,8 +42,8 @@
                         <div class="alert alert-info">
                             <strong>ℹ️ Info:</strong>
                             <ul class="mb-0">
-                                <li invisible="not product_tmpl_id or variant_count &lt;= 1">
-                                    Jika tidak ada variant yang dipilih, semua <strong><field name="variant_count" class="oe_inline"/></strong> variant akan dicetak.
+                                <li invisible="not show_variant_selection">
+                                    Pilih variant tertentu atau kosongkan untuk cetak semua.
                                 </li>
                                 <li>
                                     Total <strong><field name="total_labels" class="oe_inline"/></strong> label akan dicetak.
