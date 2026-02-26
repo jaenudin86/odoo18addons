@@ -6,7 +6,7 @@
     <field name="name">Customer Code</field>
     <field name="code">customer.code.sequence</field>
     <field name="prefix">AC</field>
-    <field name="padding">6</field>
+    <field name="padding">7</field>
     <field name="implementation">standard</field>
 </record>
 
