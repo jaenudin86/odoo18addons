@@ -13,7 +13,7 @@
             </xpath>
             
             <!-- <xpath expr="//group[@name='group_general']" position="inside"> -->
-    <xpath expr="//field[@name='brand']" position="after">
+    <xpath expr="//field[@name='type']" position="after">
     <field name="sn_product_type" widget="radio" 
            invisible="is_article not in ('yes', 'var')"/>
 </xpath>
