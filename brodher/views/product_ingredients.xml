@@ -175,10 +175,14 @@
                 PENTING: is_article harus PERTAMA kali ditampilkan
                 supaya kondisi invisible field lain bisa terbaca saat form di-render.
             -->
+            <!-- Taruh is_article tepat setelah field nama produk -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="is_article" widget="radio" readonly="1"/>
+            </xpath>
             <xpath expr="//field[@name='type']" position="after">
 
                 <!-- Tampilkan is_article DULU - ini yang jadi acuan invisible -->
-                <field name="is_article" widget="radio" readonly="1"/>
+                <!-- <field name="is_article" widget="radio" readonly="1"/> -->
 
                 <!-- PSIT fields -->
                 <field name="brand"
