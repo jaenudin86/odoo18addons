@@ -3,7 +3,6 @@
     <template id="product_qrcode_label_template">
         <t t-call="web.basic_layout">
             <div class="page" style="padding: 0;">
-            <t t-set="i" t-value="0"/>
                 <style>
                     body {
                         margin-top: 5mm !important;
@@ -13,9 +12,15 @@
                         margin: 0;
                         margin-top: -5mm;
                     }
+                    .label-row {
+                        display: table;
+                        width: 100%;
+                        table-layout: fixed;
+                        page-break-inside: avoid;
+                    }
                     .qrcode_container {
+                        display: table-cell;
                         width: 33.33%;
-                        float: left;
                         padding: 5px 3px;
                         box-sizing: border-box;
                         text-align: center;
@@ -23,6 +28,7 @@
                         height: 140px;
                         font-size: 13px;
                         line-height: 1.1;
+                        vertical-align: top;
                     }
                     .qrcode_img {
                         width: 85px;
@@ -37,46 +43,47 @@
                         font-size: 13px;
                     }
                     .page-break {
-                    page-break-after: always;
-                        clear: both;
+                        page-break-after: always;
                         display: block;
-                    }
-                    .clearfix::after {
-                        content: "";
-                        display: table;
                         clear: both;
                     }
                 </style>
 
-                <div class="clearfix">
-                    <t t-foreach="label_data" t-as="label">
-                        <div class="qrcode_container">
-                            <span class="internal_ref">
-                            
-                                
-                            <t t-esc="label['name']"/>
-                            <br/>
-                            <t t-esc="label['variant']"/>
-                                
-                                <br/>
-                                <t t-esc="label['barcode']"/>
-                            </span>
-                            <img t-if="label['barcode']" 
-                                 t-att-src="'/report/barcode/QR/%s' % label['barcode']" 
-                                 class="qrcode_img"
-                                 alt="QR Code"/>
-                            <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 10px; color: #999;">
-                                No Barcode
-                            </div>
-                        </div>
-       <!-- Page break tiap 21 -->
-                <t t-if="(i + 1) % 18 == 0">
-                                        <p style="page-break-after: always;"/>
-                                    </t>
+                <!-- Loop per baris (3 label per baris, 6 baris per halaman = 18 label) -->
+                <t t-set="items_per_row" t-value="3"/>
+                <t t-set="rows_per_page" t-value="6"/>
+                <t t-set="total" t-value="len(label_data)"/>
+                <t t-set="row_index" t-value="0"/>
 
-                                    <t t-set="i" t-value="i + 1"/>
-                                    </t>
-                </div>
+                <t t-foreach="range(0, total, items_per_row)" t-as="row_start">
+                    <div class="label-row">
+                        <t t-foreach="label_data[row_start:row_start + items_per_row]" t-as="label">
+                            <div class="qrcode_container">
+                                <span class="internal_ref">
+                                    <t t-esc="label['name']"/>
+                                    <br/>
+                                    <t t-esc="label['variant']"/>
+                                    <br/>
+                                    <t t-esc="label['barcode']"/>
+                                </span>
+                                <img t-if="label['barcode']"
+                                     t-att-src="'/report/barcode/QR/%s' % label['barcode']"
+                                     class="qrcode_img"
+                                     alt="QR Code"/>
+                                <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; display: table-cell; text-align: center; vertical-align: middle; font-size: 10px; color: #999;">
+                                    No Barcode
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Page break setiap 6 baris (18 label) -->
+                    <t t-set="row_index" t-value="row_index + 1"/>
+                    <t t-if="row_index % rows_per_page == 0 and (row_start + items_per_row) &lt; total">
+                        <p class="page-break"/>
+                    </t>
+                </t>
+
             </div>
         </t>
     </template>
