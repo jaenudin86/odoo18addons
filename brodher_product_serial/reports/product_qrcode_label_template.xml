@@ -35,6 +35,11 @@
                         margin-top: 10px;
                         font-size: 13px;
                     }
+                    .page-break {
+                    page-break-after: always;
+                        clear: both;
+                        display: block;
+                    }
                     .clearfix::after {
                         content: "";
                         display: table;
@@ -63,6 +68,9 @@
                                 No Barcode
                             </div>
                         </div>
+                        <t t-if="counter % 21 == 0">
+                            <div class="page-break"></div>
+                        </t>
                     </t>
                 </div>
             </div>
