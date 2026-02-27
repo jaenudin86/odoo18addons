@@ -70,7 +70,7 @@
                             </div>
                         </div>
        <!-- Page break tiap 21 -->
-                <t t-if="(i + 1) % 21 == 0">
+                <t t-if="(i + 1) % 18 == 0">
                                         <p style="page-break-after: always;"/>
                                     </t>
 
