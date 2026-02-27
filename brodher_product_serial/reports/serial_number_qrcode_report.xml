@@ -23,7 +23,6 @@
                     .page {
                         padding: 0;
                         margin: 0;
-                        margin-top: -10mm;
                     }
                     table.label-table {
                         width: 100%;
@@ -118,17 +117,16 @@
                                                         <t t-esc="sn.product_id.default_code or '-'"/>
                                                     </span>
                                                     <!-- Product Name -->
+                                                    <!-- Product Name (tanpa variant) -->
                                                     <span class="label-text label-name">
                                                         <t t-esc="sn.product_id.product_tmpl_id.name"/>
                                                     </span>
                                                     <!-- Variant -->
                                                     <span class="label-text label-variant">
-                                                        <t t-esc="', '.join(sn.product_id.product_template_attribute_value_ids.mapped('name'))"/>
+                                                        <t t-esc="sn.product_id.product_template_attribute_value_ids and ', '.join(sn.product_id.product_template_attribute_value_ids.mapped('product_attribute_value_id.name')) or ''"/>
                                                     </span>
                                                     <!-- Barcode (isi = serial number) -->
-                                                    <span class="label-text label-barcode-text">
-                                                        <t t-esc="sn.name"/>
-                                                    </span>
+                                                 
                                                     <!-- QR Code -->
                                                     <img t-att-src="'/report/barcode/QR/%s' % sn.name"
                                                          class="qrcode_img"
