@@ -208,10 +208,7 @@
                 <!-- <field name="is_article" widget="radio" readonly="1"/> -->
 
                 <!-- PSIT fields -->
-                <field name="brand"
-                       invisible="is_article != 'no'"
-                       required="is_article == 'no'"/>
-
+                <field name="brand" readonly="1"/>
                 <field name="dimension"
                        invisible="is_article != 'no'"
                        required="is_article == 'no'"/>
