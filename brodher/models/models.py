@@ -85,6 +85,22 @@ class ProductTemplate(models.Model):
             vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
 
         return super().write(vals)
+    def _create_variant_ids(self):
+        """Setelah Odoo generate variant baru, sync default_code ATC"""
+        res = super()._create_variant_ids()
+        for template in self:
+            if template.is_article == 'yes' and template.default_code:
+                # Cari variant yang default_code-nya kosong atau tidak sama
+                variants_to_fix = template.product_variant_ids.filtered(
+                    lambda v: not v.default_code or v.default_code != template.default_code
+                )
+                if variants_to_fix:
+                    self.env.cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE id = ANY(%s)",
+                        (template.default_code, variants_to_fix.ids)
+                    )
+                    variants_to_fix.invalidate_recordset(['default_code'])
+        return res
 
 
 class ProductProduct(models.Model):
