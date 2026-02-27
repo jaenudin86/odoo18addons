@@ -30,10 +30,10 @@
                         margin: 2px auto;
                     }
                     .internal_ref {
-                        height: 30px;
+                        height: 34px;
                         display: block;
                         margin-top: 10px;
-                        font-size: 14px;
+                        font-size: 13px;
                     }
                     .clearfix::after {
                         content: "";
@@ -48,9 +48,9 @@
                             <span class="internal_ref">
                             
                                 
-                                    <t t-esc="label['name']"/>
-                                     <br/>
-                                    <t t-esc="label['variant']"/>
+                            <t t-esc="label['name']"/>
+                            <br/>
+                            <t t-esc="label['variant']"/>
                                 
                                 <br/>
                                 <t t-esc="label['barcode']"/>
