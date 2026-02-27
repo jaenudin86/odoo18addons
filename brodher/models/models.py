@@ -71,7 +71,6 @@ class ProductTemplate(models.Model):
 
         template = super().create(vals)
 
-        # Setelah create, sync default_code ke variant via raw SQL
         if is_article == 'yes' and template.default_code:
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
@@ -82,32 +81,20 @@ class ProductTemplate(models.Model):
         return template
 
     def write(self, vals):
-        # Ambil semua default_code dari DB tanpa filter is_article dulu
+        # Ambil semua default_code dari DB sebelum write
         self.env.cr.execute(
-            """SELECT pt.id, pt.default_code 
-               FROM product_template pt
-               WHERE pt.id = ANY(%s) 
-               AND pt.default_code IS NOT NULL 
-               AND pt.default_code != ''""",
+            """SELECT id, default_code FROM product_template 
+               WHERE id = ANY(%s) 
+               AND default_code IS NOT NULL 
+               AND default_code != ''""",
             (self.ids,)
         )
-        all_codes = dict(self.env.cr.fetchall())
+        protected_codes = dict(self.env.cr.fetchall())
 
-        # Filter ATC via DB juga
-        atc_codes = {}
-        if all_codes:
-            self.env.cr.execute(
-                """SELECT id FROM product_template 
-                   WHERE id = ANY(%s) AND is_article = 'yes'""",
-                (list(all_codes.keys()),)
-            )
-            atc_ids_from_db = [r[0] for r in self.env.cr.fetchall()]
-            atc_codes = {rid: all_codes[rid] for rid in atc_ids_from_db}
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} protected_codes={protected_codes}")
 
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} all_codes={all_codes} atc_codes={atc_codes}")
-
-        # Jangan izinkan default_code ATC di-clear
-        if 'default_code' in vals and not vals.get('default_code') and atc_codes:
+        # Jangan izinkan default_code di-clear
+        if 'default_code' in vals and not vals.get('default_code') and protected_codes:
             vals = dict(vals)
             vals.pop('default_code')
             _logger.warning(f"[TMPL WRITE] REMOVED default_code from vals")
@@ -117,22 +104,19 @@ class ProductTemplate(models.Model):
 
         res = super().write(vals)
 
-        # Restore dan sync ke variant setelah write
-        for rec_id, code in atc_codes.items():
+        # Restore langsung tanpa kondisi apapun
+        for rec_id, code in protected_codes.items():
             self.env.cr.execute(
-                """UPDATE product_template 
-                   SET default_code = %s 
-                   WHERE id = %s 
-                   AND (default_code IS NULL OR default_code = '')""",
+                "UPDATE product_template SET default_code = %s WHERE id = %s",
                 (code, rec_id)
             )
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
             )
-            _logger.warning(f"[TMPL WRITE] SYNCED id={rec_id} code={code}")
+            _logger.warning(f"[TMPL WRITE] RESTORED id={rec_id} code={code}")
 
-        if atc_codes:
+        if protected_codes:
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
@@ -189,7 +173,6 @@ class ProductProduct(models.Model):
 
         product = super().create(vals)
 
-        # Safety: pastikan default_code ATC tersimpan
         if tmpl_id:
             self.env.cr.execute(
                 "SELECT is_article, default_code FROM product_template WHERE id = %s",
