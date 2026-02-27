@@ -30,7 +30,7 @@
                         margin: 2px auto;
                     }
                     .internal_ref {
-                        height: 34px;
+                        height: 40px;
                         display: block;
                         margin-top: 10px;
                         font-size: 13px;
