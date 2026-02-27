@@ -3,6 +3,7 @@
     <template id="product_qrcode_label_template">
         <t t-call="web.basic_layout">
             <div class="page" style="padding: 0;">
+            <t t-set="i" t-value="0"/>
                 <style>
                     body {
                         margin-top: 5mm !important;
@@ -69,10 +70,12 @@
                             </div>
                         </div>
        <!-- Page break tiap 21 -->
-                        <t t-if="(i + 1) % 21 == 0">
-                            <div class="page-break"></div>
-                        </t>
-                    </t>
+                <t t-if="(i + 1) % 21 == 0">
+                                        <p style="page-break-after: always;"/>
+                                    </t>
+
+                                    <t t-set="i" t-value="i + 1"/>
+                                    </t>
                 </div>
             </div>
         </t>
