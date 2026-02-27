@@ -128,30 +128,33 @@ class ProductTemplate(models.Model):
         return template
 
     def write(self, vals):
-        # Cek semua ATC — baik yang sudah punya kode maupun yang belum
+        # Ambil semua produk ATC dan PSIT
         self.env.cr.execute(
-            """SELECT id, default_code FROM product_template 
-               WHERE id = ANY(%s) AND is_article = 'yes'""",
+            """SELECT id, default_code, is_article FROM product_template 
+               WHERE id = ANY(%s) AND is_article IS NOT NULL""",
             (self.ids,)
         )
         rows = self.env.cr.fetchall()
 
-        atc_codes = {}    # ATC yang sudah punya kode
-        atc_no_code = []  # ATC baru yang belum punya kode
+        atc_codes = {}   # ATC yang sudah punya kode
+        atc_new = []     # ATC baru belum punya kode
+        psit_ids = []    # PSIT perlu dicek variantnya
 
-        for rec_id, code in rows:
-            if code:
-                atc_codes[rec_id] = code
-            else:
-                atc_no_code.append(rec_id)
+        for rec_id, code, is_art in rows:
+            if is_art == 'yes':
+                if code:
+                    atc_codes[rec_id] = code
+                else:
+                    atc_new.append(rec_id)
+            elif is_art == 'no':
+                psit_ids.append(rec_id)
 
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_no_code={atc_no_code}")
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_new={atc_new} psit_ids={psit_ids}")
 
         # Jangan izinkan default_code ATC di-clear
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
             vals = dict(vals)
             vals.pop('default_code')
-            _logger.warning(f"[TMPL WRITE] REMOVED default_code from vals")
 
         if 'is_article' in vals:
             vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
@@ -171,7 +174,7 @@ class ProductTemplate(models.Model):
             _logger.warning(f"[TMPL WRITE] RESTORED ATC id={rec_id} code={code}")
 
         # Sync ATC baru yang kodenya baru muncul setelah super().write()
-        for rec_id in atc_no_code:
+        for rec_id in atc_new:
             self.env.cr.execute(
                 "SELECT default_code FROM product_template WHERE id = %s",
                 (rec_id,)
@@ -185,16 +188,33 @@ class ProductTemplate(models.Model):
                 )
                 _logger.warning(f"[TMPL WRITE] SYNC NEW ATC id={rec_id} code={code}")
 
-        if atc_codes or atc_no_code:
+        # PSIT: assign nomor ke variant yang kosong
+        for rec_id in psit_ids:
+            self.env.cr.execute(
+                "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                (rec_id,)
+            )
+            empty_variants = [r[0] for r in self.env.cr.fetchall()]
+            for vid in empty_variants:
+                code = self._generate_article_number('no')
+                self.env.cr.execute(
+                    "UPDATE product_product SET default_code = %s WHERE id = %s",
+                    (code, vid)
+                )
+                _logger.warning(f"[TMPL WRITE] ASSIGN PSIT variant id={vid} code={code}")
+
+        if atc_codes or atc_new or psit_ids:
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
             codes_snapshot = dict(atc_codes)
-            no_code_snapshot = list(atc_no_code)
+            atc_new_snapshot = list(atc_new)
+            psit_snapshot = list(psit_ids)
 
             @self.env.cr.postcommit.add
             def restore_after_commit():
                 with self.env.registry.cursor() as cr:
+                    # Restore ATC yang sudah punya kode
                     for rec_id, code in codes_snapshot.items():
                         cr.execute(
                             "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
@@ -204,7 +224,8 @@ class ProductTemplate(models.Model):
                             "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                             (code, rec_id)
                         )
-                    for rec_id in no_code_snapshot:
+                    # Sync ATC baru
+                    for rec_id in atc_new_snapshot:
                         cr.execute(
                             "SELECT default_code FROM product_template WHERE id = %s",
                             (rec_id,)
@@ -214,6 +235,25 @@ class ProductTemplate(models.Model):
                             cr.execute(
                                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                                 (row[0], rec_id)
+                            )
+                    # PSIT: assign nomor ke variant yang masih kosong
+                    for rec_id in psit_snapshot:
+                        cr.execute(
+                            "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                            (rec_id,)
+                        )
+                        empty_variants = [r[0] for r in cr.fetchall()]
+                        for vid in empty_variants:
+                            now = datetime.today()
+                            cr.execute(
+                                "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
+                            )
+                            row = cr.fetchone()
+                            seq = str(row[0]).zfill(4) if row else str(vid).zfill(4)
+                            code = f"PSIT{now.strftime('%y')}{seq}"
+                            cr.execute(
+                                "UPDATE product_product SET default_code = %s WHERE id = %s",
+                                (code, vid)
                             )
 
         return res
