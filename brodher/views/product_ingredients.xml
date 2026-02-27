@@ -46,12 +46,16 @@
             <xpath expr="//field[@name='standard_price']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
-            <xpath expr="//field[@name='uom_span']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
-            <xpath expr="//field[@name='standard_price_uom']" position="attributes">
-                <attribute name="invisible">1</attribute>
-            </xpath>
+<!-- Hide "per" di Sales Price -->
+<xpath expr="//div[@name='list_price_uom']" position="attributes">
+    <attribute name="invisible">1</attribute>
+</xpath>
+
+<!-- Hide "per Units" di Cost -->
+<xpath expr="//div[@name='standard_price_uom']" position="attributes">
+    <attribute name="invisible">1</attribute>
+</xpath>
+
 
             <!-- FIX: Cukup invisible field-nya saja, tidak perlu xpath label terpisah -->
             <!-- Label akan otomatis ikut tersembunyi ketika field invisible -->
