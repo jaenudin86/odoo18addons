@@ -15,7 +15,7 @@
     <!-- Report Template -->
     <template id="serial_number_qrcode_template">
         <t t-call="web.basic_layout">
-            <div class="page" style="padding: 0;">
+            <div class="page" style="padding: 0; margin: 0; margin-top: -10mm;">
                 <style>
                     body {
                         margin-top: 5mm !important;
@@ -25,49 +25,69 @@
                         margin: 0;
                         margin-top: -10mm;
                     }
-                    .qrcode_container {
+                    table.label-table {
+                        width: 100%;
+                        table-layout: fixed;
+                        border-collapse: collapse;
+                    }
+                    table.label-table td {
                         width: 20%;
-                        float: left;
-                        padding: 5px 3px;
+                        padding: 2px 2px;
                         box-sizing: border-box;
                         text-align: center;
+                        vertical-align: top;
+                        font-size: 9px;
+                        line-height: 1.2;
                         overflow: hidden;
-                        height: 140px;
-                        font-size: 13px;
-                        line-height: 1.1;
                     }
-                    .qrcode_img {
-                        width: 85px;
-                        height: 85px;
+                    .label-inner {
+                        width: 100%;
+                        height: 130px;
+                        overflow: hidden;
+                        box-sizing: border-box;
                         display: block;
-                        margin: 2px auto;
+                        padding: 1px;
                     }
-                    .sn_code {
-                        font-weight: bold;
-                        font-size: 14px;
-                        margin-top: 5px;
+                    .label-text {
                         display: block;
-                    }
-                    .product_info {
-                        font-size: 11px;
-                        color: #666;
-                        margin-top: 3px;
-                        display: block;
+                        font-size: 8px;
+                        line-height: 1.2;
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
+                        max-width: 100%;
                     }
-                    .clearfix::after {
-                        content: "";
-                        display: table;
-                        clear: both;
+                    .label-ir {
+                        font-size: 8px;
+                        font-weight: bold;
                     }
-                    .page-break {
-                        page-break-after: always;
+                    .label-name {
+                        font-size: 8px;
+                        font-weight: bold;
+                    }
+                    .label-variant {
+                        font-size: 7px;
+                        color: #333;
+                    }
+                    .label-barcode-text {
+                        font-size: 7px;
+                        color: #555;
+                    }
+                    .qrcode_img {
+                        width: 70px;
+                        height: 70px;
+                        display: block;
+                        margin: 1px auto;
+                    }
+                    .label-sn {
+                        display: block;
+                        font-weight: bold;
+                        font-size: 8px;
+                        margin-top: 1px;
+                        word-break: break-all;
                     }
                 </style>
 
-                <!-- Check if any serial numbers -->
                 <t t-if="not docs">
                     <div style="text-align: center; padding: 50px; color: #999;">
                         <h3>No Serial Numbers Selected</h3>
@@ -75,47 +95,74 @@
                     </div>
                 </t>
 
-                <!-- Print QR codes - 5 per row -->
                 <t t-if="docs">
-                    <div class="clearfix">
-                        <t t-set="counter" t-value="0"/>
-                        <t t-foreach="docs" t-as="sn">
-                            <!-- Add page break every 35 items (7 rows x 5 columns) -->
-                            <t t-if="counter > 0 and counter % 35 == 0">
-                                <div class="clearfix"></div>
-                                <div class="page-break"></div>
-                            </t>
+                    <t t-set="items_per_row" t-value="5"/>
+                    <t t-set="rows_per_page" t-value="7"/>
+                    <t t-set="labels_per_page" t-value="items_per_row * rows_per_page"/>
+                    <t t-set="total" t-value="len(docs)"/>
 
-                            <div class="qrcode_container">
-                                <!-- Product Name -->
-                                <span class="product_info" t-esc="sn.product_id.display_name"/>
-                                
-                                <!-- QR Code -->
-                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
-                                     class="qrcode_img"
-                                     alt="QR Code"/>
-                                
-                                <!-- Serial Number -->
-                                <span class="sn_code" t-esc="sn.name"/>
-                                
-                                <!-- SN Type Badge (optional, commented out) -->
-                                <!-- <span t-if="sn.sn_type" 
-                                      t-att-style="'display: inline-block; padding: 2px 6px; border-radius: 3px; font-size: 10px; margin-top: 2px; background-color: %s; color: white;' % ('#3498db' if sn.sn_type == 'M' else '#e74c3c')">
-                                    <t t-if="sn.sn_type == 'M'">MAN</t>
-                                    <t t-if="sn.sn_type == 'W'">WOMAN</t>
-                                </span> -->
-                            </div>
+                    <t t-foreach="range(0, total, labels_per_page)" t-as="page_start">
 
-                            <t t-set="counter" t-value="counter + 1"/>
+                        <!-- Page break sebelum halaman baru -->
+                        <t t-if="page_start > 0">
+                            <p style="page-break-before: always; margin: 0; padding: 0;"/>
                         </t>
-                    </div>
 
-                    <!-- Summary at bottom (optional) -->
-                    <div class="clearfix"></div>
-                    <div style="margin-top: 20px; padding: 10px; background-color: #f5f5f5; text-align: center; border-top: 2px solid #333;">
+                        <!-- 1 table per halaman -->
+                        <table class="label-table">
+                            <tbody>
+                                <t t-set="page_docs" t-value="docs[page_start : page_start + labels_per_page]"/>
+                                <t t-foreach="range(0, len(page_docs), items_per_row)" t-as="row_start">
+                                    <tr>
+                                        <t t-foreach="page_docs[row_start : row_start + items_per_row]" t-as="sn">
+                                            <td>
+                                                <div class="label-inner">
+                                                    <!-- IR Number -->
+                                                    <span class="label-text label-ir">
+                                                        <t t-esc="sn.product_id.default_code or ''"/>
+                                                    </span>
+                                                    <!-- Product Name -->
+                                                    <span class="label-text label-name">
+                                                        <t t-esc="sn.product_id.product_tmpl_id.name"/>
+                                                    </span>
+                                                    <!-- Variant -->
+                                                    <span class="label-text label-variant">
+                                                        <t t-esc="sn.product_id.product_template_attribute_value_ids.mapped('name') | join(', ')"/>
+                                                    </span>
+                                                    <!-- Barcode label (isi serial number) -->
+                                                    <span class="label-text label-barcode-text">
+                                                        <t t-esc="sn.name"/>
+                                                    </span>
+                                                    <!-- QR Code -->
+                                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name"
+                                                         class="qrcode_img"
+                                                         alt="QR"/>
+                                                    <!-- Serial Number -->
+                                                    <span class="label-sn">
+                                                        <t t-esc="sn.name"/>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </t>
+                                        <!-- Isi kolom kosong kalau baris terakhir tidak penuh -->
+                                        <t t-set="row_count" t-value="len(page_docs[row_start : row_start + items_per_row])"/>
+                                        <t t-if="row_count == 4"><td></td></t>
+                                        <t t-if="row_count == 3"><td></td><td></td></t>
+                                        <t t-if="row_count == 2"><td></td><td></td><td></td></t>
+                                        <t t-if="row_count == 1"><td></td><td></td><td></td><td></td></t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                    </t>
+
+                    <!-- Summary -->
+                    <div style="margin-top: 10px; padding: 8px; background-color: #f5f5f5; text-align: center; border-top: 2px solid #333; font-size: 11px;">
                         <strong>Total Serial Numbers: <t t-esc="len(docs)"/></strong>
                     </div>
                 </t>
+
             </div>
         </t>
     </template>
