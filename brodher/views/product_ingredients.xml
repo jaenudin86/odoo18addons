@@ -254,7 +254,7 @@
             </xpath> -->
 
             <!-- Tambah di atas brand -->
-            <xpath expr="//field[@name='brand']" position="before">
+            <xpath expr="//field[@name='brand']" position="after">
                 <field name="product_template_variant_value_ids" widget="many2many_tags" readonly="1" string="Size"/>
             </xpath>
             <!-- DEFAULT CODE di variant - readonly karena auto-generate -->
