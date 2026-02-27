@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
 from datetime import datetime
+import logging
+
+_logger = logging.getLogger(__name__)
 
 
 class ProductTemplate(models.Model):
@@ -69,40 +72,53 @@ class ProductTemplate(models.Model):
         return super().create(vals)
 
     def write(self, vals):
-        # Ambil kode ATC langsung dari DB sebelum apapun berubah
+        # Log semua yang masuk
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} vals_keys={list(vals.keys())} default_code_in_vals={'default_code' in vals} default_code_val={vals.get('default_code')}")
+
+        # Ambil kode ATC dari DB sebelum write
         atc_ids = [rec.id for rec in self if rec.is_article == 'yes']
         atc_codes = {}
         if atc_ids:
             self.env.cr.execute(
-                """SELECT id, default_code FROM product_template 
-                   WHERE id = ANY(%s) 
-                   AND default_code IS NOT NULL 
-                   AND default_code != ''""",
+                "SELECT id, default_code FROM product_template WHERE id = ANY(%s) AND default_code IS NOT NULL AND default_code != ''",
                 (atc_ids,)
             )
             atc_codes = dict(self.env.cr.fetchall())
 
-        # Jangan izinkan default_code ATC di-clear lewat vals
+        _logger.warning(f"[TMPL WRITE] atc_ids={atc_ids} atc_codes={atc_codes}")
+
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
             vals = dict(vals)
             vals.pop('default_code')
+            _logger.warning(f"[TMPL WRITE] REMOVED default_code from vals")
 
         if 'is_article' in vals:
             vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
 
         res = super().write(vals)
 
-        # Restore dan sync ke variant setelah write
-        for rec_id, code in atc_codes.items():
-            # Restore template jika hilang
+        # Cek DB setelah write
+        if atc_ids:
             self.env.cr.execute(
-                """UPDATE product_template 
-                   SET default_code = %s 
-                   WHERE id = %s 
-                   AND (default_code IS NULL OR default_code = '')""",
+                "SELECT id, default_code FROM product_template WHERE id = ANY(%s)",
+                (atc_ids,)
+            )
+            after_tmpl = dict(self.env.cr.fetchall())
+            _logger.warning(f"[TMPL WRITE] AFTER WRITE template={after_tmpl}")
+
+            self.env.cr.execute(
+                "SELECT id, default_code FROM product_product WHERE product_tmpl_id = ANY(%s)",
+                (atc_ids,)
+            )
+            after_variant = self.env.cr.fetchall()
+            _logger.warning(f"[TMPL WRITE] AFTER WRITE variants={after_variant}")
+
+        # Restore dan sync
+        for rec_id, code in atc_codes.items():
+            self.env.cr.execute(
+                "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
                 (code, rec_id)
             )
-            # Sync ke semua variant
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
