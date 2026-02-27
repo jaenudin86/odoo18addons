@@ -249,13 +249,13 @@
 
             </xpath>
 
-<!-- Hapus variants di posisi lama -->
-            <xpath expr="//field[@name='attribute_line_ids']" position="replace">
+            <!-- Hapus di posisi lama -->
+            <xpath expr="//field[@name='product_template_variant_value_ids']" position="replace">
             </xpath>
 
-            <!-- Tambah variants sebelum brand -->
+            <!-- Tambah di atas brand -->
             <xpath expr="//field[@name='brand']" position="before">
-                <field name="attribute_line_ids" widget="one2many_product_configurator"/>
+                <field name="product_template_variant_value_ids" widget="many2many_tags"/>
             </xpath>
             <!-- DEFAULT CODE di variant - readonly karena auto-generate -->
             <xpath expr="//field[@name='default_code']" position="replace">
