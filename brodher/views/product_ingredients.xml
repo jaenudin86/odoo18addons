@@ -46,6 +46,12 @@
             <xpath expr="//field[@name='standard_price']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+            <xpath expr="//field[@name='uom_span']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='standard_price_uom']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
 
             <!-- FIX: Cukup invisible field-nya saja, tidak perlu xpath label terpisah -->
             <!-- Label akan otomatis ikut tersembunyi ketika field invisible -->
@@ -210,9 +216,9 @@
                        invisible="is_article != 'no'"/>
 
                 <!-- ATC fields -->
-                <field name="date_month_year"
+                <!-- <field name="date_month_year"
                        invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/>
+                       required="is_article == 'yes'"/> -->
 
                 <field name="ingredients"
                        invisible="is_article != 'yes'"

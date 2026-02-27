@@ -57,8 +57,8 @@
                     }
                 </style>
 
-                <t t-set="items_per_row" t-value="3"/>
-                <t t-set="rows_per_page" t-value="6"/>
+                <t t-set="items_per_row" t-value="4"/>
+                <t t-set="rows_per_page" t-value="8"/>
                 <t t-set="total" t-value="len(label_data)"/>
 
                 <t t-foreach="range(0, total, items_per_row * rows_per_page)" t-as="page_start">
