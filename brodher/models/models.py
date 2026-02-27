@@ -74,12 +74,14 @@ class ProductTemplate(models.Model):
         if is_article == 'yes' and template.default_code:
             code = template.default_code
             tmpl_id = template.id
+            # Sync langsung ke semua variant
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, tmpl_id)
             )
             template.product_variant_ids.invalidate_recordset(['default_code'])
 
+            # Sync lagi setelah commit — handle create + variant sekaligus
             @self.env.cr.postcommit.add
             def sync_atc_after_commit():
                 with self.env.registry.cursor() as cr:
@@ -87,47 +89,6 @@ class ProductTemplate(models.Model):
                         "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                         (code, tmpl_id)
                     )
-
-        elif is_article == 'no':
-            tmpl_id = template.id
-            # Assign nomor unik ke setiap variant PSIT yang kosong
-            self.env.cr.execute(
-                "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                (tmpl_id,)
-            )
-            variant_ids = [r[0] for r in self.env.cr.fetchall()]
-            for vid in variant_ids:
-                code = self._generate_article_number('no')
-                self.env.cr.execute(
-                    "UPDATE product_product SET default_code = %s WHERE id = %s",
-                    (code, vid)
-                )
-            if variant_ids:
-                template.product_variant_ids.invalidate_recordset(['default_code'])
-
-            @self.env.cr.postcommit.add
-            def sync_psit_after_commit():
-                with self.env.registry.cursor() as cr:
-                    cr.execute(
-                        "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                        (tmpl_id,)
-                    )
-                    empty_variants = [r[0] for r in cr.fetchall()]
-                    for vid in empty_variants:
-                        now = datetime.today()
-                        cr.execute(
-                            "SELECT last_value + 1 FROM ir_sequence WHERE code = 'psit.number.sequence'"
-                        )
-                        row = cr.fetchone()
-                        seq = str(row[0]).zfill(4) if row else str(vid).zfill(4)
-                        code = f"PSIT{now.strftime('%y')}{seq}"
-                        cr.execute(
-                            "UPDATE product_product SET default_code = %s WHERE id = %s",
-                            (code, vid)
-                        )
-                        cr.execute(
-                            "UPDATE ir_sequence SET last_value = last_value + 1 WHERE code = 'psit.number.sequence'"
-                        )
 
         return template
 
@@ -156,12 +117,13 @@ class ProductTemplate(models.Model):
 
         res = super().write(vals)
 
-        # Restore ATC codes
+        # Restore ATC codes — sync ke template dan semua variant
         for rec_id, code in atc_codes.items():
             self.env.cr.execute(
                 "UPDATE product_template SET default_code = %s WHERE id = %s",
                 (code, rec_id)
             )
+            # ATC: semua variant pakai kode yang sama
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
@@ -172,6 +134,7 @@ class ProductTemplate(models.Model):
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
+            # Postcommit untuk ATC
             @self.env.cr.postcommit.add
             def restore_atc_after_commit():
                 with self.env.registry.cursor() as cr:
@@ -232,7 +195,7 @@ class ProductProduct(models.Model):
                     vals['default_code'] = tmpl_code
                     vals['tracking'] = 'serial'
                 elif is_article == 'no':
-                    # PSIT: generate nomor unik baru
+                    # PSIT: generate nomor unik baru untuk setiap variant
                     if not vals.get('default_code'):
                         tmpl = self.env['product.template'].browse(tmpl_id)
                         vals['default_code'] = tmpl._generate_article_number('no')
