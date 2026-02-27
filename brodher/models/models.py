@@ -55,6 +55,16 @@ class ProductTemplate(models.Model):
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('psit.number.sequence') or '0001'
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
+    def _generate_psit_number_raw(self, cr):
+        """Generate PSIT number menggunakan raw SQL — untuk dipakai di postcommit"""
+        now = datetime.today()
+        cr.execute(
+            "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
+        )
+        row = cr.fetchone()
+        seq = str(row[0]).zfill(4) if row else '0001'
+        return f"PSIT{now.strftime('%y')}{seq}"
+
     @api.model
     def create(self, vals):
         vals.setdefault('is_storable', True)
@@ -136,9 +146,9 @@ class ProductTemplate(models.Model):
         )
         rows = self.env.cr.fetchall()
 
-        atc_codes = {}   # ATC yang sudah punya kode
-        atc_new = []     # ATC baru belum punya kode
-        psit_ids = []    # PSIT perlu dicek variantnya
+        atc_codes = {}
+        atc_new = []
+        psit_ids = []
 
         for rec_id, code, is_art in rows:
             if is_art == 'yes':
@@ -171,24 +181,20 @@ class ProductTemplate(models.Model):
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
             )
-            _logger.warning(f"[TMPL WRITE] RESTORED ATC id={rec_id} code={code}")
 
-        # Sync ATC baru yang kodenya baru muncul setelah super().write()
+        # Sync ATC baru
         for rec_id in atc_new:
             self.env.cr.execute(
-                "SELECT default_code FROM product_template WHERE id = %s",
-                (rec_id,)
+                "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
             )
             row = self.env.cr.fetchone()
             if row and row[0]:
-                code = row[0]
                 self.env.cr.execute(
                     "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
-                    (code, rec_id)
+                    (row[0], rec_id)
                 )
-                _logger.warning(f"[TMPL WRITE] SYNC NEW ATC id={rec_id} code={code}")
 
-        # PSIT: assign nomor ke variant yang kosong
+        # PSIT: assign nomor ke variant yang kosong — pakai ORM sequence langsung
         for rec_id in psit_ids:
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
@@ -210,11 +216,12 @@ class ProductTemplate(models.Model):
             codes_snapshot = dict(atc_codes)
             atc_new_snapshot = list(atc_new)
             psit_snapshot = list(psit_ids)
+            registry = self.env.registry
 
             @self.env.cr.postcommit.add
             def restore_after_commit():
-                with self.env.registry.cursor() as cr:
-                    # Restore ATC yang sudah punya kode
+                with registry.cursor() as cr:
+                    # Restore ATC
                     for rec_id, code in codes_snapshot.items():
                         cr.execute(
                             "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
@@ -227,8 +234,7 @@ class ProductTemplate(models.Model):
                     # Sync ATC baru
                     for rec_id in atc_new_snapshot:
                         cr.execute(
-                            "SELECT default_code FROM product_template WHERE id = %s",
-                            (rec_id,)
+                            "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
                         )
                         row = cr.fetchone()
                         if row and row[0]:
@@ -236,7 +242,7 @@ class ProductTemplate(models.Model):
                                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                                 (row[0], rec_id)
                             )
-                    # PSIT: assign nomor ke variant yang masih kosong
+                    # PSIT: assign nomor ke variant yang masih kosong setelah commit
                     for rec_id in psit_snapshot:
                         cr.execute(
                             "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
