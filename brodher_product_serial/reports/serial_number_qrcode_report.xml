@@ -36,8 +36,6 @@
                         box-sizing: border-box;
                         text-align: center;
                         vertical-align: top;
-                        font-size: 9px;
-                        line-height: 1.2;
                         overflow: hidden;
                     }
                     .label-inner {
@@ -58,12 +56,12 @@
                         max-width: 100%;
                     }
                     .label-ir {
-                        font-size: 8px;
                         font-weight: bold;
+                        font-size: 8px;
                     }
                     .label-name {
-                        font-size: 8px;
                         font-weight: bold;
+                        font-size: 8px;
                     }
                     .label-variant {
                         font-size: 7px;
@@ -103,12 +101,10 @@
 
                     <t t-foreach="range(0, total, labels_per_page)" t-as="page_start">
 
-                        <!-- Page break sebelum halaman baru -->
                         <t t-if="page_start > 0">
                             <p style="page-break-before: always; margin: 0; padding: 0;"/>
                         </t>
 
-                        <!-- 1 table per halaman -->
                         <table class="label-table">
                             <tbody>
                                 <t t-set="page_docs" t-value="docs[page_start : page_start + labels_per_page]"/>
@@ -117,9 +113,9 @@
                                         <t t-foreach="page_docs[row_start : row_start + items_per_row]" t-as="sn">
                                             <td>
                                                 <div class="label-inner">
-                                                    <!-- IR Number -->
+                                                    <!-- IR Number (Internal Reference) -->
                                                     <span class="label-text label-ir">
-                                                        <t t-esc="sn.product_id.default_code or ''"/>
+                                                        <t t-esc="sn.product_id.default_code or '-'"/>
                                                     </span>
                                                     <!-- Product Name -->
                                                     <span class="label-text label-name">
@@ -127,9 +123,9 @@
                                                     </span>
                                                     <!-- Variant -->
                                                     <span class="label-text label-variant">
-                                                        <t t-esc="sn.product_id.product_template_attribute_value_ids.mapped('name') | join(', ')"/>
+                                                        <t t-esc="', '.join(sn.product_id.product_template_attribute_value_ids.mapped('name'))"/>
                                                     </span>
-                                                    <!-- Barcode label (isi serial number) -->
+                                                    <!-- Barcode (isi = serial number) -->
                                                     <span class="label-text label-barcode-text">
                                                         <t t-esc="sn.name"/>
                                                     </span>
@@ -144,7 +140,7 @@
                                                 </div>
                                             </td>
                                         </t>
-                                        <!-- Isi kolom kosong kalau baris terakhir tidak penuh -->
+                                        <!-- Padding kolom kosong di baris terakhir -->
                                         <t t-set="row_count" t-value="len(page_docs[row_start : row_start + items_per_row])"/>
                                         <t t-if="row_count == 4"><td></td></t>
                                         <t t-if="row_count == 3"><td></td><td></td></t>
@@ -156,11 +152,6 @@
                         </table>
 
                     </t>
-
-                    <!-- Summary -->
-                    <div style="margin-top: 10px; padding: 8px; background-color: #f5f5f5; text-align: center; border-top: 2px solid #333; font-size: 11px;">
-                        <strong>Total Serial Numbers: <t t-esc="len(docs)"/></strong>
-                    </div>
                 </t>
 
             </div>
