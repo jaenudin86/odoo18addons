@@ -82,18 +82,29 @@ class ProductTemplate(models.Model):
         return template
 
     def write(self, vals):
-        # Ambil is_article DAN default_code langsung dari DB - jangan pakai ORM
+        # Ambil semua default_code dari DB tanpa filter is_article dulu
         self.env.cr.execute(
-            """SELECT id, default_code FROM product_template 
-               WHERE id = ANY(%s) 
-               AND default_code IS NOT NULL 
-               AND default_code != ''
-               AND is_article = 'yes'""",
+            """SELECT pt.id, pt.default_code 
+               FROM product_template pt
+               WHERE pt.id = ANY(%s) 
+               AND pt.default_code IS NOT NULL 
+               AND pt.default_code != ''""",
             (self.ids,)
         )
-        atc_codes = dict(self.env.cr.fetchall())
+        all_codes = dict(self.env.cr.fetchall())
 
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes}")
+        # Filter ATC via DB juga
+        atc_codes = {}
+        if all_codes:
+            self.env.cr.execute(
+                """SELECT id FROM product_template 
+                   WHERE id = ANY(%s) AND is_article = 'yes'""",
+                (list(all_codes.keys()),)
+            )
+            atc_ids_from_db = [r[0] for r in self.env.cr.fetchall()]
+            atc_codes = {rid: all_codes[rid] for rid in atc_ids_from_db}
+
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} all_codes={all_codes} atc_codes={atc_codes}")
 
         # Jangan izinkan default_code ATC di-clear
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
@@ -108,7 +119,6 @@ class ProductTemplate(models.Model):
 
         # Restore dan sync ke variant setelah write
         for rec_id, code in atc_codes.items():
-            # Restore template jika hilang setelah super().write()
             self.env.cr.execute(
                 """UPDATE product_template 
                    SET default_code = %s 
@@ -116,7 +126,6 @@ class ProductTemplate(models.Model):
                    AND (default_code IS NULL OR default_code = '')""",
                 (code, rec_id)
             )
-            # Selalu sync ke semua variant
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
@@ -162,7 +171,6 @@ class ProductProduct(models.Model):
     def create(self, vals):
         tmpl_id = vals.get('product_tmpl_id')
         if tmpl_id:
-            # Ambil is_article dari DB langsung
             self.env.cr.execute(
                 "SELECT is_article, default_code FROM product_template WHERE id = %s",
                 (tmpl_id,)
