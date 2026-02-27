@@ -206,28 +206,33 @@ class ProductProduct(models.Model):
             tmpl = self.env['product.template'].browse(tmpl_id)
 
             if tmpl.is_article == 'yes':
-                # ATC: semua variant WAJIB pakai nomor yang sama dengan template
-                # Pastikan template sudah punya default_code, jika belum generate
                 if not tmpl.default_code:
                     new_code = tmpl._generate_article_number('yes')
                     self.env['product.template'].browse(tmpl_id).write({'default_code': new_code})
                     vals['default_code'] = new_code
                 else:
                     vals['default_code'] = tmpl.default_code
-
-                # ================================================================
-                # FIX TRACKING: Pastikan variant ATC selalu by serial number
-                # ================================================================
                 vals['tracking'] = 'serial'
 
             elif tmpl.is_article == 'no':
-                # PSIT: setiap variant generate nomor unik sendiri
                 if not vals.get('default_code'):
                     vals['default_code'] = tmpl._generate_article_number('no')
-
-                # ================================================================
-                # FIX TRACKING: Pastikan variant PSIT selalu by qty (none)
-                # ================================================================
                 vals['tracking'] = 'none'
 
-        return super(ProductProduct, self).create(vals)
+        product = super(ProductProduct, self).create(vals)
+
+        # ================================================================
+        # TAMBAHAN INI SAJA: Force sync default_code setelah Odoo create
+        # karena Odoo kadang clear default_code variant saat auto-generate
+        # ================================================================
+        if tmpl_id:
+            tmpl = self.env['product.template'].browse(tmpl_id)
+            if tmpl.is_article == 'yes' and tmpl.default_code:
+                if not product.default_code:
+                    self.env.cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE id = %s",
+                        (tmpl.default_code, product.id)
+                    )
+                    product.invalidate_recordset(['default_code'])
+
+        return product
