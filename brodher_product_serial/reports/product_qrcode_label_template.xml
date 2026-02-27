@@ -68,7 +68,8 @@
                                 No Barcode
                             </div>
                         </div>
-                        <t t-if="counter % 21 == 0">
+       <!-- Page break tiap 21 -->
+                        <t t-if="(i + 1) % 21 == 0">
                             <div class="page-break"></div>
                         </t>
                     </t>
