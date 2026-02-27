@@ -55,16 +55,6 @@ class ProductTemplate(models.Model):
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('psit.number.sequence') or '0001'
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
-    def _generate_psit_number_raw(self, cr):
-        """Generate PSIT number menggunakan raw SQL — untuk dipakai di postcommit"""
-        now = datetime.today()
-        cr.execute(
-            "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
-        )
-        row = cr.fetchone()
-        seq = str(row[0]).zfill(4) if row else '0001'
-        return f"PSIT{now.strftime('%y')}{seq}"
-
     @api.model
     def create(self, vals):
         vals.setdefault('is_storable', True)
@@ -100,6 +90,10 @@ class ProductTemplate(models.Model):
 
         elif is_article == 'no':
             tmpl_id = template.id
+            env = self.env
+            registry = self.env.registry
+
+            # Assign langsung sekarang
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                 (tmpl_id,)
@@ -114,22 +108,18 @@ class ProductTemplate(models.Model):
             if variant_ids:
                 template.product_variant_ids.invalidate_recordset(['default_code'])
 
+            # Postcommit untuk yang masih kosong setelah commit
             @self.env.cr.postcommit.add
-            def sync_psit_after_commit():
-                with self.env.registry.cursor() as cr:
+            def sync_psit_create_after_commit():
+                with registry.cursor() as cr:
+                    new_env = api.Environment(cr, env.uid, env.context)
                     cr.execute(
                         "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                         (tmpl_id,)
                     )
                     empty_variants = [r[0] for r in cr.fetchall()]
                     for vid in empty_variants:
-                        now = datetime.today()
-                        cr.execute(
-                            "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
-                        )
-                        row = cr.fetchone()
-                        seq = str(row[0]).zfill(4) if row else str(vid).zfill(4)
-                        code = f"PSIT{now.strftime('%y')}{seq}"
+                        code = new_env['product.template']._generate_article_number('no')
                         cr.execute(
                             "UPDATE product_product SET default_code = %s WHERE id = %s",
                             (code, vid)
@@ -194,7 +184,7 @@ class ProductTemplate(models.Model):
                     (row[0], rec_id)
                 )
 
-        # PSIT: assign nomor ke variant yang kosong — pakai ORM sequence langsung
+        # PSIT: assign nomor ke variant yang kosong sekarang
         for rec_id in psit_ids:
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
@@ -213,56 +203,54 @@ class ProductTemplate(models.Model):
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
-            codes_snapshot = dict(atc_codes)
-            atc_new_snapshot = list(atc_new)
-            psit_snapshot = list(psit_ids)
-            registry = self.env.registry
+        # Postcommit — handle yang masih kosong setelah semua proses Odoo selesai
+        env = self.env
+        registry = self.env.registry
+        codes_snapshot = dict(atc_codes)
+        atc_new_snapshot = list(atc_new)
+        psit_snapshot = list(psit_ids)
 
-            @self.env.cr.postcommit.add
-            def restore_after_commit():
-                with registry.cursor() as cr:
-                    # Restore ATC
-                    for rec_id, code in codes_snapshot.items():
-                        cr.execute(
-                            "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
-                            (code, rec_id)
-                        )
+        @self.env.cr.postcommit.add
+        def restore_after_commit():
+            with registry.cursor() as cr:
+                new_env = api.Environment(cr, env.uid, env.context)
+
+                # Restore ATC
+                for rec_id, code in codes_snapshot.items():
+                    cr.execute(
+                        "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
+                        (code, rec_id)
+                    )
+                    cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                        (code, rec_id)
+                    )
+
+                # Sync ATC baru
+                for rec_id in atc_new_snapshot:
+                    cr.execute(
+                        "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
+                    )
+                    row = cr.fetchone()
+                    if row and row[0]:
                         cr.execute(
                             "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                            (code, rec_id)
+                            (row[0], rec_id)
                         )
-                    # Sync ATC baru
-                    for rec_id in atc_new_snapshot:
-                        cr.execute(
-                            "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
-                        )
-                        row = cr.fetchone()
-                        if row and row[0]:
-                            cr.execute(
-                                "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                                (row[0], rec_id)
-                            )
-                    # PSIT: assign nomor ke variant yang masih kosong setelah commit
-                    for rec_id in psit_snapshot:
-                        cr.execute(
-                            "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                            (rec_id,)
-                        )
-                        empty_variants = [r[0] for r in cr.fetchall()]
-                        for vid in empty_variants:
-                            now = datetime.today()
-                            cr.execute(
-                                "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
-                            )
-                            row = cr.fetchone()
-                            seq = str(row[0]).zfill(4) if row else str(vid).zfill(4)
-                            code = f"PSIT{now.strftime('%y')}{seq}"
-                            cr.execute(
-                                "UPDATE product_product SET default_code = %s WHERE id = %s",
-                                (code, vid)
-                            )
 
-        return res
+                # PSIT: assign nomor ke variant yang masih kosong
+                for rec_id in psit_snapshot:
+                    cr.execute(
+                        "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                        (rec_id,)
+                    )
+                    empty_variants = [r[0] for r in cr.fetchall()]
+                    for vid in empty_variants:
+                        code = new_env['product.template']._generate_article_number('no')
+                        cr.execute(
+                            "UPDATE product_product SET default_code = %s WHERE id = %s",
+                            (code, vid)
+                        )
 
 
 class ProductProduct(models.Model):
