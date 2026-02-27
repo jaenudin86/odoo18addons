@@ -15,7 +15,7 @@
     <!-- Report Template -->
     <template id="serial_number_qrcode_template">
         <t t-call="web.basic_layout">
-            <div class="page" style="padding: 0; margin: 0; margin-top: -10mm;">
+            <div class="page" style="padding: 0; margin: 0;">
                 <style>
                     body {
                         margin-top: 5mm !important;

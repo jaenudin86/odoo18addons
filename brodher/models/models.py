@@ -48,6 +48,13 @@ class ProductTemplate(models.Model):
         if self.is_article == 'var' and self.parent_article_id:
             self.default_code = self.parent_article_id.default_code
 
+    @api.onchange('is_article')
+    def _onchange_is_article_tracking(self):
+        if self.is_article == 'yes':
+            self.tracking = 'serial'
+        else:
+            self.tracking = 'none'
+
     # =========================
     # GENERATE ARTICLE NUMBER
     # =========================
@@ -82,20 +89,11 @@ class ProductTemplate(models.Model):
 
         is_article = vals.get('is_article', 'no')
 
-        # ================================================================
-        # FIX TRACKING:
-        # Set di vals agar Odoo pakai nilai ini saat membuat variant pertama
-        # ================================================================
         if is_article == 'yes':
             vals['tracking'] = 'serial'
         else:
             vals['tracking'] = 'none'
 
-        # ================================================================
-        # ATC  → generate nomor di TEMPLATE, nanti di-sync ke variant
-        # PSIT → TIDAK generate nomor di template,
-        #         nomor di-generate nanti per variant di ProductProduct.create
-        # ================================================================
         if is_article == 'yes':
             default_code = vals.get('default_code')
             if not default_code or (isinstance(default_code, str) and not default_code.strip()):
@@ -105,11 +103,6 @@ class ProductTemplate(models.Model):
 
         template = super(ProductTemplate, self).create(vals)
 
-        # ================================================================
-        # FIX TRACKING: Force write ulang ke semua variant setelah dibuat
-        # Ini penting karena Odoo kadang override nilai tracking saat
-        # membuat variant pertama secara otomatis
-        # ================================================================
         if is_article == 'yes':
             template.product_variant_ids.write({
                 'default_code': template.default_code,
@@ -126,10 +119,6 @@ class ProductTemplate(models.Model):
     # WRITE
     # =========================
     def write(self, vals):
-        # ================================================================
-        # FIX TRACKING: Jika is_article berubah, siapkan nilai tracking
-        # SEBELUM super().write() agar tersimpan di template juga
-        # ================================================================
         if 'is_article' in vals:
             new_tracking = 'serial' if vals['is_article'] == 'yes' else 'none'
             vals['tracking'] = new_tracking
@@ -137,26 +126,58 @@ class ProductTemplate(models.Model):
         res = super(ProductTemplate, self).write(vals)
 
         for rec in self:
-            # Jika is_article berubah → update tracking semua variant
             if 'is_article' in vals:
                 new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
                 rec.product_variant_ids.write({'tracking': new_tracking})
 
-                # Reset default_code PSIT di semua variant jika berubah ke PSIT
                 if rec.is_article == 'no':
                     rec.product_variant_ids.write({'default_code': False})
 
-            # Jika default_code template ATC berubah → sync ke semua variant
             if 'default_code' in vals and rec.is_article == 'yes':
                 rec.product_variant_ids.write({'default_code': vals['default_code']})
 
+            # TAMBAHAN: Sync default_code ke variant baru yang belum punya
+            if rec.is_article == 'yes' and rec.default_code:
+                variants_without_code = rec.product_variant_ids.filtered(
+                    lambda v: not v.default_code or v.default_code != rec.default_code
+                )
+                if variants_without_code:
+                    for variant in variants_without_code:
+                        self.env.cr.execute(
+                            "UPDATE product_product SET default_code = %s WHERE id = %s",
+                            (rec.default_code, variant.id)
+                        )
+                    variants_without_code.invalidate_recordset(['default_code'])
+
         return res
-    @api.onchange('is_article')
-    def _onchange_is_article_tracking(self):
-        if self.is_article == 'yes':
-            self.tracking = 'serial'
-        else:
-            self.tracking = 'none'
+
+    # =========================
+    # OVERRIDE _CREATE_VARIANT_IDS
+    # Handle saat Odoo auto-generate variant baru
+    # =========================
+    def _create_variant_ids(self):
+        """Override untuk sync default_code ATC ke variant yang baru di-generate Odoo"""
+        res = super(ProductTemplate, self)._create_variant_ids()
+
+        for template in self:
+            if template.is_article == 'yes' and template.default_code:
+                variants_without_code = template.product_variant_ids.filtered(
+                    lambda v: not v.default_code or v.default_code != template.default_code
+                )
+                if variants_without_code:
+                    for variant in variants_without_code:
+                        self.env.cr.execute(
+                            "UPDATE product_product SET default_code = %s WHERE id = %s",
+                            (template.default_code, variant.id)
+                        )
+                    variants_without_code.invalidate_recordset(['default_code'])
+
+                # Pastikan tracking semua variant ATC = serial
+                template.product_variant_ids.filtered(
+                    lambda v: v.tracking != 'serial'
+                ).write({'tracking': 'serial'})
+
+        return res
 
 
 class ProductProduct(models.Model):
@@ -184,13 +205,12 @@ class ProductProduct(models.Model):
 
     # =========================
     # PRICE PER VARIANT
-    # Override lst_price agar tersimpan di level variant
     # =========================
     lst_price = fields.Float(
         string='Sales Price',
         digits='Product Price',
         default=0.0,
-        related=None,   # putus relasi ke template
+        related=None,
         store=True,
         readonly=False,
     )
@@ -206,28 +226,50 @@ class ProductProduct(models.Model):
             tmpl = self.env['product.template'].browse(tmpl_id)
 
             if tmpl.is_article == 'yes':
-                # ATC: semua variant WAJIB pakai nomor yang sama dengan template
-                # Pastikan template sudah punya default_code, jika belum generate
                 if not tmpl.default_code:
                     new_code = tmpl._generate_article_number('yes')
-                    self.env['product.template'].browse(tmpl_id).write({'default_code': new_code})
+                    tmpl.write({'default_code': new_code})
                     vals['default_code'] = new_code
                 else:
                     vals['default_code'] = tmpl.default_code
-
-                # ================================================================
-                # FIX TRACKING: Pastikan variant ATC selalu by serial number
-                # ================================================================
                 vals['tracking'] = 'serial'
 
             elif tmpl.is_article == 'no':
-                # PSIT: setiap variant generate nomor unik sendiri
                 if not vals.get('default_code'):
                     vals['default_code'] = tmpl._generate_article_number('no')
-
-                # ================================================================
-                # FIX TRACKING: Pastikan variant PSIT selalu by qty (none)
-                # ================================================================
                 vals['tracking'] = 'none'
 
-        return super(ProductProduct, self).create(vals)
+        product = super(ProductProduct, self).create(vals)
+
+        # Extra safety: force sync setelah create
+        if tmpl_id:
+            tmpl = self.env['product.template'].browse(tmpl_id)
+            if tmpl.is_article == 'yes' and tmpl.default_code:
+                if product.default_code != tmpl.default_code:
+                    self.env.cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE id = %s",
+                        (tmpl.default_code, product.id)
+                    )
+                    product.invalidate_recordset(['default_code'])
+
+        return product
+
+    # =========================
+    # WRITE
+    # =========================
+    def write(self, vals):
+        res = super(ProductProduct, self).write(vals)
+
+        # Jika default_code di-clear atau berubah di variant ATC,
+        # kembalikan ke default_code template
+        for product in self:
+            if product.is_article == 'yes':
+                tmpl_code = product.product_tmpl_id.default_code
+                if tmpl_code and product.default_code != tmpl_code:
+                    self.env.cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE id = %s",
+                        (tmpl_code, product.id)
+                    )
+                    product.invalidate_recordset(['default_code'])
+
+        return res
