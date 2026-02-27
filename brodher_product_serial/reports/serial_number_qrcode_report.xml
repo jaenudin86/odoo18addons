@@ -40,7 +40,7 @@
                     }
                     .label-inner {
                         width: 100%;
-                        height: 130px;
+                        height: 140px;
                         overflow: hidden;
                         box-sizing: border-box;
                         display: block;
