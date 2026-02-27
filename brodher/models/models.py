@@ -241,21 +241,21 @@ class ProductProduct(models.Model):
 # =========================
     @api.model
     def write(self, vals):
-        res = super(ProductProduct, self).write(vals)
+        if 'is_article' in vals:
+            new_tracking = 'serial' if vals['is_article'] == 'yes' else 'none'
+            vals['tracking'] = new_tracking
 
-        # Hanya guard jika 'default_code' yang di-write
-        # dan hanya untuk ATC
-        if 'default_code' in vals:
-            for product in self:
-                if product.is_article == 'yes':
-                    tmpl_code = product.product_tmpl_id.default_code
-                    # Hanya restore kalau template punya kode
-                    # dan variant tidak sama dengan template
-                    if tmpl_code and product.default_code != tmpl_code:
-                        self.env.cr.execute(
-                            "UPDATE product_product SET default_code = %s WHERE id = %s",
-                            (tmpl_code, product.id)
-                        )
-                        product.invalidate_recordset(['default_code'])
+        res = super(ProductTemplate, self).write(vals)
+
+        for rec in self:
+            if 'is_article' in vals:
+                new_tracking = 'serial' if rec.is_article == 'yes' else 'none'
+                rec.product_variant_ids.write({'tracking': new_tracking})
+
+                if rec.is_article == 'no':
+                    rec.product_variant_ids.write({'default_code': False})
+
+            if 'default_code' in vals and rec.is_article == 'yes':
+                rec.product_variant_ids.write({'default_code': vals['default_code']})
 
         return res
