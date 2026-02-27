@@ -74,14 +74,12 @@ class ProductTemplate(models.Model):
         if is_article == 'yes' and template.default_code:
             code = template.default_code
             tmpl_id = template.id
-            # Sync langsung ke semua variant
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, tmpl_id)
             )
             template.product_variant_ids.invalidate_recordset(['default_code'])
 
-            # Sync lagi setelah commit — handle create + variant sekaligus
             @self.env.cr.postcommit.add
             def sync_atc_after_commit():
                 with self.env.registry.cursor() as cr:
@@ -90,21 +88,64 @@ class ProductTemplate(models.Model):
                         (code, tmpl_id)
                     )
 
+        elif is_article == 'no':
+            tmpl_id = template.id
+            self.env.cr.execute(
+                "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                (tmpl_id,)
+            )
+            variant_ids = [r[0] for r in self.env.cr.fetchall()]
+            for vid in variant_ids:
+                code = self._generate_article_number('no')
+                self.env.cr.execute(
+                    "UPDATE product_product SET default_code = %s WHERE id = %s",
+                    (code, vid)
+                )
+            if variant_ids:
+                template.product_variant_ids.invalidate_recordset(['default_code'])
+
+            @self.env.cr.postcommit.add
+            def sync_psit_after_commit():
+                with self.env.registry.cursor() as cr:
+                    cr.execute(
+                        "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                        (tmpl_id,)
+                    )
+                    empty_variants = [r[0] for r in cr.fetchall()]
+                    for vid in empty_variants:
+                        now = datetime.today()
+                        cr.execute(
+                            "SELECT nextval((SELECT sequence_id::text FROM ir_sequence WHERE code = 'psit.number.sequence' LIMIT 1)::regclass)"
+                        )
+                        row = cr.fetchone()
+                        seq = str(row[0]).zfill(4) if row else str(vid).zfill(4)
+                        code = f"PSIT{now.strftime('%y')}{seq}"
+                        cr.execute(
+                            "UPDATE product_product SET default_code = %s WHERE id = %s",
+                            (code, vid)
+                        )
+
         return template
 
     def write(self, vals):
-        # Ambil hanya ATC codes dari DB
+        # Cek semua ATC — baik yang sudah punya kode maupun yang belum
         self.env.cr.execute(
             """SELECT id, default_code FROM product_template 
-               WHERE id = ANY(%s) 
-               AND is_article = 'yes'
-               AND default_code IS NOT NULL 
-               AND default_code != ''""",
+               WHERE id = ANY(%s) AND is_article = 'yes'""",
             (self.ids,)
         )
-        atc_codes = dict(self.env.cr.fetchall())
+        rows = self.env.cr.fetchall()
 
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes}")
+        atc_codes = {}    # ATC yang sudah punya kode
+        atc_no_code = []  # ATC baru yang belum punya kode
+
+        for rec_id, code in rows:
+            if code:
+                atc_codes[rec_id] = code
+            else:
+                atc_no_code.append(rec_id)
+
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_no_code={atc_no_code}")
 
         # Jangan izinkan default_code ATC di-clear
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
@@ -117,28 +158,44 @@ class ProductTemplate(models.Model):
 
         res = super().write(vals)
 
-        # Restore ATC codes — sync ke template dan semua variant
+        # Restore ATC yang sudah punya kode
         for rec_id, code in atc_codes.items():
             self.env.cr.execute(
                 "UPDATE product_template SET default_code = %s WHERE id = %s",
                 (code, rec_id)
             )
-            # ATC: semua variant pakai kode yang sama
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, rec_id)
             )
             _logger.warning(f"[TMPL WRITE] RESTORED ATC id={rec_id} code={code}")
 
-        if atc_codes:
+        # Sync ATC baru yang kodenya baru muncul setelah super().write()
+        for rec_id in atc_no_code:
+            self.env.cr.execute(
+                "SELECT default_code FROM product_template WHERE id = %s",
+                (rec_id,)
+            )
+            row = self.env.cr.fetchone()
+            if row and row[0]:
+                code = row[0]
+                self.env.cr.execute(
+                    "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
+                    (code, rec_id)
+                )
+                _logger.warning(f"[TMPL WRITE] SYNC NEW ATC id={rec_id} code={code}")
+
+        if atc_codes or atc_no_code:
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
-            # Postcommit untuk ATC
+            codes_snapshot = dict(atc_codes)
+            no_code_snapshot = list(atc_no_code)
+
             @self.env.cr.postcommit.add
-            def restore_atc_after_commit():
+            def restore_after_commit():
                 with self.env.registry.cursor() as cr:
-                    for rec_id, code in atc_codes.items():
+                    for rec_id, code in codes_snapshot.items():
                         cr.execute(
                             "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
                             (code, rec_id)
@@ -147,6 +204,17 @@ class ProductTemplate(models.Model):
                             "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                             (code, rec_id)
                         )
+                    for rec_id in no_code_snapshot:
+                        cr.execute(
+                            "SELECT default_code FROM product_template WHERE id = %s",
+                            (rec_id,)
+                        )
+                        row = cr.fetchone()
+                        if row and row[0]:
+                            cr.execute(
+                                "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                                (row[0], rec_id)
+                            )
 
         return res
 
@@ -191,11 +259,9 @@ class ProductProduct(models.Model):
             if row:
                 is_article, tmpl_code = row
                 if is_article == 'yes':
-                    # ATC: ikut kode template
                     vals['default_code'] = tmpl_code
                     vals['tracking'] = 'serial'
                 elif is_article == 'no':
-                    # PSIT: generate nomor unik baru untuk setiap variant
                     if not vals.get('default_code'):
                         tmpl = self.env['product.template'].browse(tmpl_id)
                         vals['default_code'] = tmpl._generate_article_number('no')
