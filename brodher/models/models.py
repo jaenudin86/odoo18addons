@@ -70,21 +70,15 @@ class ProductTemplate(models.Model):
         # Odoo otomatis sync default_code template → variant via _set_default_code
         # Tidak perlu kita handle manual
 
-    def write(self, vals):
-        # Protect: jangan izinkan default_code ATC di-clear
-        if 'default_code' in vals and not vals.get('default_code'):
-            # Cek apakah semua record yang di-write adalah ATC
-            for rec in self:
-                if rec.is_article == 'yes':
-                    # Kembalikan ke kode lama, jangan di-clear
-                    vals = dict(vals)
-                    vals['default_code'] = rec.default_code
-                    break
-
-        if 'is_article' in vals:
-            vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
-
-        return super().write(vals)
+    @api.constrains('product_variant_ids')
+    def _check_atc_variant_default_code(self):
+        for template in self:
+            if template.is_article == 'yes' and template.default_code:
+                self.env.cr.execute(
+                    "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
+                    (template.default_code, template.id)
+                )
+                template.product_variant_ids.invalidate_recordset(['default_code'])
     def _create_variant_ids(self):
         """Setelah Odoo generate variant baru, sync default_code ATC"""
         res = super()._create_variant_ids()
