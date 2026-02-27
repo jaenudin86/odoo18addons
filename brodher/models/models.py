@@ -69,36 +69,48 @@ class ProductTemplate(models.Model):
         return super().create(vals)
 
     def write(self, vals):
-        # Simpan kode ATC sebelum write
-        atc_codes = {
-            rec.id: rec.default_code
-            for rec in self
-            if rec.is_article == 'yes' and rec.default_code
-        }
+        # Ambil kode ATC langsung dari DB sebelum apapun berubah
+        atc_ids = [rec.id for rec in self if rec.is_article == 'yes']
+        atc_codes = {}
+        if atc_ids:
+            self.env.cr.execute(
+                """SELECT id, default_code FROM product_template 
+                   WHERE id = ANY(%s) 
+                   AND default_code IS NOT NULL 
+                   AND default_code != ''""",
+                (atc_ids,)
+            )
+            atc_codes = dict(self.env.cr.fetchall())
+
+        # Jangan izinkan default_code ATC di-clear lewat vals
+        if 'default_code' in vals and not vals.get('default_code') and atc_codes:
+            vals = dict(vals)
+            vals.pop('default_code')
 
         if 'is_article' in vals:
             vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
 
         res = super().write(vals)
 
-        # Setelah write, restore default_code ATC yang hilang
-        for rec in self:
-            code = atc_codes.get(rec.id)
-            if code:
-                # Restore ke template jika hilang
-                if not rec.default_code:
-                    self.env.cr.execute(
-                        "UPDATE product_template SET default_code = %s WHERE id = %s",
-                        (code, rec.id)
-                    )
-                    rec.invalidate_recordset(['default_code'])
+        # Restore dan sync ke variant setelah write
+        for rec_id, code in atc_codes.items():
+            # Restore template jika hilang
+            self.env.cr.execute(
+                """UPDATE product_template 
+                   SET default_code = %s 
+                   WHERE id = %s 
+                   AND (default_code IS NULL OR default_code = '')""",
+                (code, rec_id)
+            )
+            # Sync ke semua variant
+            self.env.cr.execute(
+                "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
+                (code, rec_id)
+            )
 
-                # Selalu sync ke semua variant via raw SQL
-                self.env.cr.execute(
-                    "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
-                    (code, rec.id)
-                )
-                rec.product_variant_ids.invalidate_recordset(['default_code'])
+        if atc_codes:
+            self.invalidate_recordset(['default_code'])
+            self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
         return res
 
@@ -144,5 +156,3 @@ class ProductProduct(models.Model):
                     vals['default_code'] = tmpl._generate_article_number('no')
                 vals['tracking'] = 'none'
         return super().create(vals)
-
-    # Hapus write() di ProductProduct - semua dikontrol dari ProductTemplate.write()
