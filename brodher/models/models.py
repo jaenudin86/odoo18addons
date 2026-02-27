@@ -236,3 +236,23 @@ class ProductProduct(models.Model):
                     product.invalidate_recordset(['default_code'])
 
         return product
+    # =========================
+# WRITE
+# =========================
+    @api.model
+    def write(self, vals):
+        # Jika ada perubahan default_code di variant ATC,
+        # jangan diubah - kembalikan ke default_code template
+        res = super(ProductProduct, self).write(vals)
+
+        for product in self:
+            if product.is_article == 'yes':
+                tmpl_code = product.product_tmpl_id.default_code
+                if tmpl_code and product.default_code != tmpl_code:
+                    self.env.cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE id = %s",
+                        (tmpl_code, product.id)
+                    )
+                    product.invalidate_recordset(['default_code'])
+
+        return res
