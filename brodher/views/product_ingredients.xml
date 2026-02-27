@@ -250,8 +250,8 @@
             </xpath>
 
             <!-- Hapus di posisi lama -->
-            <xpath expr="//field[@name='product_template_variant_value_ids']" position="replace">
-            </xpath>
+            <!-- <xpath expr="//field[@name='product_template_variant_value_ids']" position="replace">
+            </xpath> -->
 
             <!-- Tambah di atas brand -->
             <xpath expr="//field[@name='brand']" position="before">
