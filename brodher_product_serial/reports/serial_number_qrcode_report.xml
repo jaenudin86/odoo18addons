@@ -31,7 +31,7 @@
                         border-collapse: collapse;
                     }
                     table.label-table td {
-                        width: 20%;
+                        width: 25%;
                         padding: 2px 2px;
                         box-sizing: border-box;
                         text-align: center;
@@ -48,7 +48,7 @@
                     }
                     .label-text {
                         display: block;
-                        font-size: 8px;
+                        font-size: 10px;
                         line-height: 1.2;
                         white-space: nowrap;
                         overflow: hidden;
@@ -57,18 +57,18 @@
                     }
                     .label-ir {
                         font-weight: bold;
-                        font-size: 8px;
+                        font-size: 10px;
                     }
                     .label-name {
                         font-weight: bold;
-                        font-size: 8px;
+                        font-size: 10px;
                     }
                     .label-variant {
-                        font-size: 7px;
+                        font-size: 10px;
                         color: #333;
                     }
                     .label-barcode-text {
-                        font-size: 7px;
+                        font-size: 10px;
                         color: #555;
                     }
                     .qrcode_img {
