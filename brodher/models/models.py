@@ -245,7 +245,14 @@ class ProductProduct(models.Model):
             new_tracking = 'serial' if vals['is_article'] == 'yes' else 'none'
             vals['tracking'] = new_tracking
 
-        res = super(ProductTemplate, self).write(vals)
+        # GUARD: Jika record ATC, jangan izinkan default_code di-clear
+        for rec in self:
+            if rec.is_article == 'yes' and 'default_code' in vals:
+                if not vals.get('default_code'):
+                    vals.pop('default_code')
+                    break
+
+        res = super().write(vals)  # <-- ganti ini
 
         for rec in self:
             if 'is_article' in vals:
@@ -257,5 +264,12 @@ class ProductProduct(models.Model):
 
             if 'default_code' in vals and rec.is_article == 'yes':
                 rec.product_variant_ids.write({'default_code': vals['default_code']})
+
+            if rec.is_article == 'yes' and rec.default_code:
+                variants_without_code = rec.product_variant_ids.filtered(
+                    lambda v: not v.default_code
+                )
+                if variants_without_code:
+                    variants_without_code.write({'default_code': rec.default_code})
 
         return res
