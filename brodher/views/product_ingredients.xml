@@ -150,6 +150,8 @@
         <field name="inherit_id" ref="product.product_normal_form_view"/>
         <field name="arch" type="xml">
 
+
+
             <!-- HIDE TYPE -->
             <xpath expr="//field[@name='type']" position="attributes">
                 <attribute name="invisible">1</attribute>
@@ -162,6 +164,7 @@
             <xpath expr="//button[@name='action_update_quantity_on_hand']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
+
 
             <!-- ======================================= -->
             <!-- TAMPILKAN SEMUA DI VARIANT:            -->
@@ -194,11 +197,11 @@
                 supaya kondisi invisible field lain bisa terbaca saat form di-render.
             -->
             <!-- Taruh is_article tepat setelah field nama produk -->
-<xpath expr="//div[hasclass('oe_title')]" position="before">
-    <group>
-        <field name="is_article" widget="radio" readonly="1" string="Is Artikel"/>
-    </group>
-</xpath>
+            <xpath expr="//div[hasclass('oe_title')]" position="before">
+                <group>
+                    <field name="is_article" widget="radio" readonly="1" string="Is Artikel"/>
+                </group>
+            </xpath>
             <xpath expr="//field[@name='type']" position="after">
 
                 <!-- Tampilkan is_article DULU - ini yang jadi acuan invisible -->
@@ -246,6 +249,14 @@
 
             </xpath>
 
+<!-- Hapus variants di posisi lama -->
+            <xpath expr="//field[@name='attribute_line_ids']" position="replace">
+            </xpath>
+
+            <!-- Tambah variants sebelum brand -->
+            <xpath expr="//field[@name='brand']" position="before">
+                <field name="attribute_line_ids" widget="one2many_product_configurator"/>
+            </xpath>
             <!-- DEFAULT CODE di variant - readonly karena auto-generate -->
             <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
