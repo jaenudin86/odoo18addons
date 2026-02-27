@@ -68,6 +68,40 @@ class ProductTemplate(models.Model):
 
         return super().create(vals)
 
+    def write(self, vals):
+        # Simpan kode ATC sebelum write
+        atc_codes = {
+            rec.id: rec.default_code
+            for rec in self
+            if rec.is_article == 'yes' and rec.default_code
+        }
+
+        if 'is_article' in vals:
+            vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
+
+        res = super().write(vals)
+
+        # Setelah write, restore default_code ATC yang hilang
+        for rec in self:
+            code = atc_codes.get(rec.id)
+            if code:
+                # Restore ke template jika hilang
+                if not rec.default_code:
+                    self.env.cr.execute(
+                        "UPDATE product_template SET default_code = %s WHERE id = %s",
+                        (code, rec.id)
+                    )
+                    rec.invalidate_recordset(['default_code'])
+
+                # Selalu sync ke semua variant via raw SQL
+                self.env.cr.execute(
+                    "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
+                    (code, rec.id)
+                )
+                rec.product_variant_ids.invalidate_recordset(['default_code'])
+
+        return res
+
 
 class ProductProduct(models.Model):
     _inherit = 'product.product'
@@ -111,14 +145,4 @@ class ProductProduct(models.Model):
                 vals['tracking'] = 'none'
         return super().create(vals)
 
-    def write(self, vals):
-        # Intercept saat Odoo mau clear/ubah default_code variant ATC
-        if 'default_code' in vals:
-            atc_variants = self.filtered(lambda p: p.is_article == 'yes')
-            if atc_variants:
-                tmpl_code = atc_variants[0].product_tmpl_id.default_code
-                if tmpl_code:
-                    # Force pakai kode template, abaikan nilai dari Odoo
-                    vals = dict(vals)
-                    vals['default_code'] = tmpl_code
-        return super().write(vals)
+    # Hapus write() di ProductProduct - semua dikontrol dari ProductTemplate.write()
