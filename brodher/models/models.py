@@ -71,12 +71,25 @@ class ProductTemplate(models.Model):
 
         template = super().create(vals)
 
+        # Sync langsung setelah create
         if is_article == 'yes' and template.default_code:
+            code = template.default_code
+            tmpl_id = template.id
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
-                (template.default_code, template.id)
+                (code, tmpl_id)
             )
             template.product_variant_ids.invalidate_recordset(['default_code'])
+
+            # Sync lagi setelah semua commit
+            # Handle kasus create produk + variant sekaligus dalam satu save
+            @self.env.cr.postcommit.add
+            def sync_after_commit():
+                with self.env.registry.cursor() as cr:
+                    cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
+                        (code, tmpl_id)
+                    )
 
         return template
 
@@ -104,7 +117,7 @@ class ProductTemplate(models.Model):
 
         res = super().write(vals)
 
-        # Restore langsung tanpa kondisi apapun
+        # Restore sekarang
         for rec_id, code in protected_codes.items():
             self.env.cr.execute(
                 "UPDATE product_template SET default_code = %s WHERE id = %s",
@@ -119,6 +132,20 @@ class ProductTemplate(models.Model):
         if protected_codes:
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
+
+        # Restore lagi setelah semua transaksi selesai
+        @self.env.cr.postcommit.add
+        def restore_after_commit():
+            with self.env.registry.cursor() as cr:
+                for rec_id, code in protected_codes.items():
+                    cr.execute(
+                        "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
+                        (code, rec_id)
+                    )
+                    cr.execute(
+                        "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                        (code, rec_id)
+                    )
 
         return res
 
@@ -173,6 +200,7 @@ class ProductProduct(models.Model):
 
         product = super().create(vals)
 
+        # Safety: pastikan default_code ATC tersimpan
         if tmpl_id:
             self.env.cr.execute(
                 "SELECT is_article, default_code FROM product_template WHERE id = %s",
