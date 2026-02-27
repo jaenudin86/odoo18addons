@@ -16,29 +16,44 @@
                         width: 100%;
                         table-layout: fixed;
                         border-collapse: collapse;
+                        page-break-inside: avoid;
+                    }
+                    table.label-table tr {
+                        page-break-inside: avoid;
+                        page-break-after: auto;
                     }
                     table.label-table td {
                         width: 33.33%;
-                        padding: 5px 3px;
+                        padding: 3px 3px;
                         box-sizing: border-box;
                         text-align: center;
                         vertical-align: top;
-                        height: 140px;
-                        font-size: 13px;
-                        line-height: 1.1;
+                        /* Hapus height fixed, biarkan konten menentukan tinggi */
+                        font-size: 12px;
+                        line-height: 1.2;
                         overflow: hidden;
                     }
                     .qrcode_img {
-                        width: 85px;
-                        height: 85px;
+                        width: 80px;
+                        height: 80px;
                         display: block;
-                        margin: 2px auto;
+                        margin: 2px auto 0 auto;
                     }
                     .internal_ref {
-                        height: 40px;
                         display: block;
-                        margin-top: 10px;
-                        font-size: 13px;
+                        margin-top: 4px;
+                        font-size: 11px;
+                        line-height: 1.3;
+                        /* Batasi tinggi teks agar tidak meluber */
+                        max-height: 52px;
+                        overflow: hidden;
+                        word-break: break-word;
+                    }
+                    .label-cell-inner {
+                        /* Paksa tinggi container tetap sama di semua td dalam 1 baris */
+                        height: 130px;
+                        overflow: hidden;
+                        box-sizing: border-box;
                     }
                 </style>
 
@@ -46,46 +61,46 @@
                 <t t-set="rows_per_page" t-value="6"/>
                 <t t-set="total" t-value="len(label_data)"/>
 
-                <!-- Bagi data per halaman (18 label per halaman) -->
                 <t t-foreach="range(0, total, items_per_row * rows_per_page)" t-as="page_start">
 
-                    <!-- Page break sebelum halaman baru (kecuali halaman pertama) -->
                     <t t-if="page_start > 0">
                         <p style="page-break-before: always; margin: 0; padding: 0;"/>
                     </t>
 
-                    <!-- 1 table per halaman -->
                     <table class="label-table">
                         <t t-set="page_labels" t-value="label_data[page_start : page_start + (items_per_row * rows_per_page)]"/>
-                        <t t-foreach="range(0, len(page_labels), items_per_row)" t-as="row_start">
-                            <tr>
-                                <t t-foreach="page_labels[row_start : row_start + items_per_row]" t-as="label">
-                                    <td>
-                                        <span class="internal_ref">
-                                            <t t-esc="label['name']"/>
-                                            <br/>
-                                            <t t-esc="label['variant']"/>
-                                            <br/>
-                                            <t t-esc="label['barcode']"/>
-                                        </span>
-                                        <img t-if="label['barcode']"
-                                             t-att-src="'/report/barcode/QR/%s' % label['barcode']"
-                                             class="qrcode_img"
-                                             alt="QR Code"/>
-                                        <div t-else="" style="width: 85px; height: 85px; margin: 2px auto; border: 1px dashed #ccc; font-size: 10px; color: #999; line-height: 85px;">
-                                            No Barcode
-                                        </div>
-                                    </td>
-                                </t>
-                                <!-- Isi td kosong kalau label di baris terakhir kurang dari 3 -->
-                                <t t-if="len(page_labels[row_start : row_start + items_per_row]) == 1">
-                                    <td></td><td></td>
-                                </t>
-                                <t t-if="len(page_labels[row_start : row_start + items_per_row]) == 2">
-                                    <td></td>
-                                </t>
-                            </tr>
-                        </t>
+                        <tbody>
+                            <t t-foreach="range(0, len(page_labels), items_per_row)" t-as="row_start">
+                                <tr>
+                                    <t t-foreach="page_labels[row_start : row_start + items_per_row]" t-as="label">
+                                        <td>
+                                            <div class="label-cell-inner">
+                                                <span class="internal_ref">
+                                                    <t t-esc="label['name']"/>
+                                                    <br/>
+                                                    <t t-esc="label['variant']"/>
+                                                    <br/>
+                                                    <t t-esc="label['barcode']"/>
+                                                </span>
+                                                <img t-if="label['barcode']"
+                                                     t-att-src="'/report/barcode/QR/%s' % label['barcode']"
+                                                     class="qrcode_img"
+                                                     alt="QR Code"/>
+                                                <div t-else="" style="width: 80px; height: 80px; margin: 2px auto; border: 1px dashed #ccc; font-size: 10px; color: #999; line-height: 80px;">
+                                                    No Barcode
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </t>
+                                    <t t-if="len(page_labels[row_start : row_start + items_per_row]) == 1">
+                                        <td></td><td></td>
+                                    </t>
+                                    <t t-if="len(page_labels[row_start : row_start + items_per_row]) == 2">
+                                        <td></td>
+                                    </t>
+                                </tr>
+                            </t>
+                        </tbody>
                     </table>
 
                 </t>
