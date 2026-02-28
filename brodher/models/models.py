@@ -2,7 +2,6 @@
 from odoo import api, fields, models
 from datetime import datetime
 import logging
-import traceback
 
 _logger = logging.getLogger(__name__)
 
@@ -56,6 +55,29 @@ class ProductTemplate(models.Model):
             seq = self.env['ir.sequence'].with_context(ctx).next_by_code('psit.number.sequence') or '0001'
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
+    def _compute_default_code(self):
+        """Override: ATC pakai kode dari DB, PSIT ikut Odoo normal"""
+        # Pisah ATC dan non-ATC
+        atc = self.filtered(lambda t: t.is_article == 'yes')
+        others = self - atc
+
+        # Non-ATC: biarkan Odoo compute normal
+        if others:
+            super(ProductTemplate, others)._compute_default_code()
+
+        # ATC: ambil dari DB langsung, jangan compute dari variant
+        for template in atc:
+            self.env.cr.execute(
+                "SELECT default_code FROM product_template WHERE id = %s",
+                (template.id,)
+            )
+            row = self.env.cr.fetchone()
+            if row and row[0]:
+                template.default_code = row[0]
+            else:
+                # Fallback ke compute normal
+                super(ProductTemplate, template)._compute_default_code()
+
     @api.model
     def create(self, vals):
         vals.setdefault('is_storable', True)
@@ -72,18 +94,10 @@ class ProductTemplate(models.Model):
 
         template = super().create(vals)
 
-        _logger.warning(f"[TMPL CREATE] id={template.id} is_article={is_article} default_code={template.default_code}")
-
-        self.env.cr.execute(
-            "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
-            (template.id,)
-        )
-        all_variants = self.env.cr.fetchall()
-        _logger.warning(f"[TMPL CREATE] variants after create={all_variants}")
-
         if is_article == 'yes' and template.default_code:
             code = template.default_code
             tmpl_id = template.id
+            # Sync ke semua variant
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, tmpl_id)
@@ -103,67 +117,48 @@ class ProductTemplate(models.Model):
             env = self.env
             registry = self.env.registry
 
-            empty_variants = [r[0] for r in all_variants if not r[1]]
-            _logger.warning(f"[TMPL CREATE] PSIT empty_variants={empty_variants}")
-
+            # Assign nomor ke variant yang kosong
+            self.env.cr.execute(
+                "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
+                (tmpl_id,)
+            )
+            empty_variants = [r[0] for r in self.env.cr.fetchall()]
             for vid in empty_variants:
                 code = self._generate_article_number('no')
                 self.env.cr.execute(
                     "UPDATE product_product SET default_code = %s WHERE id = %s",
                     (code, vid)
                 )
-                _logger.warning(f"[TMPL CREATE] PSIT ASSIGNED vid={vid} code={code}")
-
             if empty_variants:
                 template.product_variant_ids.invalidate_recordset(['default_code'])
 
             @self.env.cr.postcommit.add
-            def sync_psit_create_after_commit():
+            def sync_psit_after_commit():
                 with registry.cursor() as cr:
                     new_env = api.Environment(cr, env.uid, env.context)
                     cr.execute(
-                        "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
+                        "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                         (tmpl_id,)
                     )
-                    all_v = cr.fetchall()
-                    _logger.warning(f"[POSTCOMMIT CREATE PSIT] tmpl={tmpl_id} variants={all_v}")
-                    empty = [r[0] for r in all_v if not r[1]]
+                    empty = [r[0] for r in cr.fetchall()]
                     for vid in empty:
                         code = new_env['product.template']._generate_article_number('no')
                         cr.execute(
                             "UPDATE product_product SET default_code = %s WHERE id = %s",
                             (code, vid)
                         )
-                        _logger.warning(f"[POSTCOMMIT CREATE PSIT] ASSIGNED vid={vid} code={code}")
 
         return template
 
     def write(self, vals):
+        # Ambil kode ATC dari DB sebelum write
         self.env.cr.execute(
-            """SELECT id, default_code, is_article FROM product_template 
-               WHERE id = ANY(%s) AND is_article IS NOT NULL""",
+            """SELECT id, default_code FROM product_template 
+               WHERE id = ANY(%s) AND is_article = 'yes'
+               AND default_code IS NOT NULL AND default_code != ''""",
             (self.ids,)
         )
-        rows = self.env.cr.fetchall()
-
-        atc_codes = {}
-        atc_new = []
-        psit_ids = []
-
-        for rec_id, code, is_art in rows:
-            if is_art == 'yes':
-                if code:
-                    atc_codes[rec_id] = code
-                else:
-                    atc_new.append(rec_id)
-            elif is_art == 'no':
-                psit_ids.append(rec_id)
-
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_new={atc_new} psit_ids={psit_ids} vals_keys={list(vals.keys())}")
-
-        # Log stacktrace saat default_code di-clear untuk PSIT
-        if 'default_code' in vals and not vals.get('default_code') and psit_ids:
-            _logger.warning(f"[TMPL WRITE] CLEARING default_code for PSIT! stack:\n{''.join(traceback.format_stack())}")
+        atc_codes = dict(self.env.cr.fetchall())
 
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
             vals = dict(vals)
@@ -185,51 +180,43 @@ class ProductTemplate(models.Model):
                 (code, rec_id)
             )
 
-        # Sync ATC baru
-        for rec_id in atc_new:
-            self.env.cr.execute(
-                "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
-            )
-            row = self.env.cr.fetchone()
-            if row and row[0]:
-                self.env.cr.execute(
-                    "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
-                    (row[0], rec_id)
-                )
-
         # PSIT: assign nomor ke variant yang kosong
-        for rec_id in psit_ids:
+        self.env.cr.execute(
+            """SELECT id FROM product_template 
+               WHERE id = ANY(%s) AND is_article = 'no'""",
+            (self.ids,)
+        )
+        psit_tmpl_ids = [r[0] for r in self.env.cr.fetchall()]
+
+        for rec_id in psit_tmpl_ids:
             self.env.cr.execute(
-                "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
+                "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                 (rec_id,)
             )
-            all_variants = self.env.cr.fetchall()
-            _logger.warning(f"[PSIT CHECK] tmpl_id={rec_id} all_variants={all_variants}")
-
-            empty_variants = [r[0] for r in all_variants if not r[1]]
+            empty_variants = [r[0] for r in self.env.cr.fetchall()]
             for vid in empty_variants:
                 code = self._generate_article_number('no')
                 self.env.cr.execute(
                     "UPDATE product_product SET default_code = %s WHERE id = %s",
                     (code, vid)
                 )
-                _logger.warning(f"[PSIT CHECK] ASSIGNED vid={vid} code={code}")
 
-        if atc_codes or atc_new or psit_ids:
+        if atc_codes or psit_tmpl_ids:
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
+        # Postcommit
         env = self.env
         registry = self.env.registry
         codes_snapshot = dict(atc_codes)
-        atc_new_snapshot = list(atc_new)
-        psit_snapshot = list(psit_ids)
+        psit_snapshot = list(psit_tmpl_ids)
 
         @self.env.cr.postcommit.add
         def restore_after_commit():
             with registry.cursor() as cr:
                 new_env = api.Environment(cr, env.uid, env.context)
 
+                # Restore ATC
                 for rec_id, code in codes_snapshot.items():
                     cr.execute(
                         "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
@@ -240,32 +227,19 @@ class ProductTemplate(models.Model):
                         (code, rec_id)
                     )
 
-                for rec_id in atc_new_snapshot:
-                    cr.execute(
-                        "SELECT default_code FROM product_template WHERE id = %s", (rec_id,)
-                    )
-                    row = cr.fetchone()
-                    if row and row[0]:
-                        cr.execute(
-                            "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
-                            (row[0], rec_id)
-                        )
-
+                # PSIT postcommit
                 for rec_id in psit_snapshot:
                     cr.execute(
-                        "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
+                        "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                         (rec_id,)
                     )
-                    all_v = cr.fetchall()
-                    _logger.warning(f"[POSTCOMMIT PSIT] tmpl={rec_id} variants={all_v}")
-                    empty = [r[0] for r in all_v if not r[1]]
+                    empty = [r[0] for r in cr.fetchall()]
                     for vid in empty:
                         code = new_env['product.template']._generate_article_number('no')
                         cr.execute(
                             "UPDATE product_product SET default_code = %s WHERE id = %s",
                             (code, vid)
                         )
-                        _logger.warning(f"[POSTCOMMIT PSIT] ASSIGNED vid={vid} code={code}")
 
         return res
 
@@ -318,13 +292,4 @@ class ProductProduct(models.Model):
                         vals['default_code'] = tmpl._generate_article_number('no')
                     vals['tracking'] = 'none'
 
-        product = super().create(vals)
-        _logger.warning(f"[PP CREATE] id={product.id} default_code={product.default_code} tmpl_id={tmpl_id}")
-        return product
-
-    def write(self, vals):
-        if 'default_code' in vals and not vals.get('default_code'):
-            for rec in self:
-                if rec.is_article == 'no' and rec.default_code:
-                    _logger.warning(f"[PP WRITE] CLEARING PSIT default_code id={rec.id} old={rec.default_code} stack:\n{''.join(traceback.format_stack())}")
-        return super().write(vals)
+        return super().create(vals)
