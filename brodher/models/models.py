@@ -56,18 +56,11 @@ class ProductTemplate(models.Model):
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
     def _compute_default_code(self):
+        """Override: baca dari DB langsung"""
         for template in self:
-            if template.is_article == 'yes':
-                # ATC: ambil dari DB
+            if template.is_article in ('yes', 'no'):
                 self.env.cr.execute(
-                    "SELECT default_code FROM product_template WHERE id = %s", (template.id,)
-                )
-                row = self.env.cr.fetchone()
-                template.default_code = row[0] if row and row[0] else False
-            elif template.is_article == 'no':
-                # PSIT: ambil dari variant yang punya kode
-                self.env.cr.execute(
-                    "SELECT default_code FROM product_product WHERE product_tmpl_id = %s AND default_code IS NOT NULL AND default_code != '' LIMIT 1",
+                    "SELECT default_code FROM product_template WHERE id = %s",
                     (template.id,)
                 )
                 row = self.env.cr.fetchone()
@@ -85,16 +78,18 @@ class ProductTemplate(models.Model):
             vals['tracking'] = 'serial'
             if not (vals.get('default_code') or '').strip():
                 vals['default_code'] = self._generate_article_number('yes')
-        else:
+        elif is_article == 'no':
             vals['tracking'] = 'none'
-            vals['default_code'] = False
+            # Template PSIT dapat nomor sendiri
+            if not (vals.get('default_code') or '').strip():
+                vals['default_code'] = self._generate_article_number('no')
 
         template = super().create(vals)
 
         if is_article == 'yes' and template.default_code:
             code = template.default_code
             tmpl_id = template.id
-            # Sync ke semua variant
+            # ATC: semua variant pakai kode yang sama
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, tmpl_id)
@@ -114,7 +109,7 @@ class ProductTemplate(models.Model):
             env = self.env
             registry = self.env.registry
 
-            # Assign nomor ke variant yang kosong
+            # PSIT: tiap variant dapat nomor sendiri yang berbeda
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                 (tmpl_id,)
@@ -126,8 +121,10 @@ class ProductTemplate(models.Model):
                     "UPDATE product_product SET default_code = %s WHERE id = %s",
                     (code, vid)
                 )
+
             if empty_variants:
                 template.product_variant_ids.invalidate_recordset(['default_code'])
+                template.invalidate_recordset(['default_code'])
 
             @self.env.cr.postcommit.add
             def sync_psit_after_commit():
@@ -148,7 +145,6 @@ class ProductTemplate(models.Model):
         return template
 
     def write(self, vals):
-        # Ambil kode ATC dari DB sebelum write
         self.env.cr.execute(
             """SELECT id, default_code FROM product_template 
                WHERE id = ANY(%s) AND is_article = 'yes'
@@ -179,8 +175,7 @@ class ProductTemplate(models.Model):
 
         # PSIT: assign nomor ke variant yang kosong
         self.env.cr.execute(
-            """SELECT id FROM product_template 
-               WHERE id = ANY(%s) AND is_article = 'no'""",
+            "SELECT id FROM product_template WHERE id = ANY(%s) AND is_article = 'no'",
             (self.ids,)
         )
         psit_tmpl_ids = [r[0] for r in self.env.cr.fetchall()]
@@ -202,7 +197,6 @@ class ProductTemplate(models.Model):
             self.invalidate_recordset(['default_code'])
             self.mapped('product_variant_ids').invalidate_recordset(['default_code'])
 
-        # Postcommit
         env = self.env
         registry = self.env.registry
         codes_snapshot = dict(atc_codes)
@@ -281,9 +275,11 @@ class ProductProduct(models.Model):
             if row:
                 is_article, tmpl_code = row
                 if is_article == 'yes':
+                    # ATC: ikut kode template
                     vals['default_code'] = tmpl_code
                     vals['tracking'] = 'serial'
                 elif is_article == 'no':
+                    # PSIT: generate nomor unik baru
                     if not vals.get('default_code'):
                         tmpl = self.env['product.template'].browse(tmpl_id)
                         vals['default_code'] = tmpl._generate_article_number('no')
