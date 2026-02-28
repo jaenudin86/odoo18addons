@@ -2,6 +2,7 @@
 from odoo import api, fields, models
 from datetime import datetime
 import logging
+import traceback
 
 _logger = logging.getLogger(__name__)
 
@@ -73,7 +74,6 @@ class ProductTemplate(models.Model):
 
         _logger.warning(f"[TMPL CREATE] id={template.id} is_article={is_article} default_code={template.default_code}")
 
-        # Cek semua variant setelah create
         self.env.cr.execute(
             "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
             (template.id,)
@@ -159,7 +159,11 @@ class ProductTemplate(models.Model):
             elif is_art == 'no':
                 psit_ids.append(rec_id)
 
-        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_new={atc_new} psit_ids={psit_ids}")
+        _logger.warning(f"[TMPL WRITE] ids={self.ids} atc_codes={atc_codes} atc_new={atc_new} psit_ids={psit_ids} vals_keys={list(vals.keys())}")
+
+        # Log stacktrace saat default_code di-clear untuk PSIT
+        if 'default_code' in vals and not vals.get('default_code') and psit_ids:
+            _logger.warning(f"[TMPL WRITE] CLEARING default_code for PSIT! stack:\n{''.join(traceback.format_stack())}")
 
         if 'default_code' in vals and not vals.get('default_code') and atc_codes:
             vals = dict(vals)
@@ -193,7 +197,7 @@ class ProductTemplate(models.Model):
                     (row[0], rec_id)
                 )
 
-        # PSIT
+        # PSIT: assign nomor ke variant yang kosong
         for rec_id in psit_ids:
             self.env.cr.execute(
                 "SELECT id, default_code FROM product_product WHERE product_tmpl_id = %s",
@@ -317,3 +321,10 @@ class ProductProduct(models.Model):
         product = super().create(vals)
         _logger.warning(f"[PP CREATE] id={product.id} default_code={product.default_code} tmpl_id={tmpl_id}")
         return product
+
+    def write(self, vals):
+        if 'default_code' in vals and not vals.get('default_code'):
+            for rec in self:
+                if rec.is_article == 'no' and rec.default_code:
+                    _logger.warning(f"[PP WRITE] CLEARING PSIT default_code id={rec.id} old={rec.default_code} stack:\n{''.join(traceback.format_stack())}")
+        return super().write(vals)
