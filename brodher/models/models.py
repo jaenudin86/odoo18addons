@@ -56,26 +56,23 @@ class ProductTemplate(models.Model):
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
     def _compute_default_code(self):
-        """Override: ATC pakai kode dari DB, PSIT ikut Odoo normal"""
-        # Pisah ATC dan non-ATC
-        atc = self.filtered(lambda t: t.is_article == 'yes')
-        others = self - atc
-
-        # Non-ATC: biarkan Odoo compute normal
-        if others:
-            super(ProductTemplate, others)._compute_default_code()
-
-        # ATC: ambil dari DB langsung, jangan compute dari variant
-        for template in atc:
-            self.env.cr.execute(
-                "SELECT default_code FROM product_template WHERE id = %s",
-                (template.id,)
-            )
-            row = self.env.cr.fetchone()
-            if row and row[0]:
-                template.default_code = row[0]
+        for template in self:
+            if template.is_article == 'yes':
+                # ATC: ambil dari DB
+                self.env.cr.execute(
+                    "SELECT default_code FROM product_template WHERE id = %s", (template.id,)
+                )
+                row = self.env.cr.fetchone()
+                template.default_code = row[0] if row and row[0] else False
+            elif template.is_article == 'no':
+                # PSIT: ambil dari variant yang punya kode
+                self.env.cr.execute(
+                    "SELECT default_code FROM product_product WHERE product_tmpl_id = %s AND default_code IS NOT NULL AND default_code != '' LIMIT 1",
+                    (template.id,)
+                )
+                row = self.env.cr.fetchone()
+                template.default_code = row[0] if row and row[0] else False
             else:
-                # Fallback ke compute normal
                 super(ProductTemplate, template)._compute_default_code()
 
     @api.model
