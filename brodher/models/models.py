@@ -50,9 +50,14 @@ class ProductTemplate(models.Model):
     def _set_template_lst_price(self):
         """Hanya isi variant yang belum ada harga (0.0). Tidak timpa yang sudah diisi."""
         for tmpl in self:
-            for variant in tmpl.product_variant_ids:
-                if variant.lst_price == 0.0:
-                    variant.lst_price = tmpl.lst_price
+            self.env.cr.execute(
+                """UPDATE product_product
+                   SET lst_price = %s
+                   WHERE product_tmpl_id = %s
+                   AND (lst_price IS NULL OR lst_price = 0.0)""",
+                (tmpl.lst_price, tmpl.id)
+            )
+            tmpl.product_variant_ids.invalidate_recordset(['lst_price'])
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA MODAL — tampilkan dari variant pertama, tidak sebar ke semua variant
@@ -273,7 +278,27 @@ class ProductTemplate(models.Model):
                             (code, vid)
                         )
 
+        # Validasi nama variant tidak boleh duplikat setelah semua perubahan selesai
+        self._check_duplicate_variants()
+
         return res
+
+    def _check_duplicate_variants(self):
+        """
+        Dipanggil setelah write pada template.
+        Cek semua variant yang terbentuk — tidak boleh ada display_name yang sama.
+        """
+        from odoo.exceptions import ValidationError
+        for tmpl in self:
+            variants = tmpl.product_variant_ids
+            names = [v.display_name for v in variants]
+            duplicates = [n for n in names if names.count(n) > 1]
+            if duplicates:
+                dup_list = ', '.join(set(duplicates))
+                raise ValidationError(
+                    f'Variant duplikat ditemukan: "{dup_list}". '
+                    f'Setiap kombinasi atribut harus unik!'
+                )
 
 
 class ProductProduct(models.Model):
@@ -297,15 +322,40 @@ class ProductProduct(models.Model):
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA JUAL — independen per variant
+    # lst_price disimpan langsung di kolom product_product.lst_price
+    # Odoo core punya compute _compute_product_price yang baca dari template —
+    # kita matikan dengan mendefinisikan ulang field tanpa compute/related,
+    # lalu override _compute_product_price agar baca dari DB variant langsung.
     # ══════════════════════════════════════════════════════════════════════════
     lst_price = fields.Float(
         string='Sales Price / Harga Jual',
         digits='Product Price',
         default=0.0,
         related=None,
+        compute='_compute_product_lst_price',
+        inverse='_set_product_lst_price',
         store=True,
         readonly=False,
     )
+
+    def _compute_product_lst_price(self):
+        """Baca harga dari kolom product_product (per variant), bukan dari template."""
+        for product in self:
+            self.env.cr.execute(
+                "SELECT lst_price FROM product_product WHERE id = %s",
+                (product.id,)
+            )
+            row = self.env.cr.fetchone()
+            product.lst_price = row[0] if row and row[0] is not None else 0.0
+
+    def _set_product_lst_price(self):
+        """Simpan harga langsung ke baris product_product (per variant)."""
+        for product in self:
+            self.env.cr.execute(
+                "UPDATE product_product SET lst_price = %s WHERE id = %s",
+                (product.lst_price, product.id)
+            )
+            product.invalidate_recordset(['lst_price'])
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA MODAL — independen per variant
@@ -324,12 +374,11 @@ class ProductProduct(models.Model):
 
     # ══════════════════════════════════════════════════════════════════════════
     # VALIDASI NAMA VARIANT TIDAK BOLEH DUPLIKAT
-    # display_name variant = nama produk + kombinasi attribute (misal: S / Merah)
+    # Dicek saat create dan write di level product.product
     # ══════════════════════════════════════════════════════════════════════════
-    @api.constrains('product_tmpl_id', 'product_template_attribute_value_ids')
     def _check_unique_variant_name(self):
+        """Cek semua variant dalam satu template, tidak boleh ada nama yang sama."""
         for variant in self:
-            # Ambil semua variant dari template yang sama, kecuali diri sendiri
             siblings = variant.product_tmpl_id.product_variant_ids.filtered(
                 lambda v: v.id != variant.id
             )
@@ -338,7 +387,7 @@ class ProductProduct(models.Model):
                 if sibling.display_name == variant_name:
                     raise models.ValidationError(
                         f'Nama variant "{variant_name}" sudah ada! '
-                        f'Setiap variant harus memiliki nama yang unik.'
+                        f'Setiap variant harus memiliki kombinasi atribut yang unik.'
                     )
 
     # ══════════════════════════════════════════════════════════════════════════
