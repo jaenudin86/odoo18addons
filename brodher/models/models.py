@@ -85,6 +85,39 @@ class ProductTemplate(models.Model):
     # Pajak penjualan & pembelian tetap di level template (Odoo default, tidak di-override)
     # ══════════════════════════════════════════════════════════════════════════
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # VALIDASI NAMA PRODUK TIDAK BOLEH DUPLIKAT (level template)
+    # ══════════════════════════════════════════════════════════════════════════
+    @api.constrains('name')
+    def _check_unique_product_name(self):
+        from odoo.exceptions import ValidationError
+        for tmpl in self:
+            duplicate = self.env['product.template'].search([
+                ('name', '=ilike', tmpl.name),  # case-insensitive
+                ('id', '!=', tmpl.id),
+            ], limit=1)
+            if duplicate:
+                raise ValidationError(
+                    f'Nama produk "{tmpl.name}" sudah digunakan oleh produk lain! '
+                    f'Silakan gunakan nama yang berbeda.'
+                )
+
+    @api.onchange('name')
+    def _onchange_name_check_duplicate(self):
+        """Warning real-time saat user mengetik nama yang sudah ada."""
+        if self.name:
+            duplicate = self.env['product.template'].search([
+                ('name', '=ilike', self.name),
+                ('id', '!=', self._origin.id or 0),
+            ], limit=1)
+            if duplicate:
+                return {
+                    'warning': {
+                        'title': 'Nama Sudah Digunakan!',
+                        'message': f'Produk dengan nama "{self.name}" sudah ada. Silakan gunakan nama lain.',
+                    }
+                }
+
     @api.onchange('is_article')
     def _onchange_is_article(self):
         if self.is_article in ['yes', 'no']:
