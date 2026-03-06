@@ -31,6 +31,102 @@ class ProductTemplate(models.Model):
         default='no'
     )
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # HARGA JUAL — tampilkan dari variant pertama, tidak sebar ke semua variant
+    # ══════════════════════════════════════════════════════════════════════════
+    lst_price = fields.Float(
+        string='Sales Price',
+        digits='Product Price',
+        compute='_compute_template_lst_price',
+        inverse='_set_template_lst_price',
+        store=False,
+    )
+
+    def _compute_template_lst_price(self):
+        for tmpl in self:
+            variants = tmpl.product_variant_ids
+            tmpl.lst_price = variants[0].lst_price if variants else 0.0
+
+    def _set_template_lst_price(self):
+        """Hanya isi variant yang belum ada harga (0.0). Tidak timpa yang sudah diisi."""
+        for tmpl in self:
+            for variant in tmpl.product_variant_ids:
+                if variant.lst_price == 0.0:
+                    variant.lst_price = tmpl.lst_price
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # HARGA MODAL — tampilkan dari variant pertama, tidak sebar ke semua variant
+    # ══════════════════════════════════════════════════════════════════════════
+    standard_price = fields.Float(
+        string='Cost',
+        digits='Product Price',
+        compute='_compute_template_standard_price',
+        inverse='_set_template_standard_price',
+        store=False,
+    )
+
+    def _compute_template_standard_price(self):
+        for tmpl in self:
+            variants = tmpl.with_context(force_company=self.env.company.id).product_variant_ids
+            tmpl.standard_price = variants[0].standard_price if variants else 0.0
+
+    def _set_template_standard_price(self):
+        """Hanya isi variant yang belum ada harga modal (0.0)."""
+        for tmpl in self:
+            for variant in tmpl.product_variant_ids:
+                if variant.standard_price == 0.0:
+                    variant.standard_price = tmpl.standard_price
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PAJAK PENJUALAN — tampilkan dari variant pertama
+    # ══════════════════════════════════════════════════════════════════════════
+    taxes_id = fields.Many2many(
+        'account.tax',
+        string='Customer Taxes',
+        compute='_compute_template_taxes',
+        inverse='_set_template_taxes',
+        store=False,
+        domain=[('type_tax_use', '=', 'sale')],
+    )
+
+    def _compute_template_taxes(self):
+        for tmpl in self:
+            variants = tmpl.product_variant_ids
+            tmpl.taxes_id = variants[0].taxes_id if variants else False
+
+    def _set_template_taxes(self):
+        """Hanya isi variant yang belum punya pajak jual."""
+        for tmpl in self:
+            for variant in tmpl.product_variant_ids:
+                if not variant.taxes_id:
+                    variant.taxes_id = tmpl.taxes_id
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PAJAK PEMBELIAN — tampilkan dari variant pertama
+    # ══════════════════════════════════════════════════════════════════════════
+    supplier_taxes_id = fields.Many2many(
+        'account.tax',
+        string='Vendor Taxes',
+        compute='_compute_template_supplier_taxes',
+        inverse='_set_template_supplier_taxes',
+        store=False,
+        domain=[('type_tax_use', '=', 'purchase')],
+    )
+
+    def _compute_template_supplier_taxes(self):
+        for tmpl in self:
+            variants = tmpl.product_variant_ids
+            tmpl.supplier_taxes_id = variants[0].supplier_taxes_id if variants else False
+
+    def _set_template_supplier_taxes(self):
+        """Hanya isi variant yang belum punya pajak beli."""
+        for tmpl in self:
+            for variant in tmpl.product_variant_ids:
+                if not variant.supplier_taxes_id:
+                    variant.supplier_taxes_id = tmpl.supplier_taxes_id
+
+    # ══════════════════════════════════════════════════════════════════════════
+
     @api.onchange('is_article')
     def _onchange_is_article(self):
         if self.is_article in ['yes', 'no']:
@@ -56,7 +152,6 @@ class ProductTemplate(models.Model):
             return f"PSIT{now.strftime('%y')}{str(seq).zfill(4)}"
 
     def _compute_default_code(self):
-        """Override: baca dari DB langsung"""
         for template in self:
             if template.is_article in ('yes', 'no'):
                 self.env.cr.execute(
@@ -80,7 +175,6 @@ class ProductTemplate(models.Model):
                 vals['default_code'] = self._generate_article_number('yes')
         elif is_article == 'no':
             vals['tracking'] = 'none'
-            # Template PSIT dapat nomor sendiri
             if not (vals.get('default_code') or '').strip():
                 vals['default_code'] = self._generate_article_number('no')
 
@@ -89,7 +183,6 @@ class ProductTemplate(models.Model):
         if is_article == 'yes' and template.default_code:
             code = template.default_code
             tmpl_id = template.id
-            # ATC: semua variant pakai kode yang sama
             self.env.cr.execute(
                 "UPDATE product_product SET default_code = %s WHERE product_tmpl_id = %s",
                 (code, tmpl_id)
@@ -109,7 +202,6 @@ class ProductTemplate(models.Model):
             env = self.env
             registry = self.env.registry
 
-            # PSIT: tiap variant dapat nomor sendiri yang berbeda
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                 (tmpl_id,)
@@ -162,7 +254,6 @@ class ProductTemplate(models.Model):
 
         res = super().write(vals)
 
-        # Restore ATC
         for rec_id, code in atc_codes.items():
             self.env.cr.execute(
                 "UPDATE product_template SET default_code = %s WHERE id = %s",
@@ -173,7 +264,6 @@ class ProductTemplate(models.Model):
                 (code, rec_id)
             )
 
-        # PSIT: assign nomor ke variant yang kosong
         self.env.cr.execute(
             "SELECT id FROM product_template WHERE id = ANY(%s) AND is_article = 'no'",
             (self.ids,)
@@ -207,7 +297,6 @@ class ProductTemplate(models.Model):
             with registry.cursor() as cr:
                 new_env = api.Environment(cr, env.uid, env.context)
 
-                # Restore ATC
                 for rec_id, code in codes_snapshot.items():
                     cr.execute(
                         "UPDATE product_template SET default_code = %s WHERE id = %s AND (default_code IS NULL OR default_code = '')",
@@ -218,7 +307,6 @@ class ProductTemplate(models.Model):
                         (code, rec_id)
                     )
 
-                # PSIT postcommit
                 for rec_id in psit_snapshot:
                     cr.execute(
                         "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
@@ -254,14 +342,64 @@ class ProductProduct(models.Model):
     net_net_weight = fields.Float(string='Net Net Weight*')
     date_month_year = fields.Date(string='Date (Month/Year) Design*')
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # HARGA JUAL — independen per variant
+    # ══════════════════════════════════════════════════════════════════════════
     lst_price = fields.Float(
-        string='Sales Price',
+        string='Sales Price / Harga Jual',
         digits='Product Price',
         default=0.0,
         related=None,
         store=True,
         readonly=False,
     )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # HARGA MODAL — independen per variant
+    # company_dependent=True sudah built-in di Odoo untuk standard_price,
+    # kita override agar bisa diinput langsung di form variant.
+    # ══════════════════════════════════════════════════════════════════════════
+    standard_price = fields.Float(
+        string='Cost / Harga Modal',
+        digits='Product Price',
+        default=0.0,
+        company_dependent=True,
+        store=True,
+        readonly=False,
+        groups="base.group_user",
+    )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PAJAK PENJUALAN — independen per variant
+    # Menggunakan relation table tersendiri agar tidak konflik dgn template
+    # ══════════════════════════════════════════════════════════════════════════
+    taxes_id = fields.Many2many(
+        'account.tax',
+        'product_variant_taxes_rel',
+        'prod_id',
+        'tax_id',
+        string='Customer Taxes / Pajak Jual',
+        domain=[('type_tax_use', '=', 'sale')],
+        store=True,
+        readonly=False,
+    )
+
+    # ══════════════════════════════════════════════════════════════════════════
+    # PAJAK PEMBELIAN — independen per variant
+    # Menggunakan relation table tersendiri agar tidak konflik dgn template
+    # ══════════════════════════════════════════════════════════════════════════
+    supplier_taxes_id = fields.Many2many(
+        'account.tax',
+        'product_variant_supplier_taxes_rel',
+        'prod_id',
+        'tax_id',
+        string='Vendor Taxes / Pajak Beli',
+        domain=[('type_tax_use', '=', 'purchase')],
+        store=True,
+        readonly=False,
+    )
+
+    # ══════════════════════════════════════════════════════════════════════════
 
     @api.model
     def create(self, vals):
@@ -275,11 +413,9 @@ class ProductProduct(models.Model):
             if row:
                 is_article, tmpl_code = row
                 if is_article == 'yes':
-                    # ATC: ikut kode template
                     vals['default_code'] = tmpl_code
                     vals['tracking'] = 'serial'
                 elif is_article == 'no':
-                    # PSIT: generate nomor unik baru
                     if not vals.get('default_code'):
                         tmpl = self.env['product.template'].browse(tmpl_id)
                         vals['default_code'] = tmpl._generate_article_number('no')
