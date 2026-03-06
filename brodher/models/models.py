@@ -77,54 +77,7 @@ class ProductTemplate(models.Model):
                 if variant.standard_price == 0.0:
                     variant.standard_price = tmpl.standard_price
 
-    # ══════════════════════════════════════════════════════════════════════════
-    # PAJAK PENJUALAN — tampilkan dari variant pertama
-    # ══════════════════════════════════════════════════════════════════════════
-    taxes_id = fields.Many2many(
-        'account.tax',
-        string='Customer Taxes',
-        compute='_compute_template_taxes',
-        inverse='_set_template_taxes',
-        store=False,
-        domain=[('type_tax_use', '=', 'sale')],
-    )
-
-    def _compute_template_taxes(self):
-        for tmpl in self:
-            variants = tmpl.product_variant_ids
-            tmpl.taxes_id = variants[0].taxes_id if variants else False
-
-    def _set_template_taxes(self):
-        """Hanya isi variant yang belum punya pajak jual."""
-        for tmpl in self:
-            for variant in tmpl.product_variant_ids:
-                if not variant.taxes_id:
-                    variant.taxes_id = tmpl.taxes_id
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # PAJAK PEMBELIAN — tampilkan dari variant pertama
-    # ══════════════════════════════════════════════════════════════════════════
-    supplier_taxes_id = fields.Many2many(
-        'account.tax',
-        string='Vendor Taxes',
-        compute='_compute_template_supplier_taxes',
-        inverse='_set_template_supplier_taxes',
-        store=False,
-        domain=[('type_tax_use', '=', 'purchase')],
-    )
-
-    def _compute_template_supplier_taxes(self):
-        for tmpl in self:
-            variants = tmpl.product_variant_ids
-            tmpl.supplier_taxes_id = variants[0].supplier_taxes_id if variants else False
-
-    def _set_template_supplier_taxes(self):
-        """Hanya isi variant yang belum punya pajak beli."""
-        for tmpl in self:
-            for variant in tmpl.product_variant_ids:
-                if not variant.supplier_taxes_id:
-                    variant.supplier_taxes_id = tmpl.supplier_taxes_id
-
+    # Pajak penjualan & pembelian tetap di level template (Odoo default, tidak di-override)
     # ══════════════════════════════════════════════════════════════════════════
 
     @api.onchange('is_article')
@@ -370,34 +323,23 @@ class ProductProduct(models.Model):
     )
 
     # ══════════════════════════════════════════════════════════════════════════
-    # PAJAK PENJUALAN — independen per variant
-    # Menggunakan relation table tersendiri agar tidak konflik dgn template
+    # VALIDASI NAMA VARIANT TIDAK BOLEH DUPLIKAT
+    # display_name variant = nama produk + kombinasi attribute (misal: S / Merah)
     # ══════════════════════════════════════════════════════════════════════════
-    taxes_id = fields.Many2many(
-        'account.tax',
-        'product_variant_taxes_rel',
-        'prod_id',
-        'tax_id',
-        string='Customer Taxes / Pajak Jual',
-        domain=[('type_tax_use', '=', 'sale')],
-        store=True,
-        readonly=False,
-    )
-
-    # ══════════════════════════════════════════════════════════════════════════
-    # PAJAK PEMBELIAN — independen per variant
-    # Menggunakan relation table tersendiri agar tidak konflik dgn template
-    # ══════════════════════════════════════════════════════════════════════════
-    supplier_taxes_id = fields.Many2many(
-        'account.tax',
-        'product_variant_supplier_taxes_rel',
-        'prod_id',
-        'tax_id',
-        string='Vendor Taxes / Pajak Beli',
-        domain=[('type_tax_use', '=', 'purchase')],
-        store=True,
-        readonly=False,
-    )
+    @api.constrains('product_tmpl_id', 'product_template_attribute_value_ids')
+    def _check_unique_variant_name(self):
+        for variant in self:
+            # Ambil semua variant dari template yang sama, kecuali diri sendiri
+            siblings = variant.product_tmpl_id.product_variant_ids.filtered(
+                lambda v: v.id != variant.id
+            )
+            variant_name = variant.display_name
+            for sibling in siblings:
+                if sibling.display_name == variant_name:
+                    raise models.ValidationError(
+                        f'Nama variant "{variant_name}" sudah ada! '
+                        f'Setiap variant harus memiliki nama yang unik.'
+                    )
 
     # ══════════════════════════════════════════════════════════════════════════
 
