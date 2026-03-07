@@ -31,7 +31,6 @@ class StockWarehouse(models.Model):
         help='Brand code 3 karakter (contoh: MNL)'
     )
     
-    # ... (Field PIC, Address, Store, Photos tetap sama seperti kode Anda sebelumnya) ...
     x_pic_name = fields.Char(string='PIC Name')
     x_email_warehouse = fields.Char(string='Email Warehouse')
     x_npwp_warehouse = fields.Char(string='NPWP Warehouse')
@@ -57,7 +56,7 @@ class StockWarehouse(models.Model):
     
     @api.model
     def create(self, vals):
-        """Generate nomor saat record dibuat"""
+        """Generate nomor hanya saat record pertama kali dibuat"""
         if vals.get('x_warehouse_type') and vals.get('x_brand'):
             generated_number = self._generate_warehouse_number(
                 vals['x_warehouse_type'], 
@@ -68,20 +67,8 @@ class StockWarehouse(models.Model):
             
         return super(StockWarehouse, self).create(vals)
 
-    def write(self, vals):
-        """Update nomor jika Brand atau Tipe berubah"""
-        res = super(StockWarehouse, self).write(vals)
-        
-        # Jika brand atau type diubah, generate ulang kodenya
-        if 'x_brand' in vals or 'x_warehouse_type' in vals:
-            for rec in self:
-                new_number = rec._generate_warehouse_number(rec.x_warehouse_type, rec.x_brand)
-                # Gunakan super write agar tidak trigger loop infinite
-                super(StockWarehouse, rec).write({
-                    'x_warehouse_number': new_number,
-                    'code': new_number
-                })
-        return res
+    # write() tidak di-override lagi
+    # → Nomor tidak akan berubah meskipun Brand atau Type diedit
 
     def _generate_warehouse_number(self, warehouse_type, brand):
         """
@@ -96,7 +83,6 @@ class StockWarehouse(models.Model):
         prefix, start_num = prefix_map.get(warehouse_type, ('WHS', 3))
         
         # Cari nomor terakhir di database yang punya prefix & brand yang sama
-        # Mencari di field 'code' karena field ini yang punya constraint UNIQUE di Odoo
         search_pattern = f"{prefix}{brand_code}%"
         last_rec = self.env['stock.warehouse'].search([
             ('code', '=like', search_pattern)
@@ -115,7 +101,6 @@ class StockWarehouse(models.Model):
         generated = f"{prefix}{brand_code}{str(next_num).zfill(3)}"
         
         # Safety Check: Pastikan hasil generate benar-benar belum ada di database
-        # (Jika ada lubang/data manual, dia akan naik terus sampai ketemu yang kosong)
         while self.env['stock.warehouse'].search_count([('code', '=', generated)]) > 0:
             next_num += 1
             generated = f"{prefix}{brand_code}{str(next_num).zfill(3)}"
