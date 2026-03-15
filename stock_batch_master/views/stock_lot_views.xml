@@ -5,7 +5,7 @@
     <record id="view_stock_lot_form_inherit_batch" model="ir.ui.view">
         <field name="name">stock.lot.form.inherit.batch</field>
         <field name="model">stock.lot</field>
-        <field name="inherit_id" ref="stock.view_lot_form"/>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
         <field name="arch" type="xml">
             <!-- Add Batch Number field after the lot name -->
             <xpath expr="//field[@name='name']" position="after">
@@ -18,7 +18,7 @@
     <record id="view_stock_lot_list_inherit_batch" model="ir.ui.view">
         <field name="name">stock.lot.list.inherit.batch</field>
         <field name="model">stock.lot</field>
-        <field name="inherit_id" ref="stock.view_lot_tree"/>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//field[@name='product_id']" position="after">
                 <field name="batch_master_id"/>
