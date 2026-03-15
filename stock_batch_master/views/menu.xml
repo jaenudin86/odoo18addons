@@ -5,7 +5,7 @@
     <menuitem
         id="menu_stock_batch_master"
         name="Batch Numbers"
-        parent="stock.menu_stock_configuration"
+        parent="stock.menu_stock_config_settings"
         action="action_stock_batch_master"
         sequence="25"/>
 
