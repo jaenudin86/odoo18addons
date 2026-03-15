@@ -232,7 +232,7 @@
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
-                <field name="gross_weight"
+                <!-- <field name="gross_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
@@ -242,7 +242,13 @@
 
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/>
+                       required="is_article == 'yes'"/> -->
+                
+                <field name="gross_weight" required="true"/>
+
+                <field name="net_weight" required="true"/>
+
+                <field name="net_net_weight" required="true">
 
             </xpath>
 
