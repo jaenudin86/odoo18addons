@@ -248,7 +248,7 @@
 
                 <field name="net_weight" required="true"/>
 
-                <field name="net_net_weight" required="true">
+                <field name="net_net_weight" required="true"/>
 
             </xpath>
 
