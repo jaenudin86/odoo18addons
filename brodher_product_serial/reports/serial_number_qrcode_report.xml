@@ -128,9 +128,7 @@
                                                     <!-- Barcode (isi = serial number) -->
                                                  
                                                     <!-- QR Code -->
-                                                    <img t-att-src="'/report/barcode/QR/%s' % sn.name"
-                                                         class="qrcode_img"
-                                                         alt="QR"/>
+            
                                                     <img t-att-src="'/report/barcode/QR/%s' % (sn.name + '#' + sn.product_id.default_code + '#' + sn.product_id.brand)"
                                                         class="qrcode_img"
                                                         alt="QR"/>
