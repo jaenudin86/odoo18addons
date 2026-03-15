@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Menu under Inventory > Configuration > Batch Numbers -->
+    <menuitem
+        id="menu_stock_batch_master"
+        name="Batch Numbers"
+        parent="stock.menu_stock_configuration"
+        action="action_stock_batch_master"
+        sequence="25"/>
+
+</odoo>

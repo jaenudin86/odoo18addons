@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List View -->
+    <record id="view_stock_batch_master_list" model="ir.ui.view">
+        <field name="name">stock.batch.master.list</field>
+        <field name="model">stock.batch.master</field>
+        <field name="arch" type="xml">
+            <list string="Batch Numbers">
+                <field name="name"/>
+                <field name="description"/>
+                <field name="lot_count" string="SN/Lot Count"/>
+                <field name="active"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_stock_batch_master_form" model="ir.ui.view">
+        <field name="name">stock.batch.master.form</field>
+        <field name="model">stock.batch.master</field>
+        <field name="arch" type="xml">
+            <form string="Batch Number">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_lots"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-list-ol">
+                            <field name="lot_count" widget="statinfo" string="SN/Lots"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="description"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Serial/Lot Numbers" name="lots">
+                            <field name="lot_ids" readonly="1">
+                                <list>
+                                    <field name="name" string="Serial/Lot Number"/>
+                                    <field name="product_id"/>
+                                    <field name="expiration_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_stock_batch_master_search" model="ir.ui.view">
+        <field name="name">stock.batch.master.search</field>
+        <field name="model">stock.batch.master</field>
+        <field name="arch" type="xml">
+            <search string="Search Batch Numbers">
+                <field name="name"/>
+                <field name="description"/>
+                <filter string="Active" name="active" domain="[('active','=',True)]"/>
+                <filter string="Archived" name="archived" domain="[('active','=',False)]"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_stock_batch_master" model="ir.actions.act_window">
+        <field name="name">Batch Numbers</field>
+        <field name="res_model">stock.batch.master</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="view_stock_batch_master_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Batch Number
+            </p>
+        </field>
+    </record>
+
+</odoo>
