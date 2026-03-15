@@ -8,6 +8,10 @@
             <field name="model">stock.warehouse</field>
             <field name="inherit_id" ref="stock.view_warehouse"/>
             <field name="arch" type="xml">
+            <!-- Hide short name -->
+<xpath expr="//field[@name='short_name']" position="attributes">
+    <attribute name="invisible">1</attribute>
+</xpath>
                 <xpath expr="//notebook" position="inside">
                     <page string="Warehouse Details" name="warehouse_details">
                         
