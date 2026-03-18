@@ -6,39 +6,100 @@
         <field name="arch" type="xml">
             <form string="Generate Serial Numbers">
                 <sheet>
+
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <!-- LOADING BANNER — tampil saat state = generating    -->
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <div class="alert alert-info d-flex align-items-center gap-2 mb-3"
+                         attrs="{'invisible': [('state', '!=', 'generating')]}">
+                        <div class="spinner-border spinner-border-sm text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <div>
+                            <strong>&#x23F3; Generating Serial Numbers, please wait...</strong><br/>
+                            <field name="progress_message" readonly="1" nolabel="1" class="text-muted small"/>
+                        </div>
+                    </div>
+
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <!-- DONE BANNER — tampil saat state = done             -->
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <div class="alert alert-success mb-3"
+                         attrs="{'invisible': [('state', '!=', 'done')]}">
+                        <i class="fa fa-check-circle me-2"/>
+                        <strong>Serial numbers generated successfully!</strong>
+                    </div>
+
+                    <!-- Hidden fields untuk attrs logic -->
+                    <field name="state" invisible="1"/>
+                    <field name="can_generate" invisible="1"/>
+
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <!-- HEADER INFO                                        -->
+                    <!-- ══════════════════════════════════════════════════ -->
                     <div class="oe_title">
                         <h1>
                             <field name="picking_id" readonly="1" class="oe_inline"/>
                         </h1>
                     </div>
-                    
+
                     <group>
-                        <field name="operation_type" readonly="1"/>
-                        <field name="total_to_generate"/>
-                        <field name="can_generate" invisible="1"/>
+                        <group>
+                            <field name="operation_type" readonly="1"/>
+                            <field name="total_products" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="total_to_generate" readonly="1"/>
+                            <field name="progress_message" readonly="1"
+                                   attrs="{'invisible': [('state', 'not in', ['generating', 'done'])]}"/>
+                        </group>
                     </group>
-                    
+
+                    <!-- ══════════════════════════════════════════════════ -->
+                    <!-- PRODUCT LINES                                      -->
+                    <!-- ══════════════════════════════════════════════════ -->
                     <notebook>
                         <page string="Products">
-                            <field name="line_ids">
+                            <field name="line_ids"
+                                   attrs="{'readonly': [('state', '=', 'generating')]}">
                                 <list editable="bottom">
                                     <field name="generate" widget="boolean_toggle"/>
                                     <field name="product_id" readonly="1"/>
-                                    <field name="quantity"/>
-                                    <field name="sn_type"/>
+                                    <field name="quantity_in_picking" readonly="1" optional="show"/>
+                                    <field name="quantity_existing" readonly="1" optional="show"/>
+                                    <field name="sn_type"
+                                           attrs="{'readonly': [('generate', '=', False)]}"/>
+                                    <field name="quantity"
+                                           attrs="{'readonly': [('generate', '=', False)]}"/>
                                     <field name="preview_sn" readonly="1"/>
                                 </list>
                             </field>
                         </page>
                     </notebook>
+
                 </sheet>
-                
+
+                <!-- ══════════════════════════════════════════════════ -->
+                <!-- FOOTER BUTTONS                                     -->
+                <!-- ══════════════════════════════════════════════════ -->
                 <footer>
-                    <button string="Generate" 
-                            name="action_generate_and_close" 
-                            type="object" 
-                            class="btn-primary"/>
-                    <button string="Cancel" special="cancel"/>
+                    <!-- Tombol normal — tampil saat draft atau done -->
+                    <button name="action_generate_and_close"
+                            string="Generate Serial Numbers"
+                            type="object"
+                            class="btn-primary"
+                            attrs="{'invisible': [('state', '=', 'generating')],
+                                   'readonly': [('can_generate', '=', False)]}"/>
+
+                    <!-- Tombol loading — tampil saat generating -->
+                    <button string="Generating... Please wait"
+                            type="object"
+                            class="btn-primary"
+                            disabled="1"
+                            attrs="{'invisible': [('state', '!=', 'generating')]}"/>
+
+                    <button string="Cancel" special="cancel"
+                            attrs="{'invisible': [('state', '=', 'generating')]}"/>
                 </footer>
             </form>
         </field>

@@ -23,14 +23,6 @@ class StockPickingSNWizard(models.TransientModel):
     total_to_generate = fields.Integer('Total to Generate', compute='_compute_totals')
     total_products = fields.Integer('Total Products', compute='_compute_totals')
     can_generate = fields.Boolean('Can Generate', compute='_compute_totals')
-
-    # State untuk loading indicator
-    state = fields.Selection([
-        ('draft', 'Draft'),
-        ('generating', 'Generating...'),
-        ('done', 'Done'),
-    ], string='State', default='draft')
-    progress_message = fields.Char('Progress', default='')
     
     @api.depends('line_ids.quantity', 'line_ids.generate')
     def _compute_totals(self):
@@ -54,13 +46,17 @@ class StockPickingSNWizard(models.TransientModel):
         if not picking.exists():
             raise UserError(_('Picking not found!'))
         
+        # Get ONLY products from this picking's moves that need serial tracking
         lines = []
         for move in picking.move_ids.filtered(lambda m: m.product_id.tracking == 'serial'):
+            
+            # Calculate how many SNs are needed for THIS move
             qty_needed = int(move.product_uom_qty)
             qty_existing = len(move.move_line_ids.filtered(lambda ml: ml.lot_id))
             qty_to_generate = max(0, qty_needed - qty_existing)
             
             if qty_to_generate > 0:
+                # Auto-detect SN type from product
                 sn_type = picking._get_default_sn_type(move.product_id)
                 
                 lines.append((0, 0, {
@@ -81,42 +77,32 @@ class StockPickingSNWizard(models.TransientModel):
             ))
         
         res['line_ids'] = lines
+        
         return res
     
     def action_generate(self):
-        """Generate serial numbers untuk produk yang dipilih"""
+        """Generate serial numbers for selected products"""
         self.ensure_one()
         
         if not self.can_generate:
             raise UserError(_('No products selected for generation!'))
         
+        # Validate picking is still in correct state
         if self.picking_id.state not in ['confirmed', 'assigned', 'waiting']:
             raise UserError(_('Transfer state has changed. Please refresh and try again.'))
-
-        # Set state generating untuk loading indicator di UI
-        self.write({'state': 'generating', 'progress_message': _('Preparing to generate serial numbers...')})
-        self.env.cr.commit()  # Flush ke DB supaya UI bisa baca state terbaru
-
+        
         StockLot = self.env['stock.lot']
         total_generated = 0
         generated_details = []
         errors = []
         
-        lines_to_process = self.line_ids.filtered(lambda l: l.generate and l.quantity > 0)
-
-        for idx, line in enumerate(lines_to_process, 1):
-            # Update progress message per produk
-            self.write({
-                'progress_message': _(
-                    'Processing %s/%s: %s (%s SNs)...'
-                ) % (idx, len(lines_to_process), line.product_name, line.quantity)
-            })
-            self.env.cr.commit()
-
+        for line in self.line_ids.filtered(lambda l: l.generate and l.quantity > 0):
             try:
+                # Validate that the move still exists and belongs to this picking
                 if line.move_id.picking_id != self.picking_id:
                     raise ValidationError(_('Move does not belong to this picking!'))
                 
+                # Double-check quantity needed
                 qty_needed = int(line.move_id.product_uom_qty)
                 qty_existing = len(line.move_id.move_line_ids.filtered(lambda ml: ml.lot_id))
                 qty_to_generate = max(0, qty_needed - qty_existing)
@@ -127,12 +113,10 @@ class StockPickingSNWizard(models.TransientModel):
                     )
                     continue
                 
+                # Use the requested quantity, but not more than needed
                 actual_qty = min(line.quantity, qty_to_generate)
-
-                # -------------------------------------------------------
-                # FIX UTAMA: generate_serial_numbers sekarang menerima
-                # semua kandidat SN sekaligus, lalu batch create move lines
-                # -------------------------------------------------------
+                
+                # Generate serial numbers
                 serial_numbers = StockLot.generate_serial_numbers(
                     line.product_id.product_tmpl_id.id,
                     line.product_id.id,
@@ -140,14 +124,11 @@ class StockPickingSNWizard(models.TransientModel):
                     actual_qty
                 )
                 
-                _logger.info(
-                    'Generated %d SNs for %s in picking %s',
-                    len(serial_numbers), line.product_name, self.picking_id.name
-                )
-
-                # Batch create move lines — satu call, satu transaksi
-                move_line_vals_list = [
-                    {
+                _logger.info(f'Generated {len(serial_numbers)} SNs for {line.product_name} in picking {self.picking_id.name}')
+                
+                # Create move lines for each SN
+                for sn in serial_numbers:
+                    self.env['stock.move.line'].create({
                         'move_id': line.move_id.id,
                         'product_id': line.product_id.id,
                         'product_uom_id': line.product_id.uom_id.id,
@@ -156,43 +137,38 @@ class StockPickingSNWizard(models.TransientModel):
                         'picking_id': self.picking_id.id,
                         'lot_id': sn.id,
                         'quantity': 1,
-                    }
-                    for sn in serial_numbers
-                ]
-                self.env['stock.move.line'].create(move_line_vals_list)
-                total_generated += len(serial_numbers)
+                    })
+                    total_generated += 1
                 
                 generated_details.append(
                     f"✓ {line.product_name}: {actual_qty} SNs generated (Type: {line.sn_type})"
                 )
                 
-                if serial_numbers:
-                    first_sn = serial_numbers[0].name
-                    last_sn = serial_numbers[-1].name if len(serial_numbers) > 1 else first_sn
-                    if len(serial_numbers) > 1:
-                        generated_details.append(f"   Range: {first_sn} ... {last_sn}")
-                    else:
-                        generated_details.append(f"   SN: {first_sn}")
+                # Get sample SN range
+                first_sn = serial_numbers[0].name
+                last_sn = serial_numbers[-1].name if len(serial_numbers) > 1 else first_sn
+                
+                if len(serial_numbers) > 1:
+                    generated_details.append(f"   Range: {first_sn} ... {last_sn}")
+                else:
+                    generated_details.append(f"   SN: {first_sn}")
                 
             except Exception as e:
                 error_msg = str(e)
-                _logger.error(
-                    'Error generating SNs for %s: %s', line.product_name, error_msg,
-                    exc_info=True
-                )
+                _logger.error(f'Error generating SNs for {line.product_name}: {error_msg}', exc_info=True)
                 errors.append(f"✗ {line.product_name}: {error_msg}")
         
-        # Tandai picking sudah generate SN
+        # Mark as generated if at least one SN was created
         if total_generated > 0:
             self.picking_id.serial_numbers_generated = True
-
-        # Set state done
-        self.write({'state': 'done', 'progress_message': _('Generation complete!')})
-
+        
+        # Prepare result message
         details_message = '\n'.join(generated_details)
+        
         if errors:
             details_message += '\n\nErrors:\n' + '\n'.join(errors)
         
+        # Return notification
         if total_generated > 0:
             message = _(
                 'Successfully generated %s serial numbers!\n\n%s\n\n'
@@ -215,8 +191,9 @@ class StockPickingSNWizard(models.TransientModel):
         }
     
     def action_generate_and_close(self):
-        """Generate dan tutup wizard"""
+        """Generate and close wizard"""
         result = self.action_generate()
+        # Don't close automatically, let user see the result
         return result
 
 
@@ -229,8 +206,8 @@ class StockPickingSNWizardLine(models.TransientModel):
     product_id = fields.Many2one('product.product', string='Product', required=True, readonly=True)
     product_name = fields.Char('Product Name', readonly=True)
     
-    quantity_in_picking = fields.Integer('Qty in Transfer', readonly=True)
-    quantity_existing = fields.Integer('Already Assigned', readonly=True)
+    quantity_in_picking = fields.Integer('Qty in Transfer', readonly=True, help="Total quantity in the transfer")
+    quantity_existing = fields.Integer('Already Assigned', readonly=True, help="Serial numbers already assigned")
     quantity = fields.Integer('Qty to Generate', required=True, default=1)
     
     sn_type = fields.Selection([
@@ -248,13 +225,16 @@ class StockPickingSNWizardLine(models.TransientModel):
                 try:
                     year = datetime.now().strftime('%y')
                     StockLot = self.env['stock.lot']
+                    
                     next_seq = StockLot._get_next_sequence_global(line.sn_type, year)
                     preview = f"PF{year}{line.sn_type}{next_seq:07d}"
+                    
                     if line.quantity > 1:
                         last_seq = next_seq + line.quantity - 1
                         preview += f" ... PF{year}{line.sn_type}{last_seq:07d}"
+                    
                     line.preview_sn = preview
-                except Exception:
+                except Exception as e:
                     line.preview_sn = 'Preview not available'
             else:
                 line.preview_sn = ''
@@ -272,5 +252,5 @@ class StockPickingSNWizardLine(models.TransientModel):
                     'Transfer quantity: %s\n'
                     'Already assigned: %s\n'
                     'Maximum to generate: %s'
-                ) % (max_qty, line.product_name, line.quantity_in_picking,
+                ) % (max_qty, line.product_name, line.quantity_in_picking, 
                      line.quantity_existing, max_qty))
