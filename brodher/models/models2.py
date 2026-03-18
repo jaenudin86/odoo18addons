@@ -82,6 +82,9 @@ class ProductTemplate(models.Model):
                 if variant.standard_price == 0.0:
                     variant.standard_price = tmpl.standard_price
 
+    # Pajak penjualan & pembelian tetap di level template (Odoo default, tidak di-override)
+    # ══════════════════════════════════════════════════════════════════════════
+
     # ══════════════════════════════════════════════════════════════════════════
     # VALIDASI NAMA PRODUK TIDAK BOLEH DUPLIKAT (level template)
     # ══════════════════════════════════════════════════════════════════════════
@@ -90,7 +93,7 @@ class ProductTemplate(models.Model):
         from odoo.exceptions import ValidationError
         for tmpl in self:
             duplicate = self.env['product.template'].search([
-                ('name', '=ilike', tmpl.name),
+                ('name', '=ilike', tmpl.name),  # case-insensitive
                 ('id', '!=', tmpl.id),
             ], limit=1)
             if duplicate:
@@ -158,20 +161,17 @@ class ProductTemplate(models.Model):
         is_article = vals.get('is_article', 'no')
 
         if is_article == 'yes':
-            # ATC: template dan semua variant pakai nomor yang sama
             vals['tracking'] = 'serial'
             if not (vals.get('default_code') or '').strip():
                 vals['default_code'] = self._generate_article_number('yes')
-
         elif is_article == 'no':
-            # PSIT: template TIDAK dapat nomor otomatis, dibiarkan kosong
             vals['tracking'] = 'none'
-            vals.pop('default_code', None)  # pastikan template tidak dapat nomor
+            if not (vals.get('default_code') or '').strip():
+                vals['default_code'] = self._generate_article_number('no')
 
         template = super().create(vals)
 
         if is_article == 'yes' and template.default_code:
-            # ATC: sinkronkan nomor template ke semua variant
             code = template.default_code
             tmpl_id = template.id
             self.env.cr.execute(
@@ -189,7 +189,6 @@ class ProductTemplate(models.Model):
                     )
 
         elif is_article == 'no':
-            # PSIT: hanya variant yang dapat nomor otomatis, template tetap kosong
             tmpl_id = template.id
             env = self.env
             registry = self.env.registry
@@ -208,11 +207,7 @@ class ProductTemplate(models.Model):
 
             if empty_variants:
                 template.product_variant_ids.invalidate_recordset(['default_code'])
-                # Jangan invalidate default_code template agar tetap kosong
-                self.env.cr.execute(
-                    "UPDATE product_template SET default_code = NULL WHERE id = %s",
-                    (tmpl_id,)
-                )
+                template.invalidate_recordset(['default_code'])
 
             @self.env.cr.postcommit.add
             def sync_psit_after_commit():
@@ -267,12 +262,6 @@ class ProductTemplate(models.Model):
         psit_tmpl_ids = [r[0] for r in self.env.cr.fetchall()]
 
         for rec_id in psit_tmpl_ids:
-            # PSIT: pastikan default_code template tetap NULL/kosong
-            self.env.cr.execute(
-                "UPDATE product_template SET default_code = NULL WHERE id = %s",
-                (rec_id,)
-            )
-            # Hanya variant yang dapat nomor otomatis
             self.env.cr.execute(
                 "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                 (rec_id,)
@@ -310,12 +299,6 @@ class ProductTemplate(models.Model):
                     )
 
                 for rec_id in psit_snapshot:
-                    # PSIT post-commit: pastikan template tetap kosong
-                    cr.execute(
-                        "UPDATE product_template SET default_code = NULL WHERE id = %s",
-                        (rec_id,)
-                    )
-                    # Variant yang belum punya nomor → generate
                     cr.execute(
                         "SELECT id FROM product_product WHERE product_tmpl_id = %s AND (default_code IS NULL OR default_code = '')",
                         (rec_id,)
@@ -328,6 +311,7 @@ class ProductTemplate(models.Model):
                             (code, vid)
                         )
 
+        # Validasi nama variant tidak boleh duplikat setelah semua perubahan selesai
         self._check_duplicate_variants()
 
         return res
@@ -371,6 +355,10 @@ class ProductProduct(models.Model):
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA JUAL — independen per variant
+    # lst_price disimpan langsung di kolom product_product.lst_price
+    # Odoo core punya compute _compute_product_price yang baca dari template —
+    # kita matikan dengan mendefinisikan ulang field tanpa compute/related,
+    # lalu override _compute_product_price agar baca dari DB variant langsung.
     # ══════════════════════════════════════════════════════════════════════════
     lst_price = fields.Float(
         string='Sales Price / Harga Jual',
@@ -404,6 +392,8 @@ class ProductProduct(models.Model):
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA MODAL — independen per variant
+    # company_dependent=True sudah built-in di Odoo untuk standard_price,
+    # kita override agar bisa diinput langsung di form variant.
     # ══════════════════════════════════════════════════════════════════════════
     standard_price = fields.Float(
         string='Cost / Harga Modal',
@@ -417,6 +407,7 @@ class ProductProduct(models.Model):
 
     # ══════════════════════════════════════════════════════════════════════════
     # VALIDASI NAMA VARIANT TIDAK BOLEH DUPLIKAT
+    # Dicek saat create dan write di level product.product
     # ══════════════════════════════════════════════════════════════════════════
     def _check_unique_variant_name(self):
         """Cek semua variant dalam satu template, tidak boleh ada nama yang sama."""
@@ -446,14 +437,12 @@ class ProductProduct(models.Model):
             if row:
                 is_article, tmpl_code = row
                 if is_article == 'yes':
-                    # ATC: variant ikut nomor template
                     vals['default_code'] = tmpl_code
                     vals['tracking'] = 'serial'
                 elif is_article == 'no':
-                    # PSIT: variant dapat nomor otomatis sendiri, tracking none
-                    vals['tracking'] = 'none'
                     if not vals.get('default_code'):
                         tmpl = self.env['product.template'].browse(tmpl_id)
                         vals['default_code'] = tmpl._generate_article_number('no')
+                    vals['tracking'] = 'none'
 
         return super().create(vals)
