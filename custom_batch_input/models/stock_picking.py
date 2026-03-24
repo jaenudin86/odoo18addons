@@ -5,6 +5,21 @@ from odoo.exceptions import UserError
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
 
+    def action_open_batch_input_wizard(self):
+        """Buka wizard input batch number & expired date."""
+        self.ensure_one()
+        return {
+            'name': _('Input Batch & Expired Date'),
+            'type': 'ir.actions.act_window',
+            'res_model': 'stock.batch.input.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'active_id': self.id,
+                'active_model': 'stock.picking',
+            },
+        }
+
     def button_validate(self):
         """Override validate: wajib batch number & expired date untuk semua produk
         yang memiliki tracking 'lot' pada penerimaan barang (Receipt)."""
