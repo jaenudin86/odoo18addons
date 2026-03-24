@@ -16,7 +16,7 @@
                     <notebook>
                         <page string="Detail Produk">
                             <field name="line_ids" widget="one2many">
-                                <list editable="bottom" decoration-danger="not lot_name or not expiration_date">
+                                <tree editable="bottom" decoration-danger="not lot_name or not expiration_date">
                                     <field name="product_id" readonly="1" optional="show"/>
                                     <field name="qty_done" optional="show"/>
                                     <field name="product_uom_id" readonly="1" optional="show"/>
@@ -34,7 +34,7 @@
                                         required="1"
                                         widget="date"/>
                                     <field name="move_id" column_invisible="1"/>
-                                </list>
+                                </tree>
                             </field>
                         </page>
                     </notebook>
