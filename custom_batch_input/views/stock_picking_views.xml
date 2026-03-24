@@ -1,34 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
+<odoo noupdate="0">
 
-    <!-- Inherit stock.picking form - tambah tombol di Receipt -->
     <record id="view_stock_picking_form_batch_input" model="ir.ui.view">
         <field name="name">stock.picking.form.batch.input</field>
         <field name="model">stock.picking</field>
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
-
-            <!-- Tambah tombol di header, sebelum tombol Validate -->
-            <xpath expr="//button[@name='button_validate']" position="before">
-                <button name="%(custom_batch_input.action_stock_batch_input_wizard)d"
-                    string="🏷️ Input Batch &amp; Expired"
-                    type="action"
+            <header position="inside">
+                <button name="action_open_batch_input_wizard"
+                    string="Input Batch &amp; Expired"
+                    type="object"
                     class="btn-secondary"
                     invisible="picking_type_code != 'incoming' or state in ('done', 'cancel')"
-                    context="{'active_id': active_id}"
                     help="Klik untuk mengisi batch number dan expired date untuk semua produk"/>
-            </xpath>
-
-        </field>
-    </record>
-
-    <!-- Override tombol Validate di stock.picking untuk cek batch wajib -->
-    <record id="view_stock_picking_form_validate_check" model="ir.ui.view">
-        <field name="name">stock.picking.form.validate.check</field>
-        <field name="model">stock.picking</field>
-        <field name="inherit_id" ref="stock.view_picking_form"/>
-        <field name="arch" type="xml">
-            <!-- Tambah server action untuk validasi sebelum validate -->
+            </header>
         </field>
     </record>
 
