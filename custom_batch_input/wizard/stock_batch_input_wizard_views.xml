@@ -1,8 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<odoo>
-<data>
+<odoo noupdate="0">
 
-    <!-- Wizard Form View -->
     <record id="view_stock_batch_input_wizard_form" model="ir.ui.view">
         <field name="name">stock.batch.input.wizard.form</field>
         <field name="model">stock.batch.input.wizard</field>
@@ -15,7 +13,6 @@
                             <field name="picking_id" readonly="1"/>
                         </h3>
                     </div>
-
                     <notebook>
                         <page string="Detail Produk">
                             <field name="line_ids" widget="one2many">
@@ -41,7 +38,6 @@
                             </field>
                         </page>
                     </notebook>
-
                     <div class="alert alert-warning" role="alert">
                         <strong>Perhatian:</strong>
                         Semua produk dengan tracking Lot wajib diisi Batch Number dan Expired Date
@@ -63,7 +59,6 @@
         </field>
     </record>
 
-    <!-- Action untuk membuka wizard -->
     <record id="action_stock_batch_input_wizard" model="ir.actions.act_window">
         <field name="name">Input Batch &amp; Expired Date</field>
         <field name="res_model">stock.batch.input.wizard</field>
@@ -73,5 +68,4 @@
         <field name="context">{}</field>
     </record>
 
-</data>
 </odoo>
