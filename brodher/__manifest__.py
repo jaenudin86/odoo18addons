@@ -18,8 +18,8 @@ Long description of module's purpose
     'version': '0.1',
 
     # any module necessary for this one to work correctly
-    # 'depends': ['product','web'],
-'depends': ['stock', 'website', 'product','contacts'],
+    # 'depends': ['product','web'],ß
+'depends': ['stock','product','contacts'],
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',
