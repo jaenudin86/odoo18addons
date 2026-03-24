@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+<data>
 
     <!-- Wizard Form View -->
     <record id="view_stock_batch_input_wizard_form" model="ir.ui.view">
@@ -43,7 +44,8 @@
 
                     <div class="alert alert-warning" role="alert">
                         <strong>Perhatian:</strong>
-                        Semua produk dengan tracking Lot wajib diisi Batch Number dan Expired Date sebelum bisa melakukan validasi penerimaan.
+                        Semua produk dengan tracking Lot wajib diisi Batch Number dan Expired Date
+                        sebelum bisa melakukan validasi penerimaan.
                     </div>
                 </sheet>
                 <footer>
@@ -71,4 +73,5 @@
         <field name="context">{}</field>
     </record>
 
+</data>
 </odoo>
