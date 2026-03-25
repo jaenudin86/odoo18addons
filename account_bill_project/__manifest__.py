@@ -24,7 +24,7 @@ Account Bill Project
         'security/ir.model.access.csv',
         'security/account_bill_project_security.xml',
         'report/report_vendor_bill.xml',
-        'report/report_action.xml',
+        # 'report/report_action.xml',
         'views/account_move_views.xml',
         'views/account_bill_approval_views.xml',
         # 'views/res_config_settings_views.xml',
