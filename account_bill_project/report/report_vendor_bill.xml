@@ -5,6 +5,26 @@
 <template id="report_vendor_bill_project"
           inherit_id="account.report_invoice_document">
 
+    <!-- Ganti header kolom Description → Akun COA -->
+    <xpath expr="//th[@name='th_description']" position="replace">
+        <th name="th_description" class="text-start">
+            <span>Akun COA</span>
+        </th>
+    </xpath>
+
+    <!-- Ganti isi kolom deskripsi → tampilkan COA code + name -->
+    <xpath expr="//td[@name='account_invoice_line_name']" position="replace">
+        <td name="account_invoice_line_name">
+            <t t-if="line.account_id">
+                <strong><t t-esc="line.account_id.code"/></strong>
+                <span> - <t t-esc="line.account_id.name"/></span>
+            </t>
+            <t t-if="line.name">
+                <br/><small style="color:#888;"><t t-esc="line.name"/></small>
+            </t>
+        </td>
+    </xpath>
+
     <!-- Tambah Project / Analytic setelah div informations -->
     <xpath expr="//div[@id='informations']" position="after">
         <t t-if="o.x_analytic_account_id">
@@ -18,23 +38,6 @@
         </t>
     </xpath>
 
-    <!-- Ganti kolom description di lines dengan COA code + name -->
-    <!-- Di Odoo 18, kolom deskripsi line ada di td pertama tabel lines -->
-    <xpath expr="//t[@t-foreach='lines']/tr/td[1]" position="replace">
-        <td>
-            <t t-if="line.account_id">
-                <strong><t t-esc="line.account_id.code"/></strong>
-                <span style="color:#555;"> - <t t-esc="line.account_id.name"/></span>
-                <t t-if="line.name and line.name != line.account_id.name">
-                    <br/><small style="color:#888;"><t t-esc="line.name"/></small>
-                </t>
-            </t>
-            <t t-else="">
-                <t t-esc="line.name"/>
-            </t>
-        </td>
-    </xpath>
-
     <!-- Tambah info approval setelah div total -->
     <xpath expr="//div[@id='total']" position="after">
         <t t-if="o.x_approval_state == 'approved' and o.x_approved_by">
@@ -42,7 +45,7 @@
                 <strong>Disetujui oleh: </strong>
                 <span t-field="o.x_approved_by.name"/>
                 <span style="margin-left:16px;color:#6c757d;">
-                    <t t-esc="o.x_approved_date" t-options='{"widget": "datetime"}'/>
+                    <t t-esc="o.x_approved_date" t-options='{"widget":"datetime"}'/>
                 </span>
             </div>
         </t>
