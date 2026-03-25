@@ -31,7 +31,6 @@ class StockBatchInputWizard(models.TransientModel):
             raise UserError(_('Wizard ini hanya untuk penerimaan barang (Receipt).'))
 
         lines = []
-        # Group per produk — 1 baris per produk, bukan per SN
         seen_products = set()
         for move in picking.move_ids.filtered(lambda m: m.state not in ('done', 'cancel')):
             product = move.product_id
@@ -41,7 +40,6 @@ class StockBatchInputWizard(models.TransientModel):
                 continue
             seen_products.add(product.id)
 
-            # Ambil batch & expired dari SN pertama kalau sudah ada
             first_lot = move.move_line_ids.mapped('lot_id')[:1]
             lines.append((0, 0, {
                 'move_id': move.id,
@@ -57,24 +55,20 @@ class StockBatchInputWizard(models.TransientModel):
         return res
 
     def action_confirm(self):
-        """Apply batch number & expired date ke semua SN per produk."""
         self.ensure_one()
 
-        # Validasi semua line harus terisi
         for line in self.line_ids:
             if not line.x_batch_number:
                 raise ValidationError(_(
                     'Batch number wajib diisi untuk produk: %s'
-                ) % line.product_id.display_name)
+                ) % (line.product_id.display_name if line.product_id else '?'))
             if not line.expiration_date:
                 raise ValidationError(_(
                     'Expired date wajib diisi untuk produk: %s'
-                ) % line.product_id.display_name)
+                ) % (line.product_id.display_name if line.product_id else '?'))
 
         for line in self.line_ids:
-            move = line.move_id
-            # Apply ke semua lot/SN yang ada di move line produk ini
-            lots = move.move_line_ids.mapped('lot_id')
+            lots = line.move_id.move_line_ids.mapped('lot_id')
             lots.write({
                 'x_batch_number': line.x_batch_number,
                 'expiration_date': line.expiration_date,
@@ -96,12 +90,10 @@ class StockBatchInputWizardLine(models.TransientModel):
     move_id = fields.Many2one(
         'stock.move',
         string='Move',
-        required=True,
     )
     product_id = fields.Many2one(
         'product.product',
         string='Produk',
-        required=True,
         readonly=True,
     )
     product_uom_id = fields.Many2one(
@@ -115,9 +107,7 @@ class StockBatchInputWizardLine(models.TransientModel):
     )
     x_batch_number = fields.Char(
         string='Batch Number',
-        required=True,
     )
     expiration_date = fields.Datetime(
         string='Expired Date',
-        required=True,
     )
