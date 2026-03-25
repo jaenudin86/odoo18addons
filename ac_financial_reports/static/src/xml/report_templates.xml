@@ -1,0 +1,226 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- Shared: HierarchyRow (recursive) -->
+    <t t-name="ac_financial_reports.HierarchyRow">
+        <div class="fr-row" t-att-class="{ 'fr-row-parent': hasChildren }" t-on-click="onRowClick">
+            <div class="fr-row-content" t-attf-style="padding-left: {{ indent }}px;">
+                <span class="fr-toggle" t-on-click="toggleExpand">
+                    <t t-if="hasChildren">
+                        <i t-attf-class="fa {{ state.expanded ? 'fa-caret-down' : 'fa-caret-right' }} fr-caret"/>
+                    </t>
+                    <t t-else=""><span class="fr-spacer"/></t>
+                </span>
+                <span class="fr-code" t-att-class="{ 'fw-bold': hasChildren }"><t t-esc="props.row.code"/></span>
+                <span class="fr-name" t-att-class="{ 'fw-bold': hasChildren }"><t t-esc="props.row.name"/></span>
+                <t t-foreach="props.columns" t-as="col" t-key="col.key">
+                    <span class="fr-amount" t-att-class="{ 'fw-bold': hasChildren, 'text-success': props.row[col.key] > 0, 'text-danger': props.row[col.key] &lt; 0 }">
+                        <t t-esc="fmt(props.row[col.key])"/>
+                    </span>
+                </t>
+            </div>
+        </div>
+        <t t-if="hasChildren and state.expanded">
+            <t t-foreach="props.row.children" t-as="child" t-key="child.id">
+                <HierarchyRow row="child" depth="(props.depth || 0) + 1" columns="props.columns" onRowClick="props.onRowClick"/>
+            </t>
+        </t>
+    </t>
+
+    <!-- TRIAL BALANCE -->
+    <t t-name="ac_financial_reports.TrialBalanceReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-balance-scale me-2"/>Trial Balance</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>From:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom" t-on-change="(ev) => state.dateFrom = ev.target.value"/></div>
+                <div class="fr-filter-group"><label>To:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <button class="btn btn-primary btn-sm" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <div class="fr-table-header">
+                    <span class="fr-col-toggle"></span><span class="fr-col-code">Code</span><span class="fr-col-name">Account</span>
+                    <span class="fr-col-amount">Opening</span><span class="fr-col-amount">Debit</span><span class="fr-col-amount">Credit</span><span class="fr-col-amount">Ending</span>
+                </div>
+                <div class="fr-tree-content">
+                    <t t-foreach="state.data.accounts" t-as="acc" t-key="acc.id">
+                        <HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/>
+                    </t>
+                </div>
+                <div class="fr-totals-row">
+                    <span class="fr-col-toggle"></span><span class="fr-col-code"></span><span class="fr-col-name fw-bold">TOTAL</span>
+                    <span class="fr-col-amount fw-bold"><t t-esc="fmt(state.data.totals.opening_balance)"/></span>
+                    <span class="fr-col-amount fw-bold"><t t-esc="fmt(state.data.totals.debit)"/></span>
+                    <span class="fr-col-amount fw-bold"><t t-esc="fmt(state.data.totals.credit)"/></span>
+                    <span class="fr-col-amount fw-bold"><t t-esc="fmt(state.data.totals.ending_balance)"/></span>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- PROFIT AND LOSS -->
+    <t t-name="ac_financial_reports.ProfitLossReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-line-chart me-2"/>Profit &amp; Loss</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>From:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom" t-on-change="(ev) => state.dateFrom = ev.target.value"/></div>
+                <div class="fr-filter-group"><label>To:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <button class="btn btn-primary btn-sm" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <div class="fr-section-header"><span class="fw-bold">INCOME</span><span class="fr-section-total fw-bold"><t t-esc="fmt(state.data.income.total)"/></span></div>
+                <div class="fr-tree-content">
+                    <t t-foreach="state.data.income.items" t-as="acc" t-key="acc.id"><HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/></t>
+                </div>
+                <div class="fr-section-header mt-3"><span class="fw-bold">EXPENSE</span><span class="fr-section-total fw-bold"><t t-esc="fmt(state.data.expense.total)"/></span></div>
+                <div class="fr-tree-content">
+                    <t t-foreach="state.data.expense.items" t-as="acc" t-key="acc.id"><HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/></t>
+                </div>
+                <div class="fr-totals-row fr-net-profit">
+                    <span class="fw-bold fs-5">NET PROFIT</span>
+                    <span class="fw-bold fs-5" t-att-class="{ 'text-success': state.data.net_profit >= 0, 'text-danger': state.data.net_profit &lt; 0 }"><t t-esc="fmt(state.data.net_profit)"/></span>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- BALANCE SHEET -->
+    <t t-name="ac_financial_reports.BalanceSheetReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-building me-2"/>Balance Sheet</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>As of:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <button class="btn btn-primary btn-sm" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <div class="fr-section-header"><span class="fw-bold">ASSETS</span><span class="fr-section-total fw-bold"><t t-esc="fmt(state.data.assets.total)"/></span></div>
+                <div class="fr-tree-content"><t t-foreach="state.data.assets.items" t-as="acc" t-key="acc.id"><HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/></t></div>
+                <div class="fr-section-header mt-3"><span class="fw-bold">LIABILITIES</span><span class="fr-section-total fw-bold"><t t-esc="fmt(state.data.liabilities.total)"/></span></div>
+                <div class="fr-tree-content"><t t-foreach="state.data.liabilities.items" t-as="acc" t-key="acc.id"><HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/></t></div>
+                <div class="fr-section-header mt-3"><span class="fw-bold">EQUITY</span><span class="fr-section-total fw-bold"><t t-esc="fmt(state.data.equity.total)"/></span></div>
+                <div class="fr-tree-content"><t t-foreach="state.data.equity.items" t-as="acc" t-key="acc.id"><HierarchyRow row="acc" depth="0" columns="columns" onRowClick.bind="onAccountClick"/></t></div>
+                <div class="fr-summary-line"><span>Unallocated Earnings</span><span class="fw-bold"><t t-esc="fmt(state.data.unallocated_earnings)"/></span></div>
+                <div class="fr-totals-row"><span class="fw-bold">TOTAL ASSETS</span><span class="fw-bold"><t t-esc="fmt(state.data.assets.total)"/></span></div>
+                <div class="fr-totals-row"><span class="fw-bold">TOTAL LIABILITIES + EQUITY</span><span class="fw-bold"><t t-esc="fmt(state.data.total_liabilities_equity)"/></span></div>
+            </t>
+        </div>
+    </t>
+
+    <!-- GENERAL LEDGER -->
+    <t t-name="ac_financial_reports.GeneralLedgerReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-book me-2"/>General Ledger</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>From:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom" t-on-change="(ev) => state.dateFrom = ev.target.value"/></div>
+                <div class="fr-filter-group"><label>To:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <button class="btn btn-primary btn-sm" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <t t-foreach="state.data.accounts" t-as="acc" t-key="acc.id">
+                    <div class="fr-gl-account-header" t-on-click="() => this.toggleAccount(acc.id)">
+                        <i t-attf-class="fa {{ isExpanded(acc.id) ? 'fa-caret-down' : 'fa-caret-right' }} me-2"/>
+                        <span class="fw-bold"><t t-esc="acc.code"/> - <t t-esc="acc.name"/></span>
+                        <span class="ms-auto fw-bold">Ending: <t t-esc="fmt(acc.ending_balance)"/></span>
+                    </div>
+                    <t t-if="isExpanded(acc.id)">
+                        <div class="fr-gl-opening"><span>Opening Balance:</span><span class="fw-bold"><t t-esc="fmt(acc.opening_balance)"/></span></div>
+                        <table class="table table-sm table-hover fr-gl-table">
+                            <thead><tr><th>Date</th><th>Journal Entry</th><th>Partner</th><th>Label</th><th class="text-end">Debit</th><th class="text-end">Credit</th><th class="text-end">Balance</th></tr></thead>
+                            <tbody>
+                                <t t-foreach="acc.entries" t-as="entry" t-key="entry.id">
+                                    <tr class="fr-gl-entry" t-on-click="() => this.onMoveClick(entry.move_id)">
+                                        <td><t t-esc="entry.date"/></td><td class="text-primary"><t t-esc="entry.move_name"/></td>
+                                        <td><t t-esc="entry.partner"/></td><td><t t-esc="entry.label"/></td>
+                                        <td class="text-end"><t t-esc="fmt(entry.debit)"/></td><td class="text-end"><t t-esc="fmt(entry.credit)"/></td>
+                                        <td class="text-end fw-bold"><t t-esc="fmt(entry.balance)"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                            <tfoot><tr class="fw-bold"><td colspan="4">Total</td><td class="text-end"><t t-esc="fmt(acc.total_debit)"/></td><td class="text-end"><t t-esc="fmt(acc.total_credit)"/></td><td class="text-end"><t t-esc="fmt(acc.ending_balance)"/></td></tr></tfoot>
+                        </table>
+                    </t>
+                </t>
+            </t>
+        </div>
+    </t>
+
+    <!-- CASH FLOW -->
+    <t t-name="ac_financial_reports.CashFlowReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-money me-2"/>Cash Flow Statement (Indirect)</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>From:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateFrom" t-on-change="(ev) => state.dateFrom = ev.target.value"/></div>
+                <div class="fr-filter-group"><label>To:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <button class="btn btn-primary btn-sm" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <div class="fr-cf-section">
+                    <div class="fr-cf-section-title">OPERATING ACTIVITIES</div>
+                    <div class="fr-cf-line"><span>Net Income</span><span><t t-esc="fmt(state.data.operating.net_income)"/></span></div>
+                    <div class="fr-cf-subtitle">Adjustments:</div>
+                    <t t-foreach="state.data.operating.adjustments" t-as="item" t-key="item.name"><div class="fr-cf-line fr-cf-indent"><span><t t-esc="item.name"/></span><span><t t-esc="fmt(item.amount)"/></span></div></t>
+                    <div class="fr-cf-subtitle">Changes in Working Capital:</div>
+                    <t t-foreach="state.data.operating.working_capital" t-as="item" t-key="item.name"><div class="fr-cf-line fr-cf-indent"><span><t t-esc="item.name"/></span><span><t t-esc="fmt(item.amount)"/></span></div></t>
+                    <div class="fr-cf-total"><span>Net Cash from Operating</span><span><t t-esc="fmt(state.data.operating.total)"/></span></div>
+                </div>
+                <div class="fr-cf-section">
+                    <div class="fr-cf-section-title">INVESTING ACTIVITIES</div>
+                    <t t-foreach="state.data.investing.items" t-as="item" t-key="item.name"><div class="fr-cf-line"><span><t t-esc="item.name"/></span><span><t t-esc="fmt(item.amount)"/></span></div></t>
+                    <div class="fr-cf-total"><span>Net Cash from Investing</span><span><t t-esc="fmt(state.data.investing.total)"/></span></div>
+                </div>
+                <div class="fr-cf-section">
+                    <div class="fr-cf-section-title">FINANCING ACTIVITIES</div>
+                    <t t-foreach="state.data.financing.items" t-as="item" t-key="item.name"><div class="fr-cf-line"><span><t t-esc="item.name"/></span><span><t t-esc="fmt(item.amount)"/></span></div></t>
+                    <div class="fr-cf-total"><span>Net Cash from Financing</span><span><t t-esc="fmt(state.data.financing.total)"/></span></div>
+                </div>
+                <div class="fr-cf-section fr-cf-summary">
+                    <div class="fr-cf-line"><span>Net Change in Cash</span><span class="fw-bold"><t t-esc="fmt(state.data.net_cash_change)"/></span></div>
+                    <div class="fr-cf-line"><span>Opening Cash Balance</span><span><t t-esc="fmt(state.data.opening_cash)"/></span></div>
+                    <div class="fr-cf-total fr-cf-grand-total"><span>Closing Cash Balance</span><span><t t-esc="fmt(state.data.closing_cash)"/></span></div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+    <!-- AGING -->
+    <t t-name="ac_financial_reports.AgingReport">
+        <div class="o_action fr-container">
+            <div class="fr-header"><h2><i class="fa fa-clock-o me-2"/>Aging Report</h2></div>
+            <div class="fr-filter-bar">
+                <div class="fr-filter-group"><label>As of:</label>
+                    <input type="date" class="form-control form-control-sm" t-att-value="state.dateTo" t-on-change="(ev) => state.dateTo = ev.target.value"/></div>
+                <div class="btn-group btn-group-sm ms-2">
+                    <button t-att-class="'btn ' + (state.reportType === 'receivable' ? 'btn-primary' : 'btn-outline-primary')" t-on-click="() => this.setType('receivable')">Receivable</button>
+                    <button t-att-class="'btn ' + (state.reportType === 'payable' ? 'btn-primary' : 'btn-outline-primary')" t-on-click="() => this.setType('payable')">Payable</button>
+                </div>
+                <button class="btn btn-primary btn-sm ms-2" t-on-click="onApplyFilter"><i class="fa fa-filter me-1"/>Apply</button>
+            </div>
+            <div t-if="state.loading" class="fr-loading"><i class="fa fa-spinner fa-spin fa-2x"/><span class="ms-2">Loading...</span></div>
+            <t t-if="!state.loading and state.data">
+                <table class="table table-sm table-hover fr-aging-table">
+                    <thead><tr><th>Partner</th><th class="text-end">Current</th><th class="text-end">1-30</th><th class="text-end">31-60</th><th class="text-end">61-90</th><th class="text-end">&gt;90</th><th class="text-end">Total</th></tr></thead>
+                    <tbody>
+                        <t t-foreach="state.data.partners" t-as="p" t-key="p.partner_id">
+                            <tr><td><t t-esc="p.partner_name"/></td><td class="text-end"><t t-esc="fmt(p.current)"/></td><td class="text-end"><t t-esc="fmt(p.b1_30)"/></td><td class="text-end"><t t-esc="fmt(p.b31_60)"/></td><td class="text-end"><t t-esc="fmt(p.b61_90)"/></td><td class="text-end"><t t-esc="fmt(p.b90_plus)"/></td><td class="text-end fw-bold"><t t-esc="fmt(p.total)"/></td></tr>
+                        </t>
+                    </tbody>
+                    <tfoot><tr class="fw-bold"><td>TOTAL</td><td class="text-end"><t t-esc="fmt(state.data.totals.current)"/></td><td class="text-end"><t t-esc="fmt(state.data.totals.b1_30)"/></td><td class="text-end"><t t-esc="fmt(state.data.totals.b31_60)"/></td><td class="text-end"><t t-esc="fmt(state.data.totals.b61_90)"/></td><td class="text-end"><t t-esc="fmt(state.data.totals.b90_plus)"/></td><td class="text-end"><t t-esc="fmt(state.data.totals.total)"/></td></tr></tfoot>
+                </table>
+            </t>
+        </div>
+    </t>
+
+</templates>

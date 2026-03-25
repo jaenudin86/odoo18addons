@@ -1,0 +1,74 @@
+/* ============================================================ */
+/* Financial Reports Shared Styles                              */
+/* ============================================================ */
+.fr-container { padding: 16px 24px; background: #fff; min-height: 100%; }
+.fr-header { display: flex; align-items: center; margin-bottom: 12px; }
+.fr-header h2 { font-size: 1.4rem; font-weight: 600; color: #2c3e50; margin: 0; }
+
+/* Filter Bar */
+.fr-filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 10px 14px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; }
+.fr-filter-group { display: flex; align-items: center; gap: 6px; }
+.fr-filter-group label { font-size: 0.85rem; font-weight: 500; color: #495057; white-space: nowrap; }
+.fr-filter-group .form-control { width: 160px; }
+
+/* Table Header */
+.fr-table-header { display: flex; align-items: center; padding: 10px 8px; background: #e9ecef; border-radius: 6px; font-weight: 600; font-size: 0.82rem; color: #495057; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.fr-col-toggle { width: 28px; flex-shrink: 0; }
+.fr-col-code { width: 120px; flex-shrink: 0; }
+.fr-col-name { flex: 1; min-width: 180px; }
+.fr-col-amount { width: 140px; flex-shrink: 0; text-align: right; }
+
+/* Rows */
+.fr-tree-content { max-height: calc(100vh - 280px); overflow-y: auto; }
+.fr-row { border-bottom: 1px solid #f1f3f5; transition: background 0.12s; }
+.fr-row:hover { background: #e8f4fd; cursor: pointer; }
+.fr-row-content { display: flex; align-items: center; padding: 7px 8px; min-height: 38px; }
+.fr-toggle { width: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.fr-caret { font-size: 1.1rem; color: #6c757d; width: 16px; text-align: center; }
+.fr-spacer { display: inline-block; width: 16px; }
+.fr-code { width: 120px; flex-shrink: 0; font-family: 'Courier New', monospace; font-size: 0.88rem; color: #495057; }
+.fr-name { flex: 1; min-width: 180px; font-size: 0.88rem; color: #2c3e50; padding-right: 10px; }
+.fr-amount { width: 140px; flex-shrink: 0; text-align: right; font-size: 0.88rem; font-family: 'Courier New', monospace; }
+
+/* Totals */
+.fr-totals-row { display: flex; align-items: center; padding: 12px 8px; background: #e9ecef; border-radius: 6px; margin-top: 4px; font-size: 0.95rem; }
+
+/* Section Header (P&L, BS) */
+.fr-section-header { display: flex; justify-content: space-between; padding: 10px 12px; background: #2c3e50; color: #fff; border-radius: 6px; margin-bottom: 2px; font-size: 0.95rem; }
+.fr-section-total { font-family: 'Courier New', monospace; }
+.fr-net-profit { justify-content: space-between; background: #1a252f; color: #fff; border-radius: 6px; padding: 14px 16px; margin-top: 12px; }
+.fr-summary-line { display: flex; justify-content: space-between; padding: 8px 12px; background: #f8f9fa; border-radius: 4px; margin-top: 4px; font-size: 0.9rem; }
+
+/* General Ledger */
+.fr-gl-account-header { display: flex; align-items: center; padding: 10px 12px; background: #e9ecef; border-radius: 6px; margin-top: 8px; cursor: pointer; font-size: 0.95rem; }
+.fr-gl-account-header:hover { background: #dee2e6; }
+.fr-gl-opening { display: flex; justify-content: space-between; padding: 6px 12px; background: #f8f9fa; font-size: 0.85rem; color: #6c757d; }
+.fr-gl-table { font-size: 0.85rem; margin-bottom: 0; }
+.fr-gl-entry { cursor: pointer; }
+.fr-gl-entry:hover { background: #e8f4fd !important; }
+
+/* Cash Flow */
+.fr-cf-section { margin-bottom: 16px; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; }
+.fr-cf-section-title { padding: 10px 14px; background: #2c3e50; color: #fff; font-weight: 600; font-size: 0.92rem; text-transform: uppercase; }
+.fr-cf-subtitle { padding: 6px 14px; background: #f1f3f5; font-weight: 600; font-size: 0.82rem; color: #6c757d; text-transform: uppercase; }
+.fr-cf-line { display: flex; justify-content: space-between; padding: 7px 14px; border-bottom: 1px solid #f1f3f5; font-size: 0.9rem; }
+.fr-cf-indent { padding-left: 32px; }
+.fr-cf-total { display: flex; justify-content: space-between; padding: 10px 14px; background: #e9ecef; font-weight: 600; font-size: 0.92rem; }
+.fr-cf-grand-total { background: #2c3e50; color: #fff; font-size: 1rem; }
+.fr-cf-summary { border: 2px solid #2c3e50; }
+
+/* Aging */
+.fr-aging-table { font-size: 0.88rem; }
+.fr-aging-table thead { background: #e9ecef; }
+.fr-aging-table tfoot { background: #e9ecef; }
+
+/* Loading */
+.fr-loading { display: flex; align-items: center; justify-content: center; padding: 60px 0; color: #6c757d; font-size: 1.1rem; }
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fr-container { padding: 8px 12px; }
+    .fr-filter-bar { flex-direction: column; align-items: stretch; }
+    .fr-col-code { width: 80px; }
+    .fr-col-amount { width: 100px; }
+}
