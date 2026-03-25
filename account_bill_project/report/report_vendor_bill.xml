@@ -2,18 +2,18 @@
 <odoo>
 <data>
 
-<!-- Inherit template print vendor bill bawaan -->
-<template id="report_vendor_bill_document"
+<template id="report_vendor_bill_project"
           inherit_id="account.report_invoice_document">
 
-    <!-- Tambah Project setelah div informations -->
+    <!-- Tambah Project / Analytic setelah blok informations -->
+    <!-- variable di report_invoice_document adalah 'o' bukan 'doc' -->
     <xpath expr="//div[@id='informations']" position="after">
-        <t t-if="doc.x_analytic_account_id">
+        <t t-if="o.x_analytic_account_id">
             <div style="margin:4px 0 8px 0;padding:6px 12px;background:#e6f7f8;border-left:3px solid #017e84;">
                 <strong style="color:#015f64;">Project: </strong>
-                <span t-field="doc.x_analytic_account_id.name" style="color:#015f64;"/>
+                <span t-field="o.x_analytic_account_id.name" style="color:#015f64;"/>
                 <span style="color:#017e84;margin-left:12px;">
-                    Alokasi: <t t-esc="doc.x_analytic_distribution_pct"/>%
+                    Alokasi: <t t-esc="o.x_analytic_distribution_pct"/>%
                 </span>
             </div>
         </t>
@@ -21,12 +21,12 @@
 
     <!-- Tambah info approval setelah div total -->
     <xpath expr="//div[@id='total']" position="after">
-        <t t-if="doc.x_approval_state == 'approved' and doc.x_approved_by">
+        <t t-if="o.x_approval_state == 'approved' and o.x_approved_by">
             <div style="margin-top:12px;padding:8px 12px;border:1px solid #dee2e6;border-radius:4px;font-size:12px;">
                 <strong>Disetujui oleh: </strong>
-                <span t-field="doc.x_approved_by.name"/>
+                <span t-field="o.x_approved_by.name"/>
                 <span style="margin-left:16px;color:#6c757d;">
-                    <t t-esc="doc.x_approved_date" t-options='{"widget": "datetime"}'/>
+                    <t t-esc="o.x_approved_date" t-options='{"widget": "datetime"}'/>
                 </span>
             </div>
         </t>
