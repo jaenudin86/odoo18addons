@@ -9,7 +9,7 @@
         <field name="model">account.account</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
-            <tree string="Chart of Accounts - Hierarchy"
+            <list string="Chart of Accounts - Hierarchy"
                   default_order="code">
                 <field name="code"/>
                 <field name="name"/>
@@ -21,7 +21,7 @@
                 <field name="account_type"/>
                 <field name="reconcile" optional="hide"/>
                 <field name="company_id" optional="hide" groups="base.group_multi_company"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -33,7 +33,7 @@
         <field name="model">account.account</field>
         <field name="priority">25</field>
         <field name="arch" type="xml">
-            <tree string="Chart of Accounts - Grouped"
+            <list string="Chart of Accounts - Grouped"
                   default_order="code"
                   default_group_by="parent_id">
                 <field name="code"/>
@@ -42,7 +42,7 @@
                 <field name="hierarchy_level"/>
                 <field name="account_type"/>
                 <field name="child_count" string="Children"/>
-            </tree>
+            </list>
         </field>
     </record>
 
@@ -70,13 +70,13 @@
                 <page string="Child Accounts" name="child_accounts"
                       invisible="not is_parent">
                     <field name="child_ids" readonly="1">
-                        <tree string="Child Accounts" default_order="code">
+                        <list string="Child Accounts" default_order="code">
                             <field name="code"/>
                             <field name="name"/>
                             <field name="account_type"/>
                             <field name="hierarchy_level" string="Level"/>
                             <field name="child_count" string="Children"/>
-                        </tree>
+                        </list>
                     </field>
                 </page>
             </notebook>
@@ -121,9 +121,9 @@
     <record id="action_account_hierarchy_tree" model="ir.actions.act_window">
         <field name="name">Chart of Accounts - Hierarchy</field>
         <field name="res_model">account.account</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_account_account_hierarchy_tree')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_tree')}),
         ]"/>
         <field name="context">{'default_parent_id': False}</field>
         <field name="help" type="html">
@@ -141,9 +141,9 @@
     <record id="action_account_hierarchy_grouped" model="ir.actions.act_window">
         <field name="name">CoA - Grouped by Parent</field>
         <field name="res_model">account.account</field>
-        <field name="view_mode">tree,form</field>
+        <field name="view_mode">list,form</field>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'tree', 'view_id': ref('view_account_account_hierarchy_tree_grouped')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_tree_grouped')}),
         ]"/>
     </record>
 
