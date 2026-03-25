@@ -49,9 +49,9 @@
         <field name="view_mode">list,form</field>
     </record>
 
-    <menuitem id="menu_brodher_sn_move"
+    <!-- <menuitem id="menu_brodher_sn_move"
               name="SN Movements"
               parent="stock.menu_stock_root"
               action="brodher_sn_move_action"
-              sequence="51"/>
+              sequence="51"/> -->
 </odoo>
