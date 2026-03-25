@@ -1,166 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <data>
+<data>
 
-        <!-- ═══════════════════════════════════════════════════════════════
-             INHERIT: account.move form → Vendor Bills
-        ════════════════════════════════════════════════════════════════ -->
+<!-- ═══════════════════════════════════════════════════════
+     INHERIT account.move form view
+══════════════════════════════════════════════════════════ -->
+<record id="view_account_move_vendor_bill_inherit" model="ir.ui.view">
+    <field name="name">account.move.vendor.bill.inherit.abp</field>
+    <field name="model">account.move</field>
+    <field name="inherit_id" ref="account.view_move_form"/>
+    <field name="arch" type="xml">
 
-        <record id="view_account_move_vendor_bill_inherit" model="ir.ui.view">
-            <field name="name">account.move.vendor.bill.inherit.abp</field>
-            <field name="model">account.move</field>
-            <field name="inherit_id" ref="account.view_move_form"/>
-            <field name="arch" type="xml">
+        <!-- 1. Tombol approval di header -->
+        <xpath expr="//header/button[@name='action_post']" position="before">
 
-                <!-- ── 1. Buttons Approval ── -->
-                <xpath expr="//header/button[@name='action_post']" position="before">
+            <button name="action_submit_for_approval"
+                    string="Ajukan Persetujuan"
+                    type="object"
+                    class="oe_highlight"
+                    invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'draft' or state != 'draft'"/>
 
-                    <button name="action_submit_for_approval"
-                            string="Ajukan Persetujuan"
-                            type="object"
-                            class="oe_highlight"
-                            invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'draft' or state != 'draft'"/>
+            <button name="action_approve"
+                    string="Setujui"
+                    type="object"
+                    class="oe_highlight"
+                    groups="account_bill_project.group_bill_finance_manager"
+                    invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'waiting'"/>
 
-                    <button name="action_approve"
-                            string="Setujui"
-                            type="object"
-                            class="oe_highlight btn-success"
-                            groups="account_bill_project.group_bill_finance_manager"
-                            invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'waiting'"/>
+            <button name="action_reject"
+                    string="Tolak"
+                    type="object"
+                    groups="account_bill_project.group_bill_finance_manager"
+                    invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'waiting'"/>
 
-                    <button name="action_reject"
-                            string="Tolak"
-                            type="object"
-                            class="btn-danger"
-                            groups="account_bill_project.group_bill_finance_manager"
-                            invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'waiting'"/>
+            <button name="action_reset_to_draft_custom"
+                    string="Reset ke Draft"
+                    type="object"
+                    invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'rejected'"/>
 
-                    <button name="action_reset_to_draft_custom"
-                            string="Reset ke Draft"
-                            type="object"
-                            invisible="move_type not in ['in_invoice','in_refund'] or x_approval_state != 'rejected'"/>
+        </xpath>
 
-                </xpath>
+        <!-- 2. Status bar approval -->
+        <xpath expr="//header" position="inside">
+            <field name="x_approval_state"
+                   widget="statusbar"
+                   statusbar_visible="draft,waiting,approved"
+                   invisible="move_type not in ['in_invoice','in_refund']"/>
+        </xpath>
 
-                <!-- ── 2. Status Approval di statusbar ── -->
-                <xpath expr="//header" position="inside">
-                    <field name="x_approval_state"
-                           widget="statusbar"
-                           statusbar_visible="draft,waiting,approved"
-                           invisible="move_type not in ['in_invoice','in_refund']"/>
-                </xpath>
+        <!-- 3. Analytic header block — letakkan di atas tab notebook -->
+        <xpath expr="//notebook" position="before">
+            <group name="analytic_header_group"
+                   string="Account Analytic (Project)"
+                   invisible="move_type not in ['in_invoice','in_refund']">
+                <group>
+                    <field name="x_analytic_account_id"
+                           string="Project / Analytic Account"
+                           placeholder="Pilih project..."/>
+                    <field name="x_analytic_distribution_pct"
+                           string="% Alokasi"
+                           invisible="not x_analytic_account_id"/>
+                </group>
+                <group>
+                    <field name="x_require_director_approval"
+                           string="Perlu Approval Direktur"
+                           readonly="1"
+                           invisible="not x_require_director_approval"/>
+                </group>
+            </group>
+        </xpath>
 
-                <!-- ── 3. Analytic Header Block setelah field ref ── -->
-                <xpath expr="//field[@name='ref']" position="after">
-                    <group string="Account Analytic (Project)"
-                           name="analytic_header_group"
-                           invisible="move_type not in ['in_invoice','in_refund']">
-                        <group>
-                            <field name="x_analytic_account_id"
-                                   string="Analytic Account / Project"
-                                   placeholder="Pilih project..."/>
-                            <field name="x_analytic_distribution_pct"
-                                   string="% Alokasi"
-                                   invisible="not x_analytic_account_id"/>
-                        </group>
-                        <group>
-                            <field name="x_require_director_approval"
-                                   string="Perlu Persetujuan Direktur"
-                                   invisible="not x_require_director_approval"
-                                   readonly="1"/>
-                        </group>
-                    </group>
-                </xpath>
-
-                <!-- ── 4. Sembunyikan kolom product di vendor bills ── -->
-                <xpath expr="//field[@name='invoice_line_ids']//field[@name='product_id']"
-                       position="attributes">
-                    <attribute name="column_invisible">parent.move_type in ['in_invoice', 'in_refund']</attribute>
-                </xpath>
-
-                <!-- ── 5. Tab Approval & Log ── -->
-                <xpath expr="//notebook" position="inside">
-                    <page string="Approval &amp; Log"
-                          name="approval_log_page"
-                          invisible="move_type not in ['in_invoice','in_refund']">
-                        <group string="Info Persetujuan">
-                            <group>
-                                <field name="x_approved_by" string="Disetujui Oleh" readonly="1"/>
-                                <field name="x_approved_date" string="Tanggal Disetujui" readonly="1"/>
-                            </group>
-                            <group>
-                                <field name="x_rejected_reason" string="Alasan Penolakan"
-                                       readonly="1"
-                                       invisible="not x_rejected_reason"/>
-                            </group>
-                        </group>
-                        <field name="x_approval_ids" readonly="1">
-                            <list>
-                                <field name="date" string="Tanggal"/>
-                                <field name="user_id" string="User"/>
-                                <field name="action" string="Aksi"
-                                       widget="badge"
-                                       decoration-success="action == 'approved'"
-                                       decoration-danger="action == 'rejected'"
-                                       decoration-info="action == 'waiting'"/>
-                                <field name="note" string="Catatan"/>
-                            </list>
-                        </field>
-                    </page>
-                </xpath>
-
-            </field>
-        </record>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             LIST VIEW: tambah kolom approval state & project
-        ════════════════════════════════════════════════════════════════ -->
-
-        <record id="view_account_move_vendor_bill_list_inherit" model="ir.ui.view">
-            <field name="name">account.move.vendor.bill.list.inherit.abp</field>
-            <field name="model">account.move</field>
-            <field name="inherit_id" ref="account.view_in_invoice_tree"/>
-            <field name="arch" type="xml">
-                <xpath expr="//list//field[@name='invoice_date_due']" position="after">
-                    <field name="x_analytic_account_id" string="Project" optional="show"/>
-                    <field name="x_approval_state" string="Approval"
-                           widget="badge"
-                           decoration-info="x_approval_state == 'waiting'"
-                           decoration-success="x_approval_state == 'approved'"
-                           decoration-danger="x_approval_state == 'rejected'"
-                           optional="show"/>
-                </xpath>
-            </field>
-        </record>
-
-        <!-- ═══════════════════════════════════════════════════════════════
-             LOG VIEW
-        ════════════════════════════════════════════════════════════════ -->
-
-        <record id="view_account_bill_approval_log_list" model="ir.ui.view">
-            <field name="name">account.bill.approval.log.list</field>
-            <field name="model">account.bill.approval.log</field>
-            <field name="arch" type="xml">
-                <list string="Log Approval" create="false" edit="false" delete="false">
-                    <field name="date" string="Tanggal"/>
-                    <field name="move_id" string="Tagihan"/>
-                    <field name="user_id" string="User"/>
-                    <field name="action" string="Aksi"
-                           widget="badge"
-                           decoration-success="action == 'approved'"
-                           decoration-danger="action == 'rejected'"
-                           decoration-info="action == 'waiting'"/>
-                    <field name="note" string="Catatan"/>
+        <!-- 4. Ganti invoice_line_ids dengan view COA langsung -->
+        <xpath expr="//field[@name='invoice_line_ids']" position="replace">
+            <field name="invoice_line_ids"
+                   invisible="move_type not in ['in_invoice','in_refund']"
+                   optional="show">
+                <list editable="bottom">
+                    <!-- COA wajib, product disembunyikan -->
+                    <field name="account_id"
+                           string="Akun COA"
+                           required="1"
+                           domain="[('deprecated', '=', False)]"
+                           options="{'no_create': False}"/>
+                    <field name="name" string="Keterangan" optional="show"/>
+                    <field name="analytic_distribution"
+                           widget="analytic_distribution"
+                           optional="show"
+                           readonly="1"
+                           column_invisible="parent.x_analytic_account_id == False"/>
+                    <field name="quantity" string="Qty" optional="show"/>
+                    <field name="price_unit" string="Harga"/>
+                    <field name="tax_ids" string="Pajak" widget="many2many_tags" optional="show"/>
+                    <field name="price_subtotal" string="Subtotal" readonly="1"/>
+                    <!-- Sembunyikan product sepenuhnya -->
+                    <field name="product_id" column_invisible="1"/>
+                    <field name="product_uom_id" column_invisible="1"/>
+                    <field name="display_type" column_invisible="1"/>
                 </list>
             </field>
-        </record>
+        </xpath>
 
-        <record id="action_account_bill_approval_log" model="ir.actions.act_window">
-            <field name="name">Log Approval Tagihan</field>
-            <field name="res_model">account.bill.approval.log</field>
-            <field name="view_mode">list</field>
-            <field name="view_id" ref="view_account_bill_approval_log_list"/>
-        </record>
+        <!-- 5. Tab approval log -->
+        <xpath expr="//notebook" position="inside">
+            <page string="Approval"
+                  name="approval_page"
+                  invisible="move_type not in ['in_invoice','in_refund']">
+                <group string="Info Persetujuan">
+                    <group>
+                        <field name="x_approved_by" string="Disetujui Oleh" readonly="1"/>
+                        <field name="x_approved_date" string="Tanggal" readonly="1"/>
+                    </group>
+                    <group>
+                        <field name="x_rejected_reason"
+                               string="Alasan Penolakan"
+                               readonly="1"
+                               invisible="not x_rejected_reason"/>
+                    </group>
+                </group>
+                <field name="x_approval_ids" readonly="1">
+                    <list>
+                        <field name="date" string="Tanggal"/>
+                        <field name="user_id" string="User"/>
+                        <field name="action" string="Aksi"
+                               widget="badge"
+                               decoration-success="action == 'approved'"
+                               decoration-danger="action == 'rejected'"
+                               decoration-info="action == 'waiting'"/>
+                        <field name="note" string="Catatan"/>
+                    </list>
+                </field>
+            </page>
+        </xpath>
 
-    </data>
+    </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════
+     LIST VIEW: kolom tambahan
+══════════════════════════════════════════════════════════ -->
+<record id="view_account_move_vendor_bill_list_inherit" model="ir.ui.view">
+    <field name="name">account.move.vendor.bill.list.inherit.abp</field>
+    <field name="model">account.move</field>
+    <field name="inherit_id" ref="account.view_in_invoice_tree"/>
+    <field name="arch" type="xml">
+        <xpath expr="//list//field[@name='invoice_date_due']" position="after">
+            <field name="x_analytic_account_id" string="Project" optional="show"/>
+            <field name="x_approval_state" string="Approval"
+                   widget="badge"
+                   decoration-info="x_approval_state == 'waiting'"
+                   decoration-success="x_approval_state == 'approved'"
+                   decoration-danger="x_approval_state == 'rejected'"
+                   optional="show"/>
+        </xpath>
+    </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════
+     LOG VIEW
+══════════════════════════════════════════════════════════ -->
+<record id="view_account_bill_approval_log_list" model="ir.ui.view">
+    <field name="name">account.bill.approval.log.list.abp</field>
+    <field name="model">account.bill.approval.log</field>
+    <field name="arch" type="xml">
+        <list string="Log Approval" create="false" edit="false" delete="false">
+            <field name="date" string="Tanggal"/>
+            <field name="move_id" string="Tagihan"/>
+            <field name="user_id" string="User"/>
+            <field name="action" string="Aksi"
+                   widget="badge"
+                   decoration-success="action == 'approved'"
+                   decoration-danger="action == 'rejected'"
+                   decoration-info="action == 'waiting'"/>
+            <field name="note" string="Catatan"/>
+        </list>
+    </field>
+</record>
+
+<record id="action_account_bill_approval_log" model="ir.actions.act_window">
+    <field name="name">Log Approval Tagihan</field>
+    <field name="res_model">account.bill.approval.log</field>
+    <field name="view_mode">list</field>
+    <field name="view_id" ref="view_account_bill_approval_log_list"/>
+</record>
+
+</data>
 </odoo>
