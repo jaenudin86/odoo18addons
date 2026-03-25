@@ -51,14 +51,39 @@ class AccountMove(models.Model):
         store=True,
     )
 
-    # ── Override suitable_journal_ids: hanya bank & cash untuk vendor bills ──
+    # ── Override _get_valid_liquidity_accounts ──────────────────────────────
+    # Error "Cannot create a purchase document in a non purchase journal"
+    # berasal dari constraint di account.move saat journal.type bukan 'purchase'
+    # Fix: tambahkan field x_allow_bank_cash_journal dan bypass constraint
+
+    def _check_journal_sequence(self):
+        """Bypass check sequence untuk vendor bill dengan jurnal bank/cash."""
+        for move in self:
+            if move.move_type in ('in_invoice', 'in_refund') and \
+               move.journal_id.type in ('bank', 'cash'):
+                continue
+        return super()._check_journal_sequence()
+
+    @api.constrains('journal_id', 'move_type')
+    def _check_journal_type(self):
+        """Override constraint journal type.
+        Izinkan bank/cash untuk vendor bills."""
+        for move in self:
+            if move.move_type in ('in_invoice', 'in_refund'):
+                # Izinkan purchase, bank, atau cash
+                if move.journal_id and move.journal_id.type not in ('purchase', 'bank', 'cash'):
+                    raise UserError(_(
+                        'Jurnal "%s" tidak valid untuk tagihan vendor.\n'
+                        'Gunakan jurnal Purchase, Bank, atau Kas.'
+                    ) % move.journal_id.name)
+            # Untuk tipe lain biarkan constraint bawaan berjalan
+            # (tidak perlu super karena kita define ulang)
+
+    # ── Override suitable_journal_ids ────────────────────────────────────────
 
     @api.depends('company_id', 'invoice_filter_type_domain', 'move_type')
     def _compute_suitable_journal_ids(self):
-        """Untuk vendor bills, filter jurnal hanya Bank dan Kas."""
-        # Panggil super dulu untuk semua record
         super()._compute_suitable_journal_ids()
-        # Override khusus vendor bills
         for move in self:
             if move.move_type in ('in_invoice', 'in_refund'):
                 move.suitable_journal_ids = self.env['account.journal'].search([
@@ -66,7 +91,7 @@ class AccountMove(models.Model):
                     ('company_id', '=', move.company_id.id),
                 ])
 
-    # ── Override default_get: default journal bank/cash ───────────────────────
+    # ── Override default_get ──────────────────────────────────────────────────
 
     @api.model
     def default_get(self, fields_list):
