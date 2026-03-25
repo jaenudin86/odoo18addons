@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- Menu: Accounting > Configuration > CoA Hierarchy -->
+    <!-- ============================================================ -->
+    <menuitem id="menu_account_hierarchy_root"
+              name="CoA Hierarchy"
+              parent="account.account_management_menu"
+              sequence="5"/>
+
+    <menuitem id="menu_account_hierarchy_tree"
+              name="Hierarchy View"
+              parent="menu_account_hierarchy_root"
+              action="action_account_hierarchy_tree"
+              sequence="10"/>
+
+    <menuitem id="menu_account_hierarchy_grouped"
+              name="Grouped by Parent"
+              parent="menu_account_hierarchy_root"
+              action="action_account_hierarchy_grouped"
+              sequence="20"/>
+
+</odoo>
