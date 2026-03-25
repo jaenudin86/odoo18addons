@@ -11,7 +11,7 @@
     <field name="inherit_id" ref="account.view_move_form"/>
     <field name="arch" type="xml">
 
-        <!-- 1. Tombol approval di header -->
+        <!-- 1. Tombol approval + cetak di header -->
         <xpath expr="//header/button[@name='action_post']" position="before">
 
             <button name="action_submit_for_approval"
@@ -40,6 +40,14 @@
 
         </xpath>
 
+        <!-- Tombol cetak PDF -->
+        <xpath expr="//header/button[@name='action_post']" position="after">
+            <button name="%(account_bill_project.action_report_vendor_bill_abp)d"
+                    string="Cetak Tagihan"
+                    type="action"
+                    invisible="move_type not in ['in_invoice','in_refund'] or state == 'draft'"/>
+        </xpath>
+
         <!-- 2. Status bar approval -->
         <xpath expr="//header" position="inside">
             <field name="x_approval_state"
@@ -48,7 +56,16 @@
                    invisible="move_type not in ['in_invoice','in_refund']"/>
         </xpath>
 
-        <!-- 3. Analytic header block — letakkan di atas tab notebook -->
+        <!-- 3. Filter jurnal: hanya bank & cash -->
+        <xpath expr="//field[@name='journal_id']" position="attributes">
+            <attribute name="domain">
+                [('type', 'in', ['bank', 'cash']),
+                 ('company_id', '=', company_id)]
+            </attribute>
+            <attribute name="help">Hanya jurnal Bank dan Kas yang tersedia</attribute>
+        </xpath>
+
+        <!-- 4. Analytic header block di atas notebook -->
         <xpath expr="//notebook" position="before">
             <group name="analytic_header_group"
                    string="Account Analytic (Project)"
@@ -70,17 +87,16 @@
             </group>
         </xpath>
 
-        <!-- 4. Ganti invoice_line_ids dengan view COA langsung -->
+        <!-- 5. Ganti invoice_line_ids — langsung COA tanpa product -->
         <xpath expr="//field[@name='invoice_line_ids']" position="replace">
             <field name="invoice_line_ids"
                    invisible="move_type not in ['in_invoice','in_refund']"
                    optional="show">
                 <list editable="bottom">
-                    <!-- COA wajib, product disembunyikan -->
                     <field name="account_id"
                            string="Akun COA"
                            required="1"
-                           domain="[('deprecated', '=', False)]"
+                           domain="[('deprecated', '=', False), ('account_type', 'not in', ['asset_receivable','liability_payable'])]"
                            options="{'no_create': False}"/>
                     <field name="name" string="Keterangan" optional="show"/>
                     <field name="analytic_distribution"
@@ -90,9 +106,9 @@
                            column_invisible="parent.x_analytic_account_id == False"/>
                     <field name="quantity" string="Qty" optional="show"/>
                     <field name="price_unit" string="Harga"/>
-                    <field name="tax_ids" string="Pajak" widget="many2many_tags" optional="show"/>
+                    <field name="tax_ids" string="Pajak"
+                           widget="many2many_tags" optional="show"/>
                     <field name="price_subtotal" string="Subtotal" readonly="1"/>
-                    <!-- Sembunyikan product sepenuhnya -->
                     <field name="product_id" column_invisible="1"/>
                     <field name="product_uom_id" column_invisible="1"/>
                     <field name="display_type" column_invisible="1"/>
@@ -100,7 +116,7 @@
             </field>
         </xpath>
 
-        <!-- 5. Tab approval log -->
+        <!-- 6. Tab Approval & Log -->
         <xpath expr="//notebook" position="inside">
             <page string="Approval"
                   name="approval_page"
@@ -136,7 +152,7 @@
 </record>
 
 <!-- ═══════════════════════════════════════════════════════
-     LIST VIEW: kolom tambahan
+     LIST VIEW
 ══════════════════════════════════════════════════════════ -->
 <record id="view_account_move_vendor_bill_list_inherit" model="ir.ui.view">
     <field name="name">account.move.vendor.bill.list.inherit.abp</field>
@@ -153,6 +169,23 @@
                    optional="show"/>
         </xpath>
     </field>
+</record>
+
+<!-- ═══════════════════════════════════════════════════════
+     ACTION: Vendor Bills — hanya jurnal Bank & Cash
+══════════════════════════════════════════════════════════ -->
+<record id="action_vendor_bills_bank_cash" model="ir.actions.act_window">
+    <field name="name">Tagihan Vendor (Bank &amp; Kas)</field>
+    <field name="res_model">account.move</field>
+    <field name="view_mode">list,form</field>
+    <field name="domain">[
+        ('move_type', 'in', ['in_invoice', 'in_refund']),
+        ('journal_id.type', 'in', ['bank', 'cash'])
+    ]</field>
+    <field name="context">{
+        'default_move_type': 'in_invoice',
+        'default_journal_id': False
+    }</field>
 </record>
 
 <!-- ═══════════════════════════════════════════════════════
