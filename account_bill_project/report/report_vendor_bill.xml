@@ -2,11 +2,11 @@
 <odoo>
 <data>
 
-<!-- Inherit report_invoice_document - tambah project & approval info -->
+<!-- Inherit template print vendor bill bawaan -->
 <template id="report_vendor_bill_document"
           inherit_id="account.report_invoice_document">
 
-    <!-- Tambah blok Project setelah div informations -->
+    <!-- Tambah Project setelah div informations -->
     <xpath expr="//div[@id='informations']" position="after">
         <t t-if="doc.x_analytic_account_id">
             <div style="margin:4px 0 8px 0;padding:6px 12px;background:#e6f7f8;border-left:3px solid #017e84;">
@@ -33,15 +33,6 @@
     </xpath>
 
 </template>
-
-<!-- Override wrapper report original vendor bill -->
-<!-- <template id="report_vendor_bill"
-          inherit_id="account.report_original_vendor_bill">
-    <xpath expr="//div[hasclass('article')]" position="replace">
-        <t t-call="account_bill_project.report_vendor_bill_document"
-           t-lang="o.partner_id.lang"/>
-    </xpath>
-</template> -->
 
 </data>
 </odoo>

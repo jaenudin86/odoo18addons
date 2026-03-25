@@ -1,11 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
 <data>
-
-    <!-- Override report action bawaan vendor bill -->
-    <record id="account.action_report_in_invoice" model="ir.actions.report">
-        <field name="report_name">account_bill_project.report_vendor_bill</field>
-    </record>
-
+    <!-- Tidak perlu override action, cukup template saja -->
 </data>
 </odoo>
