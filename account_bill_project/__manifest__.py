@@ -25,7 +25,7 @@ Fitur:
         'security/account_bill_project_security.xml',
         'views/account_move_views.xml',
         'views/account_bill_approval_views.xml',
-        # 'views/res_config_settings_views.xml',
+        'views/res_config_settings_views.xml',
         'wizard/bill_approval_wizard_views.xml',
     ],
     'assets': {

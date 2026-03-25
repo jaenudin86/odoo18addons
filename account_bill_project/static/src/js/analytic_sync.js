@@ -5,47 +5,55 @@ import { FormController } from "@web/views/form/form_controller";
 import { useEffect } from "@odoo/owl";
 
 /**
- * Patch FormController untuk account.move:
- * Setiap kali x_analytic_account_id atau x_analytic_percentage berubah,
- * semua baris invoice_line_ids ikut ter-update otomatis (analytic_distribution).
+ * Sync analytic dari header ke semua invoice_line_ids.
+ * invoice_line_ids di Odoo 18 adalah StaticList, bukan Array biasa.
+ * Gunakan model.root.data untuk akses data, dan
+ * model.root.updateRecord untuk update per record.
  */
 patch(FormController.prototype, {
-
     setup() {
         super.setup(...arguments);
 
         useEffect(
             () => {
-                const model = this.model?.root;
-                if (!model) return;
-
-                // Hanya untuk account.move
-                if (model.resModel !== "account.move") return;
-
-                const moveType = model.data?.move_type;
-                if (!["in_invoice", "in_refund"].includes(moveType)) return;
-
-                const analyticId  = model.data?.x_analytic_account_id?.[0];
-                const analyticPct = model.data?.x_analytic_percentage ?? 100.0;
-
-                if (!analyticId) return;
-
-                // Build distribution JSON: { "analytic_account_id": percentage }
-                const distribution = { [String(analyticId)]: analyticPct };
-
-                // Sync ke setiap invoice line
-                const lines = model.data?.invoice_line_ids ?? [];
-                lines.forEach((line) => {
-                    if (line.data?.display_type === "product") {
-                        line.update({ analytic_distribution: distribution });
-                    }
-                });
+                this._syncAnalyticToLines();
             },
-            // Re-run setiap kali analytic account atau persentase berubah
             () => [
-                this.model?.root?.data?.x_analytic_account_id,
-                this.model?.root?.data?.x_analytic_percentage,
+                this.model?.root?.data?.x_analytic_account_id?.[0],
+                this.model?.root?.data?.x_analytic_distribution_pct,
             ]
         );
+    },
+
+    _syncAnalyticToLines() {
+        const root = this.model?.root;
+        if (!root) return;
+        if (root.resModel !== "account.move") return;
+
+        const moveType = root.data?.move_type;
+        if (!["in_invoice", "in_refund"].includes(moveType)) return;
+
+        const analyticRaw = root.data?.x_analytic_account_id;
+        // Many2one value bisa [id, name] atau false
+        const analyticId = Array.isArray(analyticRaw) ? analyticRaw[0] : analyticRaw;
+        if (!analyticId) return;
+
+        const pct = root.data?.x_analytic_distribution_pct ?? 100.0;
+        const distribution = { [String(analyticId)]: pct };
+
+        // invoice_line_ids adalah StaticList — ambil via root.data
+        const lineList = root.data?.invoice_line_ids;
+        if (!lineList) return;
+
+        // StaticList punya property 'records' (array of Record)
+        const records = lineList.records ?? lineList;
+        if (!records || typeof records[Symbol.iterator] !== "function") return;
+
+        for (const line of records) {
+            if (line.data?.display_type === "product") {
+                // update() hanya untuk field yang bisa diedit
+                line.update({ analytic_distribution: distribution }).catch(() => {});
+            }
+        }
     },
 });
