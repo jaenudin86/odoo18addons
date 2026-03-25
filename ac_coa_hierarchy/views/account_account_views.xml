@@ -2,10 +2,10 @@
 <odoo>
 
     <!-- ============================================================ -->
-    <!-- Tree View Hierarkis (dengan expand/collapse child_of) -->
+    <!-- List View Hierarkis -->
     <!-- ============================================================ -->
-    <record id="view_account_account_hierarchy_tree" model="ir.ui.view">
-        <field name="name">account.account.hierarchy.tree</field>
+    <record id="view_account_account_hierarchy_list" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.list</field>
         <field name="model">account.account</field>
         <field name="priority">20</field>
         <field name="arch" type="xml">
@@ -20,16 +20,15 @@
                 <field name="child_count" optional="show" string="Children"/>
                 <field name="account_type"/>
                 <field name="reconcile" optional="hide"/>
-                <field name="company_id" optional="hide" groups="base.group_multi_company"/>
             </list>
         </field>
     </record>
 
     <!-- ============================================================ -->
-    <!-- Tree View dengan Parent-Child Grouping -->
+    <!-- List View dengan Parent-Child Grouping -->
     <!-- ============================================================ -->
-    <record id="view_account_account_hierarchy_tree_grouped" model="ir.ui.view">
-        <field name="name">account.account.hierarchy.tree.grouped</field>
+    <record id="view_account_account_hierarchy_list_grouped" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.list.grouped</field>
         <field name="model">account.account</field>
         <field name="priority">25</field>
         <field name="arch" type="xml">
@@ -58,8 +57,7 @@
             <!-- Tambah field Parent Account setelah field code -->
             <field name="code" position="after">
                 <field name="parent_id"
-                       options="{'no_create': True}"
-                       context="{'show_code': True}"/>
+                       options="{'no_create': True}"/>
                 <field name="hierarchy_level" readonly="1"/>
                 <field name="complete_name" readonly="1"/>
                 <field name="is_parent" invisible="1"/>
@@ -118,12 +116,12 @@
     <!-- ============================================================ -->
     <!-- Action untuk Hierarchy View -->
     <!-- ============================================================ -->
-    <record id="action_account_hierarchy_tree" model="ir.actions.act_window">
+    <record id="action_account_hierarchy_list" model="ir.actions.act_window">
         <field name="name">Chart of Accounts - Hierarchy</field>
         <field name="res_model">account.account</field>
         <field name="view_mode">list,form</field>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_tree')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_list')}),
         ]"/>
         <field name="context">{'default_parent_id': False}</field>
         <field name="help" type="html">
@@ -143,7 +141,7 @@
         <field name="res_model">account.account</field>
         <field name="view_mode">list,form</field>
         <field name="view_ids" eval="[(5, 0, 0),
-            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_tree_grouped')}),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_list_grouped')}),
         ]"/>
     </record>
 

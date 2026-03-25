@@ -8,7 +8,7 @@
         
         Fitur:
         - Field parent_id pada account.account
-        - Tree view hierarkis dengan expand/collapse
+        - List view hierarkis dengan expand/collapse
         - Computed field: level, complete_name, child_ids
         - Validasi circular reference
         - Kompatibel dengan Account Groups bawaan Odoo

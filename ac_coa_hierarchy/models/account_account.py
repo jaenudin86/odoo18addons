@@ -11,7 +11,7 @@ class AccountAccount(models.Model):
         string='Parent Account',
         index=True,
         ondelete='restrict',
-        domain="[('company_id', '=', company_id), ('id', '!=', id)]",
+        domain="[('id', '!=', id)]",
         help='Akun induk untuk membentuk hierarki CoA. '
              'Akun parent berfungsi sebagai penampung/header, '
              'mirip seperti struktur di Accurate.',
@@ -61,7 +61,6 @@ class AccountAccount(models.Model):
         for account in self:
             level = 0
             parent = account.parent_id
-            # Safety limit to prevent infinite loops
             max_depth = 10
             while parent and level < max_depth:
                 level += 1
@@ -87,13 +86,11 @@ class AccountAccount(models.Model):
         for account in self:
             if not account.parent_id:
                 continue
-            # Cek apakah parent adalah dirinya sendiri
             if account.parent_id == account:
                 raise ValidationError(_(
                     'Error! Akun "%(account)s" tidak bisa menjadi parent dari dirinya sendiri.',
                     account=account.name,
                 ))
-            # Cek circular reference
             parent = account.parent_id
             visited = {account.id}
             max_depth = 10
@@ -109,18 +106,6 @@ class AccountAccount(models.Model):
                 parent = parent.parent_id
                 depth += 1
 
-    @api.constrains('parent_id', 'company_id')
-    def _check_parent_company(self):
-        """Pastikan parent dan child berada di company yang sama."""
-        for account in self:
-            if account.parent_id and account.parent_id.company_id != account.company_id:
-                raise ValidationError(_(
-                    'Error! Akun "%(account)s" dan parent "%(parent)s" '
-                    'harus berada di company yang sama.',
-                    account=account.name,
-                    parent=account.parent_id.name,
-                ))
-
     # === Helper Methods ===
 
     def get_all_children(self, include_self=False):
@@ -132,7 +117,7 @@ class AccountAccount(models.Model):
 
         def _get_children_recursive(account, depth=0):
             nonlocal children
-            if depth > 10:  # Safety limit
+            if depth > 10:
                 return
             for child in account.child_ids:
                 children |= child
