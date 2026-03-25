@@ -51,7 +51,22 @@ class AccountMove(models.Model):
         store=True,
     )
 
-    # ── Override default_get: paksa journal bank/cash untuk vendor bills ─────
+    # ── Override suitable_journal_ids: hanya bank & cash untuk vendor bills ──
+
+    @api.depends('company_id', 'invoice_filter_type_domain', 'move_type')
+    def _compute_suitable_journal_ids(self):
+        """Untuk vendor bills, filter jurnal hanya Bank dan Kas."""
+        # Panggil super dulu untuk semua record
+        super()._compute_suitable_journal_ids()
+        # Override khusus vendor bills
+        for move in self:
+            if move.move_type in ('in_invoice', 'in_refund'):
+                move.suitable_journal_ids = self.env['account.journal'].search([
+                    ('type', 'in', ['bank', 'cash']),
+                    ('company_id', '=', move.company_id.id),
+                ])
+
+    # ── Override default_get: default journal bank/cash ───────────────────────
 
     @api.model
     def default_get(self, fields_list):
