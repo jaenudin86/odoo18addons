@@ -6,8 +6,14 @@
               parent="account.account_management_menu"
               sequence="5"/>
 
+    <menuitem id="menu_account_hierarchy_owl"
+              name="Tree Hierarchy"
+              parent="menu_account_hierarchy_root"
+              action="action_coa_hierarchy_owl"
+              sequence="5"/>
+
     <menuitem id="menu_account_hierarchy_list"
-              name="Hierarchy View"
+              name="List View"
               parent="menu_account_hierarchy_root"
               action="action_account_hierarchy_list"
               sequence="10"/>

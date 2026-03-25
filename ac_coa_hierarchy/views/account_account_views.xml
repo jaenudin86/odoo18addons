@@ -145,5 +145,12 @@
             (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_list_grouped')}),
         ]"/>
     </record>
+    <!-- ============================================================ -->
+    <!-- Client Action untuk OWL Hierarchy View -->
+    <!-- ============================================================ -->
+    <record id="action_coa_hierarchy_owl" model="ir.actions.client">
+        <field name="name">CoA - Tree Hierarchy</field>
+        <field name="tag">ac_coa_hierarchy.hierarchy_view</field>
+    </record>
 
 </odoo>

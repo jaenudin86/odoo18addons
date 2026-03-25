@@ -24,7 +24,13 @@
         'views/account_account_views.xml',
         'views/menu.xml',
     ],
-    'assets': {},
+    'assets': {
+        'web.assets_backend': [
+            'ac_coa_hierarchy/static/src/css/coa_hierarchy_view.css',
+            'ac_coa_hierarchy/static/src/js/coa_hierarchy_view.js',
+            'ac_coa_hierarchy/static/src/xml/coa_hierarchy_view.xml',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,
