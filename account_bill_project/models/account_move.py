@@ -51,20 +51,20 @@ class AccountMove(models.Model):
         store=True,
     )
 
-    # ── Override: default journal hanya bank/cash untuk vendor bills ─────────
+    # ── Override default_get: paksa journal bank/cash untuk vendor bills ─────
 
     @api.model
-    def _get_default_journal(self):
-        """Override: untuk vendor bills, default journal hanya dari bank/cash."""
-        move_type = self._context.get('default_move_type', '')
-        if move_type in ('in_invoice', 'in_refund'):
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        move_type = res.get('move_type') or self._context.get('default_move_type', '')
+        if move_type in ('in_invoice', 'in_refund') and 'journal_id' in fields_list:
             journal = self.env['account.journal'].search([
                 ('type', 'in', ['bank', 'cash']),
                 ('company_id', '=', self.env.company.id),
             ], limit=1)
             if journal:
-                return journal
-        return super()._get_default_journal()
+                res['journal_id'] = journal.id
+        return res
 
     # ── Compute ──────────────────────────────────────────────────────────────
 
