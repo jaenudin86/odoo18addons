@@ -42,7 +42,8 @@ class AccountMove(models.Model):
         string='Alasan Penolakan', readonly=True, copy=False,
     )
     x_approval_ids = fields.One2many(
-        'account.bill.approval', 'move_id', string='Log Persetujuan', copy=False,
+        'account.bill.approval.log', 'move_id',
+        string='Log Persetujuan', copy=False,
     )
     x_require_director_approval = fields.Boolean(
         string='Perlu Persetujuan Direktur',
@@ -72,7 +73,6 @@ class AccountMove(models.Model):
         """Propagate analytic header ke setiap invoice line."""
         for move in self:
             if not move.x_analytic_account_id:
-                # Jika header dikosongkan, hapus analytic di semua baris
                 for line in move.invoice_line_ids:
                     line.analytic_distribution = {}
                 continue
@@ -96,7 +96,6 @@ class AccountMove(models.Model):
                         'Tagihan "%s" telah ditolak.\n'
                         'Reset ke draft dan perbaiki sebelum melanjutkan.'
                     ) % move.name)
-                # Sync analytic sebelum posting
                 move._sync_analytic_to_lines()
         return super().action_post()
 
@@ -131,7 +130,7 @@ class AccountMove(models.Model):
         return {
             'type': 'ir.actions.act_window',
             'name': _('Tolak Tagihan'),
-            'res_model': 'bill.approval.wizard',
+            'res_model': 'bill.rejection.wizard',
             'view_mode': 'form',
             'target': 'new',
             'context': {'default_move_id': self.id},
@@ -149,11 +148,11 @@ class AccountMove(models.Model):
 
     # ── Helpers ──────────────────────────────────────────────────────────────
 
-    def _log_approval(self, state, note):
-        self.env['account.bill.approval'].create({
+    def _log_approval(self, action, note):
+        self.env['account.bill.approval.log'].create({
             'move_id': self.id,
             'user_id': self.env.user.id,
-            'state': state,
+            'action': action,
             'note': note,
         })
         self.message_post(body=note, message_type='notification')

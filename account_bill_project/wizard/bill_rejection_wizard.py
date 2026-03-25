@@ -12,7 +12,6 @@ class BillRejectionWizard(models.TransientModel):
         string='Tagihan',
         required=True,
     )
-
     rejection_note = fields.Text(
         string='Alasan Penolakan',
         required=True,
@@ -21,23 +20,14 @@ class BillRejectionWizard(models.TransientModel):
     def action_confirm_reject(self):
         self.ensure_one()
         move = self.move_id
-        if move.x_approval_state not in ('waiting_manager', 'waiting_director'):
+        if move.x_approval_state != 'waiting':
             raise UserError(_('Tagihan tidak dalam status menunggu persetujuan.'))
 
         move.write({
             'x_approval_state': 'rejected',
-            'x_approval_note': self.rejection_note,
+            'x_rejected_reason': self.rejection_note,
         })
-        move.message_post(
-            body=_('<b>Tagihan Ditolak</b><br/>Alasan: %s') % self.rejection_note,
-            message_type='notification',
-        )
-
-        # Log
-        self.env['account.bill.approval.log'].create({
-            'move_id': move.id,
-            'action': 'reject',
-            'note': self.rejection_note,
-        })
-
+        move._log_approval('rejected', _('Ditolak oleh %s. Alasan: %s') % (
+            self.env.user.name, self.rejection_note
+        ))
         return {'type': 'ir.actions.act_window_close'}

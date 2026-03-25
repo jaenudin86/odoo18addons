@@ -14,28 +14,23 @@ class AccountBillApprovalLog(models.Model):
         required=True,
         ondelete='cascade',
     )
-
     user_id = fields.Many2one(
         comodel_name='res.users',
-        string='Approver',
+        string='User',
         required=True,
         default=lambda self: self.env.user,
     )
-
     action = fields.Selection(
         selection=[
-            ('submit', 'Diajukan'),
-            ('approve_manager', 'Disetujui Manager'),
-            ('approve_director', 'Disetujui Direktur'),
-            ('reject', 'Ditolak'),
-            ('reset', 'Reset ke Draft'),
+            ('waiting',  'Diajukan'),
+            ('approved', 'Disetujui'),
+            ('rejected', 'Ditolak'),
+            ('draft',    'Reset ke Draft'),
         ],
         string='Aksi',
         required=True,
     )
-
     note = fields.Text(string='Catatan')
-
     date = fields.Datetime(
         string='Tanggal',
         default=fields.Datetime.now,

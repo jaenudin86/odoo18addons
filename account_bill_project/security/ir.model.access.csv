@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_account_bill_approval_user,account.bill.approval user,model_account_bill_approval,account.group_account_invoice,1,1,1,0
-access_account_bill_approval_manager,account.bill.approval manager,model_account_bill_approval,account.group_account_manager,1,1,1,1
+access_account_bill_approval_log_user,account.bill.approval.log user,model_account_bill_approval_log,account.group_account_invoice,1,0,0,0
+access_account_bill_approval_log_manager,account.bill.approval.log manager,model_account_bill_approval_log,account.group_account_manager,1,1,1,1
+access_bill_rejection_wizard,bill.rejection.wizard,model_bill_rejection_wizard,base.group_user,1,1,1,1
