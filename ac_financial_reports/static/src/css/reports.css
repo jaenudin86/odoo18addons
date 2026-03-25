@@ -1,5 +1,5 @@
 /* ============================================================ */
-/* Financial Reports Shared Styles                              */
+/* Financial Reports Styles                                     */
 /* ============================================================ */
 .fr-container { padding: 16px 24px; background: #fff; min-height: 100%; }
 .fr-header { display: flex; align-items: center; margin-bottom: 12px; }
@@ -8,7 +8,7 @@
 /* Filter Bar */
 .fr-filter-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 10px 14px; background: #f8f9fa; border-radius: 8px; flex-wrap: wrap; }
 .fr-filter-group { display: flex; align-items: center; gap: 6px; }
-.fr-filter-group label { font-size: 0.85rem; font-weight: 500; color: #495057; white-space: nowrap; }
+.fr-filter-group label { font-size: 0.85rem; font-weight: 500; color: #495057; white-space: nowrap; margin: 0; }
 .fr-filter-group .form-control { width: 160px; }
 
 /* Table Header */
@@ -18,34 +18,53 @@
 .fr-col-name { flex: 1; min-width: 180px; }
 .fr-col-amount { width: 140px; flex-shrink: 0; text-align: right; }
 
-/* Rows */
-.fr-tree-content { max-height: calc(100vh - 280px); overflow-y: auto; }
+/* Tree */
+.fr-tree-content { max-height: calc(100vh - 300px); overflow-y: auto; }
+
+/* Row */
 .fr-row { border-bottom: 1px solid #f1f3f5; transition: background 0.12s; }
-.fr-row:hover { background: #e8f4fd; cursor: pointer; }
+.fr-row:hover { background: #f0f7ff; }
 .fr-row-content { display: flex; align-items: center; padding: 7px 8px; min-height: 38px; }
+.fr-row-level0 > .fr-row-content { background: #f8f9fa; }
 .fr-toggle { width: 28px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; }
 .fr-caret { font-size: 1.1rem; color: #6c757d; width: 16px; text-align: center; }
+.fr-caret:hover { color: #2c3e50; }
 .fr-spacer { display: inline-block; width: 16px; }
 .fr-code { width: 120px; flex-shrink: 0; font-family: 'Courier New', monospace; font-size: 0.88rem; color: #495057; }
 .fr-name { flex: 1; min-width: 180px; font-size: 0.88rem; color: #2c3e50; padding-right: 10px; }
 .fr-amount { width: 140px; flex-shrink: 0; text-align: right; font-size: 0.88rem; font-family: 'Courier New', monospace; }
 
+/* Clickable amount - looks like a link */
+.fr-amount-link { cursor: pointer; text-decoration: underline; text-decoration-style: dotted; text-underline-offset: 3px; }
+.fr-amount-link:hover { color: #2563eb !important; text-decoration-style: solid; }
+
 /* Totals */
 .fr-totals-row { display: flex; align-items: center; padding: 12px 8px; background: #e9ecef; border-radius: 6px; margin-top: 4px; font-size: 0.95rem; }
 
-/* Section Header (P&L, BS) */
-.fr-section-header { display: flex; justify-content: space-between; padding: 10px 12px; background: #2c3e50; color: #fff; border-radius: 6px; margin-bottom: 2px; font-size: 0.95rem; }
+/* Section Headers */
+.fr-section-header { display: flex; justify-content: space-between; padding: 10px 12px; background: #2c3e50; color: #fff; border-radius: 6px; margin-top: 12px; margin-bottom: 2px; font-size: 0.95rem; }
+.fr-section-income { background: #059669; }
+.fr-section-expense { background: #dc2626; }
 .fr-section-total { font-family: 'Courier New', monospace; }
-.fr-net-profit { justify-content: space-between; background: #1a252f; color: #fff; border-radius: 6px; padding: 14px 16px; margin-top: 12px; }
+
+/* Net Result */
+.fr-net-result { display: flex; justify-content: space-between; padding: 14px 16px; background: #1a252f; color: #fff; border-radius: 6px; margin-top: 12px; }
 .fr-summary-line { display: flex; justify-content: space-between; padding: 8px 12px; background: #f8f9fa; border-radius: 4px; margin-top: 4px; font-size: 0.9rem; }
 
 /* General Ledger */
-.fr-gl-account-header { display: flex; align-items: center; padding: 10px 12px; background: #e9ecef; border-radius: 6px; margin-top: 8px; cursor: pointer; font-size: 0.95rem; }
+.fr-gl-account-header { display: flex; align-items: center; padding: 10px 12px; background: #e9ecef; border-radius: 6px; margin-top: 8px; cursor: pointer; font-size: 0.92rem; }
 .fr-gl-account-header:hover { background: #dee2e6; }
-.fr-gl-opening { display: flex; justify-content: space-between; padding: 6px 12px; background: #f8f9fa; font-size: 0.85rem; color: #6c757d; }
-.fr-gl-table { font-size: 0.85rem; margin-bottom: 0; }
+.fr-gl-line { display: flex; align-items: center; padding: 5px 12px 5px 36px; font-size: 0.85rem; border-bottom: 1px solid #f1f3f5; }
+.fr-gl-opening { background: #fafafa; }
+.fr-gl-col-header { background: #f1f3f5; font-weight: 600; font-size: 0.78rem; text-transform: uppercase; }
 .fr-gl-entry { cursor: pointer; }
 .fr-gl-entry:hover { background: #e8f4fd !important; }
+.fr-gl-subtotal { background: #f0f4f8; font-weight: 600; }
+.fr-gl-col-date { width: 100px; flex-shrink: 0; }
+.fr-gl-col-ref { width: 140px; flex-shrink: 0; }
+.fr-gl-col-partner { width: 160px; flex-shrink: 0; }
+.fr-gl-col-label { flex: 1; min-width: 120px; }
+.fr-gl-col-amt { width: 120px; flex-shrink: 0; text-align: right; font-family: 'Courier New', monospace; font-size: 0.85rem; }
 
 /* Cash Flow */
 .fr-cf-section { margin-bottom: 16px; border: 1px solid #e9ecef; border-radius: 8px; overflow: hidden; }
@@ -58,9 +77,12 @@
 .fr-cf-summary { border: 2px solid #2c3e50; }
 
 /* Aging */
-.fr-aging-table { font-size: 0.88rem; }
-.fr-aging-table thead { background: #e9ecef; }
-.fr-aging-table tfoot { background: #e9ecef; }
+.fr-aging-header { display: flex; align-items: center; padding: 10px 8px; background: #e9ecef; border-radius: 6px; font-weight: 600; font-size: 0.82rem; text-transform: uppercase; margin-bottom: 2px; }
+.fr-aging-row { display: flex; align-items: center; padding: 8px 8px; border-bottom: 1px solid #f1f3f5; cursor: pointer; font-size: 0.88rem; }
+.fr-aging-row:hover { background: #f0f7ff; }
+.fr-aging-totals { display: flex; align-items: center; padding: 10px 8px; background: #e9ecef; border-radius: 6px; margin-top: 4px; font-size: 0.92rem; }
+.fr-aging-col-name { flex: 1; min-width: 200px; }
+.fr-aging-col { width: 110px; flex-shrink: 0; text-align: right; font-family: 'Courier New', monospace; font-size: 0.85rem; }
 
 /* Loading */
 .fr-loading { display: flex; align-items: center; justify-content: center; padding: 60px 0; color: #6c757d; font-size: 1.1rem; }
@@ -70,5 +92,5 @@
     .fr-container { padding: 8px 12px; }
     .fr-filter-bar { flex-direction: column; align-items: stretch; }
     .fr-col-code { width: 80px; }
-    .fr-col-amount { width: 100px; }
+    .fr-col-amount, .fr-amount { width: 100px; }
 }
