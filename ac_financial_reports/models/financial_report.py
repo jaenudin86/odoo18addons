@@ -19,7 +19,7 @@ class AccountAccountReports(models.Model):
 
         Account = self.env['account.account']
         MoveLine = self.env['account.move.line']
-        accounts = Account.search([], order='code')
+        accounts = Account.search([('code', '!=', False), ('code', '!=', '')], order='code')
 
         opening_data = {}
         opening_lines = MoveLine.read_group(
@@ -120,6 +120,7 @@ class AccountAccountReports(models.Model):
 
         pl_accounts = Account.search([
             ('account_type', 'in', income_types + expense_types),
+            ('code', '!=', False), ('code', '!=', ''),
         ], order='code')
 
         move_data = {}
@@ -194,7 +195,7 @@ class AccountAccountReports(models.Model):
         equity_types = ['equity', 'equity_unaffected']
         all_types = asset_types + liability_types + equity_types
 
-        bs_accounts = Account.search([('account_type', 'in', all_types)], order='code')
+        bs_accounts = Account.search([('account_type', 'in', all_types), ('code', '!=', False), ('code', '!=', '')], order='code')
 
         move_data = {}
         lines = MoveLine.read_group(
@@ -277,7 +278,9 @@ class AccountAccountReports(models.Model):
         Account = self.env['account.account']
         MoveLine = self.env['account.move.line']
 
-        acc_domain = [('id', 'in', account_ids)] if account_ids else []
+        acc_domain = [('code', '!=', False), ('code', '!=', '')]
+        if account_ids:
+            acc_domain.append(('id', 'in', account_ids))
         accounts = Account.search(acc_domain, order='code')
 
         result = []
