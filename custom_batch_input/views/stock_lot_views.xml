@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <!-- Tambah field x_batch_number di form Serial Number / Lot -->
+    <record id="view_stock_lot_form_batch" model="ir.ui.view">
+        <field name="name">stock.lot.form.batch</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_form"/>
+        <field name="arch" type="xml">
+            <field name="expiration_date" position="before">
+                <field name="x_batch_number" string="Batch Number"/>
+            </field>
+        </field>
+    </record>
+
+    <!-- Tambah kolom batch number di list view lot/SN -->
+    <record id="view_stock_lot_list_batch" model="ir.ui.view">
+        <field name="name">stock.lot.list.batch</field>
+        <field name="model">stock.lot</field>
+        <field name="inherit_id" ref="stock.view_production_lot_tree"/>
+        <field name="arch" type="xml">
+            <field name="name" position="after">
+                <field name="x_batch_number" string="Batch Number" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+</odoo>

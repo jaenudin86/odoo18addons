@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo noupdate="0">
 
+    <!-- Tambah tombol wizard di Receipt -->
     <record id="view_stock_picking_form_batch_input" model="ir.ui.view">
         <field name="name">stock.picking.form.batch.input</field>
         <field name="model">stock.picking</field>
@@ -11,8 +12,7 @@
                     string="Input Batch &amp; Expired"
                     type="object"
                     class="btn-secondary"
-                    invisible="picking_type_code != 'incoming' or state in ('done', 'cancel')"
-                    help="Klik untuk mengisi batch number dan expired date untuk semua produk"/>
+                    invisible="picking_type_code != 'incoming' or state in ('done', 'cancel')"/>
             </header>
         </field>
     </record>

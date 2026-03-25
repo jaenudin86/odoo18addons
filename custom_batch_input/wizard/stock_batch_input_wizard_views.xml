@@ -9,39 +9,26 @@
                 <sheet>
                     <div class="oe_title">
                         <h1>Input Batch &amp; Expired Date</h1>
-                        <h3>
-                            <field name="picking_id" readonly="1"/>
-                        </h3>
+                        <h3><field name="picking_id" readonly="1"/></h3>
                     </div>
                     <notebook>
-                        <page string="Detail Produk">
+                        <page string="Per Produk">
                             <field name="line_ids" widget="one2many">
-                                <list editable="bottom" decoration-danger="not lot_name or not expiration_date">
-                                    <field name="product_id" readonly="1" optional="show"/>
-                                    <field name="qty_done" optional="show"/>
-                                    <field name="product_uom_id" readonly="1" optional="show"/>
-                                    <field name="lot_id"
-                                        string="Pilih Batch Existing"
-                                        optional="hide"
-                                        domain="[('product_id', '=', product_id)]"
-                                        options="{'no_create': True}"/>
-                                    <field name="lot_name"
-                                        string="Batch Number"
-                                        required="1"
-                                        placeholder="Ketik batch number baru atau pilih dari kolom sebelah kiri"/>
-                                    <field name="expiration_date"
-                                        string="Expired Date"
-                                        required="1"
-                                        widget="date"/>
+                                <list editable="bottom" decoration-danger="not x_batch_number or not expiration_date">
+                                    <field name="product_id" readonly="1"/>
+                                    <field name="sn_count" readonly="1" string="Jumlah SN"/>
+                                    <field name="x_batch_number" string="Batch Number" required="1"/>
+                                    <field name="expiration_date" string="Expired Date" required="1" widget="date"/>
                                     <field name="move_id" column_invisible="1"/>
+                                    <field name="product_uom_id" column_invisible="1"/>
                                 </list>
                             </field>
                         </page>
                     </notebook>
-                    <div class="alert alert-warning" role="alert">
-                        <strong>Perhatian:</strong>
-                        Semua produk dengan tracking Lot wajib diisi Batch Number dan Expired Date
-                        sebelum bisa melakukan validasi penerimaan.
+                    <div class="alert alert-info" role="alert">
+                        <strong>Info:</strong>
+                        Batch Number dan Expired Date akan diterapkan ke <strong>semua Serial Number</strong>
+                        dari produk tersebut secara otomatis.
                     </div>
                 </sheet>
                 <footer>
@@ -57,15 +44,6 @@
                 </footer>
             </form>
         </field>
-    </record>
-
-    <record id="action_stock_batch_input_wizard" model="ir.actions.act_window">
-        <field name="name">Input Batch &amp; Expired Date</field>
-        <field name="res_model">stock.batch.input.wizard</field>
-        <field name="view_mode">form</field>
-        <field name="view_id" ref="view_stock_batch_input_wizard_form"/>
-        <field name="target">new</field>
-        <field name="context">{}</field>
     </record>
 
 </odoo>

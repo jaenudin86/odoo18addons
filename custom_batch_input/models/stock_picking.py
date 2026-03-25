@@ -21,9 +21,7 @@ class StockPicking(models.Model):
         }
 
     def button_validate(self):
-        """Override validate: wajib batch number & expired date untuk semua produk
-        yang memiliki tracking 'lot' pada penerimaan barang (Receipt)."""
-
+        """Blokir validate kalau batch number / expired date belum diisi."""
         for picking in self:
             if picking.picking_type_code != 'incoming':
                 continue
@@ -37,29 +35,28 @@ class StockPicking(models.Model):
                 if move.product_id.tracking not in ('lot', 'serial'):
                     continue
 
-                # Cek apakah semua move lines sudah punya lot
-                if not move.move_line_ids:
-                    missing.append(
-                        _('• %s — belum ada batch number') % move.product_id.display_name
-                    )
-                    continue
-
                 for ml in move.move_line_ids:
                     if not ml.lot_id:
                         missing.append(
-                            _('• %s — batch number belum diisi') % move.product_id.display_name
+                            _('• %s — serial number belum diisi')
+                            % move.product_id.display_name
+                        )
+                    elif not ml.lot_id.x_batch_number:
+                        missing.append(
+                            _('• %s (SN: %s) — batch number belum diisi')
+                            % (move.product_id.display_name, ml.lot_id.name)
                         )
                     elif not ml.lot_id.expiration_date:
                         missing.append(
-                            _('• %s (Batch: %s) — expired date belum diisi')
+                            _('• %s (SN: %s) — expired date belum diisi')
                             % (move.product_id.display_name, ml.lot_id.name)
                         )
 
             if missing:
                 raise UserError(
                     _('Tidak dapat memvalidasi penerimaan!\n\n'
-                      'Produk berikut belum lengkap batch number / expired date:\n\n%s\n\n'
-                      'Silakan klik tombol "🏷️ Input Batch & Expired" terlebih dahulu.')
+                      'Produk berikut belum lengkap:\n\n%s\n\n'
+                      'Silakan klik tombol "Input Batch & Expired" terlebih dahulu.')
                     % '\n'.join(missing)
                 )
 
