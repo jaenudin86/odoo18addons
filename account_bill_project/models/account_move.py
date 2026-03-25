@@ -11,7 +11,6 @@ class AccountMove(models.Model):
         comodel_name='account.analytic.account',
         string='Analytic Account (Project)',
         tracking=True,
-        help='Pilih project. Nilai ini otomatis berlaku untuk semua baris.',
     )
     x_analytic_distribution_pct = fields.Float(
         string='% Alokasi',
@@ -52,6 +51,21 @@ class AccountMove(models.Model):
         store=True,
     )
 
+    # ── Override: default journal hanya bank/cash untuk vendor bills ─────────
+
+    @api.model
+    def _get_default_journal(self):
+        """Override: untuk vendor bills, default journal hanya dari bank/cash."""
+        move_type = self._context.get('default_move_type', '')
+        if move_type in ('in_invoice', 'in_refund'):
+            journal = self.env['account.journal'].search([
+                ('type', 'in', ['bank', 'cash']),
+                ('company_id', '=', self.env.company.id),
+            ], limit=1)
+            if journal:
+                return journal
+        return super()._get_default_journal()
+
     # ── Compute ──────────────────────────────────────────────────────────────
 
     @api.depends('amount_total', 'move_type')
@@ -72,7 +86,6 @@ class AccountMove(models.Model):
         self._sync_analytic_to_lines()
 
     def _sync_analytic_to_lines(self):
-        """Push analytic distribution dari header ke setiap invoice line."""
         for move in self:
             for line in move.invoice_line_ids:
                 if line.display_type != 'product':
@@ -84,8 +97,6 @@ class AccountMove(models.Model):
                     line.analytic_distribution = {
                         str(move.x_analytic_account_id.id): pct
                     }
-
-    # ── Override write: sync saat simpan ────────────────────────────────────
 
     def write(self, vals):
         res = super().write(vals)
@@ -102,15 +113,12 @@ class AccountMove(models.Model):
             if move.move_type in ('in_invoice', 'in_refund'):
                 if move.x_approval_state == 'waiting':
                     raise UserError(_(
-                        'Tagihan "%s" masih menunggu persetujuan.\n'
-                        'Silakan selesaikan proses approval terlebih dahulu.'
+                        'Tagihan "%s" masih menunggu persetujuan.'
                     ) % move.name)
                 if move.x_approval_state == 'rejected':
                     raise UserError(_(
-                        'Tagihan "%s" telah ditolak.\n'
-                        'Reset ke draft dan perbaiki sebelum melanjutkan.'
+                        'Tagihan "%s" telah ditolak. Reset ke draft dulu.'
                     ) % move.name)
-                # Sync analytic sebelum posting
                 move._sync_analytic_to_lines()
         return super().action_post()
 
@@ -121,37 +129,31 @@ class AccountMove(models.Model):
             if move.move_type not in ('in_invoice', 'in_refund'):
                 continue
             if not move.invoice_line_ids:
-                raise UserError(_(
-                    'Tambahkan minimal satu baris COA sebelum mengajukan persetujuan.'
-                ))
+                raise UserError(_('Tambahkan minimal satu baris COA.'))
             move.x_approval_state = 'waiting'
-            move._log_approval(
-                'waiting',
-                _('Diajukan untuk persetujuan oleh <b>%s</b>.') % self.env.user.name
-            )
+            move._log_approval('waiting',
+                _('Diajukan oleh <b>%s</b>.') % self.env.user.name)
             move._notify_approver()
 
     def action_approve(self):
         self.ensure_one()
         if not self.env.user.has_group('account_bill_project.group_bill_finance_manager'):
-            raise UserError(_('Hanya Finance Manager yang dapat menyetujui tagihan.'))
+            raise UserError(_('Hanya Finance Manager yang dapat menyetujui.'))
         if self.x_approval_state != 'waiting':
-            raise UserError(_('Tagihan tidak dalam status menunggu persetujuan.'))
+            raise UserError(_('Status tidak sesuai untuk disetujui.'))
         self.write({
             'x_approval_state': 'approved',
             'x_approved_by': self.env.user.id,
             'x_approved_date': fields.Datetime.now(),
             'x_rejected_reason': False,
         })
-        self._log_approval(
-            'approved',
-            _('Disetujui oleh <b>%s</b>.') % self.env.user.name
-        )
+        self._log_approval('approved',
+            _('Disetujui oleh <b>%s</b>.') % self.env.user.name)
 
     def action_reject(self):
         self.ensure_one()
         if not self.env.user.has_group('account_bill_project.group_bill_finance_manager'):
-            raise UserError(_('Hanya Finance Manager yang dapat menolak tagihan.'))
+            raise UserError(_('Hanya Finance Manager yang dapat menolak.'))
         return {
             'type': 'ir.actions.act_window',
             'name': _('Tolak Tagihan'),
@@ -170,8 +172,6 @@ class AccountMove(models.Model):
                 'x_rejected_reason': False,
             })
         return self.button_draft()
-
-    # ── Helpers ──────────────────────────────────────────────────────────────
 
     def _log_approval(self, action, note):
         self.env['account.bill.approval.log'].create({
@@ -192,10 +192,7 @@ class AccountMove(models.Model):
         partner_ids = group.users.mapped('partner_id').ids
         if partner_ids:
             self.message_post(
-                body=_(
-                    'Tagihan <b>%s</b> dari <b>%s</b> total <b>Rp %s</b> '
-                    'menunggu persetujuan Anda.'
-                ) % (
+                body=_('Tagihan <b>%s</b> dari <b>%s</b> total <b>Rp %s</b> menunggu persetujuan.') % (
                     self.name,
                     self.partner_id.name or '-',
                     '{:,.0f}'.format(self.amount_total),

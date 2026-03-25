@@ -5,8 +5,7 @@
 <template id="report_vendor_bill_project"
           inherit_id="account.report_invoice_document">
 
-    <!-- Tambah Project / Analytic setelah blok informations -->
-    <!-- variable di report_invoice_document adalah 'o' bukan 'doc' -->
+    <!-- Tambah Project / Analytic setelah div informations -->
     <xpath expr="//div[@id='informations']" position="after">
         <t t-if="o.x_analytic_account_id">
             <div style="margin:4px 0 8px 0;padding:6px 12px;background:#e6f7f8;border-left:3px solid #017e84;">
@@ -17,6 +16,23 @@
                 </span>
             </div>
         </t>
+    </xpath>
+
+    <!-- Ganti kolom description di lines dengan COA code + name -->
+    <!-- Di Odoo 18, kolom deskripsi line ada di td pertama tabel lines -->
+    <xpath expr="//t[@t-foreach='lines']/tr/td[1]" position="replace">
+        <td>
+            <t t-if="line.account_id">
+                <strong><t t-esc="line.account_id.code"/></strong>
+                <span style="color:#555;"> - <t t-esc="line.account_id.name"/></span>
+                <t t-if="line.name and line.name != line.account_id.name">
+                    <br/><small style="color:#888;"><t t-esc="line.name"/></small>
+                </t>
+            </t>
+            <t t-else="">
+                <t t-esc="line.name"/>
+            </t>
+        </td>
     </xpath>
 
     <!-- Tambah info approval setelah div total -->
