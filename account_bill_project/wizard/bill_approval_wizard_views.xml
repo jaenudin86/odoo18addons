@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <record id="view_bill_approval_wizard_form" model="ir.ui.view">
+            <field name="name">bill.approval.wizard.form</field>
+            <field name="model">bill.approval.wizard</field>
+            <field name="arch" type="xml">
+                <form string="Tolak Tagihan">
+                    <group>
+                        <field name="move_id" readonly="1"/>
+                        <field name="rejection_reason"
+                               placeholder="Jelaskan alasan penolakan tagihan ini..."
+                               widget="text"
+                               required="1"/>
+                    </group>
+                    <footer>
+                        <button name="action_confirm_reject"
+                                string="Konfirmasi Penolakan"
+                                type="object"
+                                class="btn-danger"/>
+                        <button string="Batal" class="btn-secondary" special="cancel"/>
+                    </footer>
+                </form>
+            </field>
+        </record>
+    </data>
+</odoo>

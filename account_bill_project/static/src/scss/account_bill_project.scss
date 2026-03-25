@@ -1,0 +1,70 @@
+// account_bill_project — Odoo 18 custom styles
+
+// ── Analytic Header Group ──────────────────────────────────────────
+.o_abp_analytic_group {
+    background: #e6f7f8;
+    border: 1px solid #9fe1cb;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+
+    .o_group_label {
+        color: #015f64;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .o_field_widget {
+        .o_input {
+            border-color: #9fe1cb;
+            &:focus {
+                border-color: #017e84;
+                box-shadow: 0 0 0 3px rgba(1, 126, 132, 0.15);
+            }
+        }
+    }
+}
+
+.o_abp_analytic_note {
+    background: rgba(255, 255, 255, 0.6);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 0.8rem;
+    color: #015f64;
+    border-left: 3px solid #017e84;
+    margin-top: 4px;
+}
+
+// ── Approval Status Badge ─────────────────────────────────────────
+.o_statusbar_status {
+    .o_arrow_button[data-value="waiting_manager"] {
+        background-color: #fef3c7;
+        color: #92400e;
+        border-color: #f59e0b;
+    }
+    .o_arrow_button[data-value="waiting_director"] {
+        background-color: #fde8d8;
+        color: #7c2d12;
+        border-color: #f97316;
+    }
+    .o_arrow_button[data-value="approved"] {
+        background-color: #d1fae5;
+        color: #065f46;
+        border-color: #10b981;
+    }
+    .o_arrow_button[data-value="rejected"] {
+        background-color: #fee2e2;
+        color: #991b1b;
+        border-color: #ef4444;
+    }
+}
+
+// ── List view: highlight baris menunggu approval ──────────────────
+.o_list_view .o_data_row {
+    &.o_decoration_info td {
+        background-color: rgba(230, 247, 248, 0.4);
+    }
+    &.o_decoration_warning td {
+        background-color: rgba(254, 243, 199, 0.4);
+    }
+}

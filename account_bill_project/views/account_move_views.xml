@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- ══════════════════════════════════════
+             Inherit account.move form — Vendor Bills
+             ══════════════════════════════════════ -->
+        <record id="view_account_bill_project_form" model="ir.ui.view">
+            <field name="name">account.move.bill.project.form</field>
+            <field name="model">account.move</field>
+            <field name="inherit_id" ref="account.view_move_form"/>
+            <field name="arch" type="xml">
+
+                <!-- 1. Status bar approval -->
+                <xpath expr="//header" position="inside">
+                    <field name="x_approval_state"
+                           widget="statusbar"
+                           statusbar_visible="draft,waiting,approved"
+                           attrs="{'invisible': [('move_type', '!=', 'in_invoice')]}"/>
+                </xpath>
+
+                <!-- 2. Tombol approval -->
+                <xpath expr="//header/button[1]" position="before">
+                    <button name="action_submit_for_approval"
+                            string="Ajukan Persetujuan"
+                            type="object"
+                            class="btn-primary"
+                            attrs="{'invisible': ['|', ('move_type', '!=', 'in_invoice'), ('x_approval_state', 'not in', ['draft'])]}"/>
+                    <button name="action_approve"
+                            string="Setujui"
+                            type="object"
+                            class="btn-success"
+                            groups="account_bill_project.group_bill_finance_manager"
+                            attrs="{'invisible': ['|', ('move_type', '!=', 'in_invoice'), ('x_approval_state', '!=', 'waiting')]}"/>
+                    <button name="action_reject"
+                            string="Tolak"
+                            type="object"
+                            class="btn-danger"
+                            groups="account_bill_project.group_bill_finance_manager"
+                            attrs="{'invisible': ['|', ('move_type', '!=', 'in_invoice'), ('x_approval_state', '!=', 'waiting')]}"/>
+                    <button name="action_reset_to_draft_custom"
+                            string="Reset ke Draft"
+                            type="object"
+                            attrs="{'invisible': ['|', ('move_type', '!=', 'in_invoice'), ('x_approval_state', 'not in', ['waiting', 'rejected'])]}"/>
+                </xpath>
+
+                <!-- 3. Blok Analytic Header — sisipkan setelah invoice_date -->
+                <xpath expr="//field[@name='invoice_date']" position="after">
+                    <group string="Account Analytic (Project)"
+                           name="group_analytic_header"
+                           attrs="{'invisible': [('move_type', '!=', 'in_invoice')]}">
+                        <group>
+                            <field name="x_analytic_account_id"
+                                   options="{'no_create': false}"
+                                   placeholder="Pilih project / analytic account..."/>
+                            <field name="x_analytic_distribution_pct"
+                                   string="% Alokasi"
+                                   attrs="{'invisible': [('x_analytic_account_id', '=', false)]}"/>
+                        </group>
+                        <group>
+                            <field name="x_approved_by" readonly="1"
+                                   attrs="{'invisible': [('x_approved_by', '=', false)]}"/>
+                            <field name="x_approved_date" readonly="1"
+                                   attrs="{'invisible': [('x_approved_date', '=', false)]}"/>
+                            <field name="x_rejected_reason" readonly="1"
+                                   attrs="{'invisible': [('x_rejected_reason', '=', false)]}"/>
+                        </group>
+                    </group>
+                </xpath>
+
+                <!-- 4. Invoice lines: product opsional, COA utama, analytic readonly -->
+                <xpath expr="//field[@name='invoice_line_ids']/tree//field[@name='product_id']"
+                       position="attributes">
+                    <attribute name="optional">show</attribute>
+                    <attribute name="string">Produk (opsional)</attribute>
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/tree//field[@name='account_id']"
+                       position="attributes">
+                    <attribute name="optional">show</attribute>
+                    <attribute name="column_invisible">0</attribute>
+                </xpath>
+                <xpath expr="//field[@name='invoice_line_ids']/tree//field[@name='analytic_distribution']"
+                       position="attributes">
+                    <attribute name="widget">analytic_distribution</attribute>
+                    <attribute name="optional">show</attribute>
+                    <attribute name="string">Analytic (dari Header)</attribute>
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+
+                <!-- 5. Tab Log Persetujuan -->
+                <xpath expr="//page[@name='invoice_tab']" position="after">
+                    <page string="Log Persetujuan" name="approval_log_tab"
+                          attrs="{'invisible': [('move_type', '!=', 'in_invoice')]}">
+                        <field name="x_approval_ids" readonly="1">
+                            <tree>
+                                <field name="create_date" string="Tanggal"/>
+                                <field name="user_id" string="User"/>
+                                <field name="state" string="Status"
+                                       decoration-success="state == 'approved'"
+                                       decoration-danger="state == 'rejected'"
+                                       decoration-warning="state == 'waiting'"/>
+                                <field name="note" string="Catatan"/>
+                            </tree>
+                        </field>
+                        <field name="x_require_director_approval" invisible="1"/>
+                        <div class="alert alert-warning mt-2"
+                             attrs="{'invisible': [('x_require_director_approval', '=', false)]}">
+                            <i class="fa fa-exclamation-triangle"/>
+                            Nilai tagihan melebihi batas — persetujuan Direktur Keuangan diperlukan.
+                        </div>
+                    </page>
+                </xpath>
+
+            </field>
+        </record>
+
+    </data>
+</odoo>

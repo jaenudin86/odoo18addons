@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <!-- Menu utama: di bawah Accounting > Vendors -->
+        <menuitem id="menu_pending_approval_bills"
+                  name="Tagihan Menunggu Persetujuan"
+                  parent="account.menu_finance_payables"
+                  action="account_bill_project.action_pending_approval_bills"
+                  sequence="15"
+                  groups="account_bill_project.group_bill_approval_manager"/>
+
+        <!-- Log Approval: Accounting > Reporting -->
+        <menuitem id="menu_bill_approval_log"
+                  name="Log Approval Tagihan"
+                  parent="account.account_reports_management_menu"
+                  action="account_bill_project.action_account_bill_approval_log"
+                  sequence="99"
+                  groups="account.group_account_manager"/>
+
+    </data>
+</odoo>
