@@ -3,6 +3,7 @@
 import { Component, useState, onWillStart } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
+import { jsonrpc } from "@web/core/network/rpc";
 
 class CoAHierarchyRow extends Component {
     static template = "ac_coa_hierarchy.CoAHierarchyRow";
@@ -40,16 +41,13 @@ class CoAHierarchyView extends Component {
     static components = { CoAHierarchyRow };
 
     setup() {
-        this.orm = useService("orm");
         this.action = useService("action");
-        this.rpc = useService("rpc");
 
         this.state = useState({
             accounts: [],
             total: 0,
             loading: true,
             searchQuery: "",
-            expandAll: false,
         });
 
         onWillStart(async () => {
@@ -60,7 +58,7 @@ class CoAHierarchyView extends Component {
     async loadData() {
         this.state.loading = true;
         try {
-            const result = await this.rpc("/ac_coa_hierarchy/get_hierarchy", {});
+            const result = await jsonrpc("/ac_coa_hierarchy/get_hierarchy", {});
             this.state.accounts = result.accounts || [];
             this.state.total = result.total || 0;
         } catch (e) {
@@ -111,13 +109,6 @@ class CoAHierarchyView extends Component {
 
     async onRefresh() {
         await this.loadData();
-    }
-
-    formatBalance(balance) {
-        return (balance || 0).toLocaleString("id-ID", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-        });
     }
 }
 
