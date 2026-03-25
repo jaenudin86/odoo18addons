@@ -35,13 +35,13 @@
 </template>
 
 <!-- Override wrapper report original vendor bill -->
-<template id="report_vendor_bill"
+<!-- <template id="report_vendor_bill"
           inherit_id="account.report_original_vendor_bill">
     <xpath expr="//div[hasclass('article')]" position="replace">
         <t t-call="account_bill_project.report_vendor_bill_document"
            t-lang="o.partner_id.lang"/>
     </xpath>
-</template>
+</template> -->
 
 </data>
 </odoo>
