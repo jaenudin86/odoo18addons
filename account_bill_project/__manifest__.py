@@ -27,7 +27,7 @@ Account Bill Project
         'report/report_action.xml',
         'views/account_move_views.xml',
         'views/account_bill_approval_views.xml',
-        'views/res_config_settings_views.xml',
+        # 'views/res_config_settings_views.xml',
         'views/menus.xml',
         'wizard/bill_approval_wizard_views.xml',
     ],
