@@ -87,6 +87,9 @@
 /* Loading */
 .fr-loading { display: flex; align-items: center; justify-content: center; padding: 60px 0; color: #6c757d; font-size: 1.1rem; }
 
+/* Export separator */
+.fr-export-sep { display: inline-block; width: 1px; height: 24px; background: #ced4da; margin: 0 4px; }
+
 /* Responsive */
 @media (max-width: 768px) {
     .fr-container { padding: 8px 12px; }

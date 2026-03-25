@@ -12,31 +12,30 @@ function yearStartStr() { const d = new Date(); return `${d.getFullYear()}-01-01
 
 function collectAccountIds(node) {
     const ids = [node.id];
-    if (node.children) {
-        for (const child of node.children) {
-            ids.push(...collectAccountIds(child));
-        }
-    }
+    if (node.children) { for (const c of node.children) ids.push(...collectAccountIds(c)); }
     return ids;
 }
 
+function downloadUrl(url) {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+}
+
 // ================================================================
-// HierarchyRow - click on amount triggers drill-down
+// HierarchyRow
 // ================================================================
 class HierarchyRow extends Component {
     static template = "ac_financial_reports.HierarchyRow";
-    static props = {
-        row: Object, depth: { type: Number, optional: true },
-        columns: Array, onDrillDown: { type: Function, optional: true },
-    };
+    static props = { row: Object, depth: { type: Number, optional: true }, columns: Array, onDrillDown: { type: Function, optional: true } };
     setup() { this.state = useState({ expanded: (this.props.depth || 0) < 1 }); }
     get hasChildren() { return this.props.row.children && this.props.row.children.length > 0; }
     get indent() { return (this.props.depth || 0) * 24; }
     toggleExpand(ev) { ev.stopPropagation(); this.state.expanded = !this.state.expanded; }
-    onAmountClick(ev, col) {
-        ev.stopPropagation();
-        if (this.props.onDrillDown) this.props.onDrillDown(this.props.row, col);
-    }
+    onAmountClick(ev, col) { ev.stopPropagation(); if (this.props.onDrillDown) this.props.onDrillDown(this.props.row, col); }
     fmt(val) { return fmt(val); }
 }
 HierarchyRow.components = { HierarchyRow };
@@ -67,6 +66,8 @@ class TrialBalanceReport extends Component {
         else domain.push(["date", ">=", this.state.dateFrom], ["date", "<=", this.state.dateTo]);
         this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${row.code} ${row.name} - ${col.label}`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain, target: "current" });
     }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/trial_balance/xlsx?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/trial_balance/pdf?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
     fmt(val) { return fmt(val); }
     get columns() { return [{ key: "opening_balance", label: "Opening" }, { key: "debit", label: "Debit" }, { key: "credit", label: "Credit" }, { key: "ending_balance", label: "Ending" }]; }
 }
@@ -93,6 +94,8 @@ class ProfitLossReport extends Component {
         const ids = collectAccountIds(row);
         this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${row.code} ${row.name}`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "in", ids], ["date", ">=", this.state.dateFrom], ["date", "<=", this.state.dateTo], ["parent_state", "=", "posted"]], target: "current" });
     }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/profit_loss/xlsx?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/profit_loss/pdf?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
     fmt(val) { return fmt(val); }
     get columns() { return [{ key: "balance", label: "Balance" }]; }
 }
@@ -119,12 +122,14 @@ class BalanceSheetReport extends Component {
         const ids = collectAccountIds(row);
         this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${row.code} ${row.name}`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "in", ids], ["date", "<=", this.state.dateTo], ["parent_state", "=", "posted"]], target: "current" });
     }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/balance_sheet/xlsx?date_to=${this.state.dateTo}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/balance_sheet/pdf?date_to=${this.state.dateTo}`); }
     fmt(val) { return fmt(val); }
     get columns() { return [{ key: "balance", label: "Balance" }]; }
 }
 
 // ================================================================
-// GENERAL LEDGER (tree list per account, expand to see entries)
+// GENERAL LEDGER
 // ================================================================
 class GeneralLedgerReport extends Component {
     static template = "ac_financial_reports.GeneralLedgerReport";
@@ -142,15 +147,11 @@ class GeneralLedgerReport extends Component {
     async onApplyFilter() { await this.loadData(); }
     toggleAccount(accId) { this.state.expandedAccounts[accId] = !this.state.expandedAccounts[accId]; }
     isExpanded(accId) { return !!this.state.expandedAccounts[accId]; }
-    onMoveClick(moveId) {
-        this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" });
-    }
-    onOpeningClick(acc) {
-        this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${acc.code} - Opening`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "=", acc.id], ["date", "<", this.state.dateFrom], ["parent_state", "=", "posted"]], target: "current" });
-    }
-    onEndingClick(acc) {
-        this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${acc.code} - All`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "=", acc.id], ["date", "<=", this.state.dateTo], ["parent_state", "=", "posted"]], target: "current" });
-    }
+    onMoveClick(moveId) { this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" }); }
+    onOpeningClick(acc) { this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${acc.code} - Opening`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "=", acc.id], ["date", "<", this.state.dateFrom], ["parent_state", "=", "posted"]], target: "current" }); }
+    onEndingClick(acc) { this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${acc.code} - All`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain: [["account_id", "=", acc.id], ["date", "<=", this.state.dateTo], ["parent_state", "=", "posted"]], target: "current" }); }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/general_ledger/xlsx?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/general_ledger/pdf?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
     fmt(val) { return fmt(val); }
 }
 
@@ -171,6 +172,8 @@ class CashFlowReport extends Component {
         this.state.loading = false;
     }
     async onApplyFilter() { await this.loadData(); }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/cash_flow/xlsx?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/cash_flow/pdf?date_from=${this.state.dateFrom}&date_to=${this.state.dateTo}`); }
     fmt(val) { return fmt(val); }
 }
 
@@ -201,9 +204,9 @@ class AgingReport extends Component {
         else domain.push(["partner_id", "=", false]);
         this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move.line", name: `${partner.partner_name}`, view_mode: "list,form", views: [[false, "list"], [false, "form"]], domain, target: "current" });
     }
-    onMoveClick(moveId) {
-        this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" });
-    }
+    onMoveClick(moveId) { this.action.doAction({ type: "ir.actions.act_window", res_model: "account.move", res_id: moveId, views: [[false, "form"]], target: "current" }); }
+    exportXlsx() { downloadUrl(`/ac_financial_reports/export/aging/xlsx?date_to=${this.state.dateTo}&report_type=${this.state.reportType}`); }
+    exportPdf() { downloadUrl(`/ac_financial_reports/export/aging/pdf?date_to=${this.state.dateTo}&report_type=${this.state.reportType}`); }
     fmt(val) { return fmt(val); }
 }
 
