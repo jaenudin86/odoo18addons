@@ -2,15 +2,9 @@
 <odoo>
 <data>
 
-    <!-- Inherit report vendor bill bawaan Odoo, tambah template kita -->
-    <record id="action_report_vendor_bill_abp" model="ir.actions.report">
-        <field name="name">Tagihan Vendor (Project)</field>
-        <field name="model">account.move</field>
-        <field name="report_type">qweb-pdf</field>
+    <!-- Override report action bawaan vendor bill -->
+    <record id="account.action_report_in_invoice" model="ir.actions.report">
         <field name="report_name">account_bill_project.report_vendor_bill</field>
-        <field name="report_file">account_bill_project.report_vendor_bill</field>
-        <field name="binding_model_id" ref="account.model_account_move"/>
-        <field name="binding_type">report</field>
     </record>
 
 </data>

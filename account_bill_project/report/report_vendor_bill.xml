@@ -2,30 +2,18 @@
 <odoo>
 <data>
 
-<!-- Inherit template vendor bill bawaan Odoo 18 -->
-<!-- Base template: account.report_invoice_document -->
-
+<!-- Inherit template asli vendor bill Odoo 18 -->
 <template id="report_vendor_bill_document"
           inherit_id="account.report_invoice_document">
 
-    <!-- 1. Hapus baris product (sembunyikan kolom product) -->
-    <xpath expr="//td[hasclass('text-start')]" position="replace">
-        <td class="text-start">
-            <!-- Tampilkan COA code + name sebagai ganti product -->
-            <span t-if="line.account_id"
-                  t-esc="line.account_id.code + ' - ' + line.account_id.name"/>
-            <span t-elif="line.name" t-esc="line.name"/>
-        </td>
-    </xpath>
-
-    <!-- 2. Tambah info Project / Analytic di bawah info tagihan -->
+    <!-- Tambah info Project / Analytic setelah blok informasi header -->
     <xpath expr="//div[@id='informations']" position="after">
         <t t-if="doc.x_analytic_account_id">
-            <div style="margin-bottom:8px;padding:6px 10px;background:#e6f7f8;border-left:3px solid #017e84;border-radius:0 4px 4px 0;">
+            <div style="margin:4px 0 8px 0;padding:6px 12px;background:#e6f7f8;border-left:3px solid #017e84;">
                 <strong style="color:#015f64;">Project: </strong>
-                <span style="color:#015f64;" t-esc="doc.x_analytic_account_id.name"/>
+                <span style="color:#015f64;" t-field="doc.x_analytic_account_id.name"/>
                 <t t-if="doc.x_analytic_account_id.code">
-                    <span style="color:#017e84;"> (<t t-esc="doc.x_analytic_account_id.code"/>)</span>
+                    (<span t-field="doc.x_analytic_account_id.code"/>)
                 </t>
                 <span style="color:#017e84;margin-left:12px;">
                     Alokasi: <t t-esc="doc.x_analytic_distribution_pct"/>%
@@ -34,32 +22,49 @@
         </t>
     </xpath>
 
-    <!-- 3. Tambah status approval -->
-    <xpath expr="//div[@id='informations']" position="inside">
-        <t t-if="doc.x_approval_state == 'approved'">
-            <div class="row mb-1">
-                <div class="col-3"><strong>Disetujui Oleh</strong></div>
-                <div class="col-3">
-                    <span t-esc="doc.x_approved_by.name"/>
-                </div>
-                <div class="col-3"><strong>Tanggal</strong></div>
-                <div class="col-3">
-                    <span t-esc="doc.x_approved_date" t-options='{"widget": "datetime"}'/>
-                </div>
+    <!-- Ganti kolom product/deskripsi dengan COA -->
+    <xpath expr="//td[hasclass('text-start')]" position="replace">
+        <td class="text-start">
+            <t t-if="line.account_id">
+                <strong t-esc="line.account_id.code"/> — <span t-esc="line.account_id.name"/>
+            </t>
+            <t t-elif="line.name">
+                <span t-esc="line.name"/>
+            </t>
+            <t t-if="line.name and line.account_id">
+                <br/><small class="text-muted" t-esc="line.name"/>
+            </t>
+        </td>
+    </xpath>
+
+    <!-- Tambah info approval di bawah tabel -->
+    <xpath expr="//div[@id='total']" position="after">
+        <t t-if="doc.x_approval_state == 'approved' and doc.x_approved_by">
+            <div style="margin-top:12px;padding:8px 12px;border:1px solid #dee2e6;border-radius:4px;font-size:12px;">
+                <strong>Disetujui oleh: </strong>
+                <span t-field="doc.x_approved_by.name"/>
+                <span style="margin-left:16px;color:#6c757d;">
+                    <t t-esc="doc.x_approved_date" t-options='{"widget": "datetime"}'/>
+                </span>
+            </div>
+        </t>
+        <t t-if="doc.x_approval_state == 'rejected' and doc.x_rejected_reason">
+            <div style="margin-top:12px;padding:8px 12px;border:1px solid #f09595;border-radius:4px;font-size:12px;color:#a32d2d;">
+                <strong>Ditolak: </strong>
+                <span t-esc="doc.x_rejected_reason"/>
             </div>
         </t>
     </xpath>
 
 </template>
 
-<!-- Report wrapper -->
-<template id="report_vendor_bill">
-    <t t-call="web.html_container">
-        <t t-foreach="docs" t-as="doc">
-            <t t-call="account_bill_project.report_vendor_bill_document"
-               t-lang="doc.partner_id.lang"/>
-        </t>
-    </t>
+<!-- Report wrapper - inherit original vendor bill -->
+<template id="report_vendor_bill"
+          inherit_id="account.report_original_vendor_bill">
+    <xpath expr="//div[hasclass('article')]" position="replace">
+        <t t-call="account_bill_project.report_vendor_bill_document"
+           t-lang="o.partner_id.lang"/>
+    </xpath>
 </template>
 
 </data>
