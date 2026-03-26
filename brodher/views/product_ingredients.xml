@@ -111,15 +111,16 @@
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"
-                       readonly="1"
+                      
                        force_save="1"/>
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"
-                       readonly="1"
+                       
                        force_save="1"/>
             </xpath>
-
+  <!-- readonly="1"
+  readonly="1" -->
         </field>
     </record>
 
@@ -265,12 +266,12 @@
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"
-                       readonly="1"/>
+                     />
 
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"
-                       readonly="1"/>
+                       />
             </xpath>
 
         </field>
