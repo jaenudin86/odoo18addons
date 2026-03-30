@@ -2,6 +2,9 @@
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 import logging
+import io
+import zipfile
+import base64
 
 _logger = logging.getLogger(__name__)
 
@@ -34,6 +37,7 @@ class SNPrintWizard(models.TransientModel):
     
     total_products_selected = fields.Integer('Produk Dipilih', compute='_compute_totals')
     total_sn_selected = fields.Integer('SN Dipilih', compute='_compute_totals')
+    batch_size = fields.Integer('SN per File PDF', default=500, required=True)
     
     @api.depends('product_line_ids.selected', 'sn_line_ids.selected')
     def _compute_totals(self):
@@ -163,45 +167,88 @@ class SNPrintWizard(models.TransientModel):
         }
     
     def action_print_selected(self):
-        """Print selected serial numbers"""
+        """Print selected serial numbers — batch ZIP jika > batch_size"""
         self.ensure_one()
-        
+
         selected_lines = self.sn_line_ids.filtered('selected')
-        
+
         if not selected_lines:
             raise UserError(_(
                 '❌ Tidak ada SN yang dipilih!\n\n'
                 'Silakan centang serial number yang ingin dicetak.'
             ))
-        
+
         selected_sns = selected_lines.mapped('serial_number_id')
-        
+
         _logger.info(f'[PRINT WIZARD] Printing {len(selected_sns)} serial numbers')
-        
+
         # Update print status and create history
+        now = fields.Datetime.now()
         for sn in selected_sns:
             new_count = sn.print_count + 1
-            
             sn.write({
                 'is_printed': True,
                 'print_count': new_count,
-                'last_print_date': fields.Datetime.now(),
+                'last_print_date': now,
                 'last_print_user': self.env.user.id,
             })
-            
             self.env['stock.lot.print.history'].create({
                 'lot_id': sn.id,
-                'print_date': fields.Datetime.now(),
+                'print_date': now,
                 'print_user': self.env.user.id,
                 'print_count_at_time': new_count,
                 'picking_id': self.picking_id.id,
                 'notes': f'Cetak QR Code - Transfer {self.picking_id.name}',
             })
-        
-        _logger.info(f'[PRINT WIZARD] Print status updated, generating PDF')
-        
-        # Generate PDF
-        return self.env.ref('brodher_product_serial.action_report_serial_number_qrcode').report_action(selected_sns)
+
+        batch_size = max(1, self.batch_size or 500)
+        total = len(selected_sns)
+
+        # Jika jumlah SN <= batch_size → langsung render PDF biasa
+        if total <= batch_size:
+            _logger.info(f'[PRINT WIZARD] Single PDF for {total} SNs')
+            return self.env.ref(
+                'brodher_product_serial.action_report_serial_number_qrcode'
+            ).report_action(selected_sns)
+
+        # Lebih dari batch_size → buat ZIP berisi beberapa PDF
+        _logger.info(f'[PRINT WIZARD] Batch ZIP: {total} SNs, batch_size={batch_size}')
+
+        report = self.env.ref('brodher_product_serial.action_report_serial_number_qrcode')
+        sn_list = selected_sns
+        zip_buffer = io.BytesIO()
+
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            batch_num = 1
+            for start in range(0, total, batch_size):
+                batch_sns = sn_list[start:start + batch_size]
+                _logger.info(
+                    f'[PRINT WIZARD] Rendering batch {batch_num}: SN {start+1}–{start+len(batch_sns)}'
+                )
+                pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=batch_sns.ids)
+                filename = f'qr_labels_{self.picking_id.name}_batch_{batch_num:03d}.pdf'
+                zf.writestr(filename, pdf_content)
+                batch_num += 1
+
+        zip_data = zip_buffer.getvalue()
+        zip_name = f'qr_labels_{self.picking_id.name}.zip'
+
+        attachment = self.env['ir.attachment'].create({
+            'name': zip_name,
+            'type': 'binary',
+            'datas': base64.b64encode(zip_data).decode(),
+            'res_model': self._name,
+            'res_id': self.id,
+            'mimetype': 'application/zip',
+        })
+
+        _logger.info(f'[PRINT WIZARD] ZIP created: {zip_name}, attachment id={attachment.id}')
+
+        return {
+            'type': 'ir.actions.act_url',
+            'url': f'/web/content/{attachment.id}?download=true',
+            'target': 'self',
+        }
     
     # Quick selection actions
     def action_select_all_sn(self):

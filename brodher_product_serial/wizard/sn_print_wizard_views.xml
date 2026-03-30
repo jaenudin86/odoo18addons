@@ -55,6 +55,8 @@
                         
                         <group>
                             <field name="total_sn_selected" string="SN Dipilih"/>
+                            <field name="batch_size" string="SN per File PDF"
+                                   help="Jika SN yang dipilih melebihi angka ini, hasil download berupa ZIP berisi beberapa file PDF"/>
                         </group>
                         
                         <!-- Quick Actions -->
