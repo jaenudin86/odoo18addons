@@ -111,16 +111,15 @@
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"
-                      
+                       readonly="1"
                        force_save="1"/>
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"
-                       
+                       readonly="1"
                        force_save="1"/>
             </xpath>
-  <!-- readonly="1"
-  readonly="1" -->
+
         </field>
     </record>
 
@@ -233,7 +232,7 @@
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
-                <!-- <field name="gross_weight"
+                <field name="gross_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
@@ -243,13 +242,7 @@
 
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/> -->
-                
-                <field name="gross_weight" required="true"/>
-
-                <field name="net_weight" required="true"/>
-
-                <field name="net_net_weight" required="true"/>
+                       required="is_article == 'yes'"/>
 
             </xpath>
 
@@ -266,12 +259,12 @@
                 <field name="default_code"
                        string="PSIT Number"
                        invisible="is_article != 'no'"
-                     />
+                       readonly="1"/>
 
                 <field name="default_code"
                        string="ATC Number"
                        invisible="is_article != 'yes'"
-                       />
+                       readonly="1"/>
             </xpath>
 
         </field>
