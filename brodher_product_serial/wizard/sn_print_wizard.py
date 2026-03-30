@@ -244,6 +244,18 @@ class SNPrintWizard(models.TransientModel):
 
         _logger.info(f'[PRINT WIZARD] ZIP created: {zip_name}, attachment id={attachment.id}')
 
+        # Kirim notifikasi sukses ke browser user
+        self.env['bus.bus']._sendone(
+            self.env.user.partner_id,
+            'simple_notification',
+            {
+                'title': 'ZIP Berhasil Dibuat',
+                'message': f'{total} SN selesai diproses dalam {batch_num - 1} file PDF. Download dimulai...',
+                'type': 'success',
+                'sticky': False,
+            }
+        )
+
         return {
             'type': 'ir.actions.act_url',
             'url': f'/web/content/{attachment.id}?download=true',
