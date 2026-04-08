@@ -30,24 +30,24 @@
                         border-collapse: collapse;
                     }
                     table.label-table td {
-                        width: 15mm;
-                        padding: 0.3mm;
+                        width: 25%;
+                        padding: 2px 2px;
                         box-sizing: border-box;
                         text-align: center;
                         vertical-align: top;
                         overflow: hidden;
                     }
                     .label-inner {
-                        width: 14.4mm;
-                        height: 19.4mm;
+                        width: 100%;
+                        height: 140px;
                         overflow: hidden;
                         box-sizing: border-box;
                         display: block;
-                        padding: 0.2mm;
+                        padding: 1px;
                     }
                     .label-text {
                         display: block;
-                        font-size: 5.5px;
+                        font-size: 10px;
                         line-height: 1.2;
                         white-space: nowrap;
                         overflow: hidden;
@@ -56,31 +56,31 @@
                     }
                     .label-ir {
                         font-weight: bold;
-                        font-size: 5.5px;
+                        font-size: 10px;
                     }
                     .label-name {
                         font-weight: bold;
-                        font-size: 5.5px;
+                        font-size: 10px;
                     }
                     .label-variant {
-                        font-size: 5.5px;
+                        font-size: 10px;
                         color: #333;
                     }
                     .label-barcode-text {
-                        font-size: 5.5px;
+                        font-size: 10px;
                         color: #555;
                     }
                     .qrcode_img {
-                        width: 11mm;
-                        height: 11mm;
+                        width: 70px;
+                        height: 70px;
                         display: block;
-                        margin: 0.3mm auto;
+                        margin: 1px auto;
                     }
                     .label-sn {
                         display: block;
                         font-weight: bold;
-                        font-size: 5.5px;
-                        margin-top: 0.2mm;
+                        font-size: 10px;
+                        margin-top: 1px;
                         word-break: break-all;
                     }
                 </style>
@@ -93,8 +93,8 @@
                 </t>
 
                 <t t-if="docs">
-                    <t t-set="items_per_row" t-value="13"/>
-                    <t t-set="rows_per_page" t-value="14"/>
+                    <t t-set="items_per_row" t-value="5"/>
+                    <t t-set="rows_per_page" t-value="7"/>
                     <t t-set="labels_per_page" t-value="items_per_row * rows_per_page"/>
                     <t t-set="total" t-value="len(docs)"/>
 
@@ -141,7 +141,10 @@
                                         </t>
                                         <!-- Padding kolom kosong di baris terakhir -->
                                         <t t-set="row_count" t-value="len(page_docs[row_start : row_start + items_per_row])"/>
-                                        <t t-foreach="range(items_per_row - row_count)" t-as="empty_col"><td></td></t>
+                                        <t t-if="row_count == 4"><td></td></t>
+                                        <t t-if="row_count == 3"><td></td><td></td></t>
+                                        <t t-if="row_count == 2"><td></td><td></td><td></td></t>
+                                        <t t-if="row_count == 1"><td></td><td></td><td></td><td></td></t>
                                     </tr>
                                 </t>
                             </tbody>
