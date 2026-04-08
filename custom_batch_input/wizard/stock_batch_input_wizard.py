@@ -38,6 +38,9 @@ class StockBatchInputWizard(models.TransientModel):
                 continue
             if product.id in seen_products:
                 continue
+            # Skip produk yang belum ada qty (belum di-scan)
+            if not move.move_line_ids:
+                continue
             seen_products.add(product.id)
 
             first_lot = move.move_line_ids.mapped('lot_id')[:1]
