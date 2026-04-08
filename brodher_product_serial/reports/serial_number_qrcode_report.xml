@@ -56,14 +56,14 @@
                     }
                     .label-ir {
                         font-weight: bold;
-                        font-size: 5.5px;
+                        font-size: 4px;
                     }
                     .label-name {
                         font-weight: bold;
-                        font-size: 5.5px;
+                        font-size: 4px;
                     }
                     .label-variant {
-                        font-size: 5.5px;
+                        font-size: 4px;
                         color: #333;
                     }
                     .label-barcode-text {
