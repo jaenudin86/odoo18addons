@@ -219,7 +219,7 @@ class BrodherSNValidationWizard(models.TransientModel):
                 original_move.copy({
                     'picking_id': backorder_picking.id,
                     'product_uom_qty': float(remaining),
-                    'quantity': float(remaining),
+                    'quantity': 0.0,  # Done qty harus 0, bukan remaining
                     'state': 'draft',
                     'move_line_ids': [],  # No move_lines in backorder yet
                 })
