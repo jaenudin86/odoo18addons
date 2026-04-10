@@ -192,16 +192,19 @@ class BrodherSNValidationWizard(models.TransientModel):
         
         if needs_backorder:
             _logger.info('[PARTIAL] Creating backorder picking...')
-            
+
             # Create empty backorder
             backorder_picking = picking.copy({
                 'name': '/',
-                'move_ids_without_package': [],
-                'move_line_ids': [],
                 'backorder_id': picking.id,
                 'state': 'draft',
             })
-            
+
+            # Hapus semua moves & move_lines yang ikut ter-copy
+            # (move_ids_without_package adalah computed field, tidak bisa di-clear via copy vals)
+            backorder_picking.move_line_ids.unlink()
+            backorder_picking.move_ids.unlink()
+
             # Create moves for backorder BEFORE modifying original
             for item in processing_data:
                 if not item['needs_backorder']:
