@@ -38,6 +38,14 @@ class PurchaseOrder(models.Model):
                 vals['name'] = self.env['ir.sequence'].next_by_code(seq_code) or 'New'
         return super().create(vals_list)
 
+    def _get_product_catalog_domain(self):
+        domain = super()._get_product_catalog_domain()
+        if self.po_type == 'atc':
+            domain += [('is_article', '=', 'yes')]
+        elif self.po_type == 'psit':
+            domain += [('is_article', '=', 'no')]
+        return domain
+
     @api.onchange('po_type')
     def _onchange_po_type_warn(self):
         """Peringatan jika tipe PO diubah saat sudah ada lines."""
