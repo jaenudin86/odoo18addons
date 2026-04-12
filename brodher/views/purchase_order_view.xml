@@ -15,7 +15,7 @@
 
             <!-- Domain produk di baris PO berdasarkan po_type -->
             <xpath expr="//field[@name='order_line']//field[@name='product_id']" position="attributes">
-                <attribute name="domain">parent.product_domain</attribute>
+                <attribute name="domain">[('is_article', 'in', parent.allowed_article_types)]</attribute>
             </xpath>
 
         </field>

@@ -12,17 +12,17 @@ class PurchaseOrder(models.Model):
     ], string='Tipe PO', required=True, default='free', copy=False,
        states={'purchase': [('readonly', True)], 'done': [('readonly', True)], 'cancel': [('readonly', True)]})
 
-    product_domain = fields.Json(compute='_compute_product_domain', store=False)
+    allowed_article_types = fields.Json(compute='_compute_allowed_article_types', store=False)
 
     @api.depends('po_type')
-    def _compute_product_domain(self):
+    def _compute_allowed_article_types(self):
         for order in self:
-            if order.po_type == 'psit':
-                order.product_domain = [('is_article', '=', 'no')]
-            elif order.po_type == 'atc':
-                order.product_domain = [('is_article', '=', 'yes')]
+            if order.po_type == 'atc':
+                order.allowed_article_types = ['yes']
+            elif order.po_type == 'psit':
+                order.allowed_article_types = ['no']
             else:
-                order.product_domain = []
+                order.allowed_article_types = ['yes', 'no']
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -39,7 +39,7 @@ class PurchaseOrder(models.Model):
         return super().create(vals_list)
 
     @api.onchange('po_type')
-    def _onchange_po_type_clear_lines(self):
+    def _onchange_po_type_warn(self):
         """Peringatan jika tipe PO diubah saat sudah ada lines."""
         if self.order_line:
             return {
