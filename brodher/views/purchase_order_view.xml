@@ -5,16 +5,16 @@
     <record id="purchase_order_form_inherit_brodher" model="ir.ui.view">
         <field name="name">purchase.order.form.inherit.brodher</field>
         <field name="model">purchase.order</field>
-        <field name="inherit_id" ref="purchase.purchase_rfq"/>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
         <field name="arch" type="xml">
 
-            <!-- Tampilkan po_type di atas partner_id -->
-            <xpath expr="//field[@name='partner_id']" position="before">
+            <!-- Tampilkan po_type sebelum partner_id -->
+            <field name="partner_id" position="before">
                 <field name="po_type" widget="radio" options="{'horizontal': true}"/>
-            </xpath>
+            </field>
 
             <!-- Domain produk di baris PO berdasarkan po_type -->
-            <xpath expr="//field[@name='product_id'][ancestor::field[@name='order_line']]" position="attributes">
+            <xpath expr="//field[@name='order_line']//field[@name='product_id']" position="attributes">
                 <attribute name="domain">parent.product_domain</attribute>
             </xpath>
 
@@ -25,11 +25,11 @@
     <record id="purchase_order_tree_inherit_brodher" model="ir.ui.view">
         <field name="name">purchase.order.tree.inherit.brodher</field>
         <field name="model">purchase.order</field>
-        <field name="inherit_id" ref="purchase.purchase_rfq_tree"/>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='name']" position="after">
+            <field name="origin" position="before">
                 <field name="po_type" optional="show"/>
-            </xpath>
+            </field>
         </field>
     </record>
 
