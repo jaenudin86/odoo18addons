@@ -19,4 +19,32 @@
     <field name="implementation">standard</field>
 </record>
 
+
+<!-- Sequence untuk PO PSIT -->
+<record id="seq_po_psit" model="ir.sequence">
+    <field name="name">Purchase Order PSIT</field>
+    <field name="code">purchase.order.psit</field>
+    <field name="prefix">PO/PSIT/</field>
+    <field name="padding">4</field>
+    <field name="implementation">standard</field>
+</record>
+
+<!-- Sequence untuk PO ATC -->
+<record id="seq_po_atc" model="ir.sequence">
+    <field name="name">Purchase Order ATC</field>
+    <field name="code">purchase.order.atc</field>
+    <field name="prefix">PO/ATC/</field>
+    <field name="padding">4</field>
+    <field name="implementation">standard</field>
+</record>
+
+<!-- Sequence untuk PO Bebas -->
+<record id="seq_po_free" model="ir.sequence">
+    <field name="name">Purchase Order Bebas</field>
+    <field name="code">purchase.order.free</field>
+    <field name="prefix">PO/FREE/</field>
+    <field name="padding">4</field>
+    <field name="implementation">standard</field>
+</record>
+
 </odoo>

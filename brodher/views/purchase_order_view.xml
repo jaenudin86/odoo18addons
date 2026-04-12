@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Tambah field po_type di form Purchase Order -->
+    <record id="purchase_order_form_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_rfq"/>
+        <field name="arch" type="xml">
+
+            <!-- Tampilkan po_type di sebelah nama/referensi PO -->
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="po_type" widget="radio" options="{'horizontal': true}"/>
+            </xpath>
+
+            <!-- Domain produk di baris PO berdasarkan po_type -->
+            <xpath expr="//field[@name='product_id'][ancestor::field[@name='order_line']]" position="attributes">
+                <attribute name="domain">parent.product_domain</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Tambah kolom po_type di list view PO -->
+    <record id="purchase_order_tree_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.tree.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_rfq_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="po_type" optional="show"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Filter di search view berdasarkan po_type -->
+    <record id="purchase_order_search_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.search.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_rfq_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='draft']" position="before">
+                <filter string="PSIT" name="type_psit" domain="[('po_type','=','psit')]"/>
+                <filter string="ATC" name="type_atc" domain="[('po_type','=','atc')]"/>
+                <filter string="Bebas" name="type_free" domain="[('po_type','=','free')]"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

@@ -19,7 +19,7 @@ Long description of module's purpose
 
     # any module necessary for this one to work correctly
     # 'depends': ['product','web'],ß
-'depends': ['stock','product','contacts'],
+'depends': ['stock', 'product', 'contacts', 'purchase'],
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',
@@ -37,6 +37,7 @@ Long description of module's purpose
     'reports/stock_picking_qrcode_action.xml',
     # 'reports/suratjalan.xml',
     'views/partner_view.xml',
+    'views/purchase_order_view.xml',
     ],
     # only loaded in demonstration mode
     'demo': [
