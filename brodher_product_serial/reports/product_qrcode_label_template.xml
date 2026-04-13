@@ -4,13 +4,19 @@
         <t t-call="web.basic_layout">
             <div class="page" style="padding: 0; margin: 0;">
                 <style>
-                    body {
+                    @page {
+                        size: 15mm 20mm;
+                        margin: 0;
+                    }
+                    html, body {
                         margin: 0 !important;
                         padding: 0 !important;
+                        width: 15mm;
+                        height: 20mm;
                     }
                     .page {
-                        padding: 0;
-                        margin: 0;
+                        padding: 0 !important;
+                        margin: 0 !important;
                     }
                     .label-wrapper {
                         width: 15mm;
