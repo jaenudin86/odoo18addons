@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="purchase_order_form_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form" position="attributes">
+                <attribute name="edit">state != 'closed'</attribute>
+            </xpath>
+            <xpath expr="//header" position="inside">
+                <button name="action_close_po" string="Close PO" type="object" 
+                        invisible="state != 'purchase'" class="oe_highlight"
+                        confirm="Are you sure you want to close this PO? All pending transfers will be cancelled."/>
+            </xpath>
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">draft,sent,purchase,closed</attribute>
+            </xpath>
+            <!-- Hide standard buttons when closed -->
+            <xpath expr="//button[@name='action_rfq_send']" position="attributes">
+                <attribute name="invisible">state in ('closed', 'cancel', 'done')</attribute>
+            </xpath>
+            <xpath expr="//button[@name='button_confirm']" position="attributes">
+                <attribute name="invisible">state not in ('sent', 'to approve')</attribute>
+            </xpath>
+            <xpath expr="//button[@id='draft_confirm']" position="attributes">
+                <attribute name="invisible">state != 'draft'</attribute>
+            </xpath>
+        </field>
+
+    </record>
+</odoo>

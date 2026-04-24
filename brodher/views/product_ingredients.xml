@@ -11,9 +11,9 @@
         <field name="arch" type="xml">
 
             <!-- HIDE PRODUCT TYPE -->
-            <xpath expr="//field[@name='type']" position="attributes">
+            <!-- <xpath expr="//field[@name='type']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
             <xpath expr="//field[@name='company_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
@@ -153,9 +153,9 @@
 
 
             <!-- HIDE TYPE -->
-            <xpath expr="//field[@name='type']" position="attributes">
+            <!-- <xpath expr="//field[@name='type']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
             <xpath expr="//field[@name='barcode']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
