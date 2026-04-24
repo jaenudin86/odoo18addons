@@ -17,60 +17,65 @@
         <t t-call="web.basic_layout">
             <div class="page" style="padding: 0; margin: 0;">
                 <style>
-                    body {
+                    @page {
+                        size: 15mm 20mm;
+                        margin: 0;
+                    }
+                    html, body {
                         margin: 0 !important;
                         padding: 0 !important;
-                    }
-                    .page {
-                        padding: 0;
-                        margin: 0;
                         width: 15mm;
                         height: 20mm;
+                    }
+                    .page {
+                        padding: 0 !important;
+                        margin: 0 !important;
                     }
                     .label-wrap {
                         width: 15mm;
                         height: 20mm;
                         overflow: hidden;
                         box-sizing: border-box;
-                        padding: 0.3mm;
+                        padding: 0.5mm;
                         display: flex;
                         flex-direction: column;
                         align-items: center;
-                        justify-content: flex-start;
+                        justify-content: center;
                         page-break-after: always;
+                    }
+                    .label-wrap:last-child {
+                        page-break-after: auto;
                     }
                     .label-text {
                         display: block;
-                        font-size: 4.5px;
+                        font-size: 4.5pt;
                         line-height: 1.2;
-                        white-space: nowrap;
-                        overflow: hidden;
-                        text-overflow: ellipsis;
+                        word-break: break-word;
                         max-width: 100%;
                         text-align: center;
                     }
                     .label-ir {
                         font-weight: bold;
-                        font-size: 4px;
+                        font-size: 4pt;
                     }
                     .label-name {
                         font-weight: bold;
-                        font-size: 4px;
+                        font-size: 4.5pt;
                     }
                     .label-variant {
-                        font-size: 3.5px;
-                        color: #333;
+                        font-size: 4pt;
+                        color: #444;
                     }
                     .qrcode_img {
                         width: 11mm;
                         height: 11mm;
                         display: block;
-                        margin: 0.2mm auto;
+                        margin: 0.3mm auto;
                     }
                     .label-sn {
                         display: block;
                         font-weight: bold;
-                        font-size: 4.5px;
+                        font-size: 4.5pt;
                         margin-top: 0.2mm;
                         word-break: break-all;
                         text-align: center;
@@ -90,16 +95,17 @@
                             <span class="label-text label-ir">
                                 <t t-esc="sn.product_id.default_code or '-'"/>
                             </span>
-                            <!-- Product Name (tanpa variant) -->
+                            <!-- Product Name -->
                             <span class="label-text label-name">
                                 <t t-esc="sn.product_id.product_tmpl_id.name"/>
                             </span>
                             <!-- Variant -->
-                            <span class="label-text label-variant">
-                                <t t-esc="sn.product_id.product_template_attribute_value_ids and ', '.join(sn.product_id.product_template_attribute_value_ids.mapped('product_attribute_value_id.name')) or ''"/>
+                            <t t-set="variant_vals" t-value="sn.product_id.product_template_attribute_value_ids.mapped('product_attribute_value_id.name')"/>
+                            <span t-if="variant_vals" class="label-text label-variant">
+                                <t t-esc="', '.join(variant_vals)"/>
                             </span>
                             <!-- QR Code -->
-                            <img t-att-src="'/report/barcode/QR/%s' % (sn.name + '#' + sn.product_id.default_code + '#' + sn.product_id.brand)"
+                            <img t-att-src="'/report/barcode/QR/%s' % sn.name"
                                 class="qrcode_img"
                                 alt="QR"/>
                             <!-- Serial Number -->
