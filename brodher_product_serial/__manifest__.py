@@ -2,7 +2,7 @@
 {
     'name': 'Brodher Product Serial Number',
     'version': '18.0.1.0.0',
-    'category': 'Inventory/Inventory',
+    'category': 'Inventory/Inventory1',
     'summary': 'Custom Serial Number Generator with QR Code',
     'description': """
         Brodher Product Serial Number Management
