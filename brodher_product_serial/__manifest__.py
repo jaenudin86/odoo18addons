@@ -40,22 +40,22 @@
         'views/stock_lot_views.xml',
        
        
-        # 'views/sn_move_views.xml',
-        # 'reports/sn_qr_label_report.xml',
-        # 'reports/stock_picking_qrcode_report.xml',
-        # 'wizard/product_qrcode_label_wizard_view.xml',
-        # 'wizard/sn_print_wizard_views.xml',  # Add this
-        # 'reports/paperformat.xml',
-        # 'reports/product_qrcode_label_report.xml',
-        # 'reports/product_qrcode_label_template.xml',
-        # # 'wizard/stock_picking_sn_wizard_views.xml',  # NEW
-        # 'wizard/brodher_stock_picking_sn_wizard_views.xml',  # NEW
-        #  'reports/serial_number_qrcode_report.xml', 
-        #  'wizard/sn_status_report_wizard_views.xml', # ← TAMBAHKAN INI
-        #  'reports/sn_status_report.xml',
+        'views/sn_move_views.xml',
+        'reports/sn_qr_label_report.xml',
+        'reports/stock_picking_qrcode_report.xml',
+        'wizard/product_qrcode_label_wizard_view.xml',
+        'wizard/sn_print_wizard_views.xml',  # Add this
+        'reports/paperformat.xml',
+        'reports/product_qrcode_label_report.xml',
+        'reports/product_qrcode_label_template.xml',
+        # 'wizard/stock_picking_sn_wizard_views.xml',  # NEW
+        'wizard/brodher_stock_picking_sn_wizard_views.xml',  # NEW
+         'reports/serial_number_qrcode_report.xml', 
+         'wizard/sn_status_report_wizard_views.xml', # ← TAMBAHKAN INI
+         'reports/sn_status_report.xml',
          
-        #  'views/sn_status_report_menu.xml',
-        #  'wizard/sn_print_wizard_views.xml',
+         'views/sn_status_report_menu.xml',
+         'wizard/sn_print_wizard_views.xml',
      
 
          
