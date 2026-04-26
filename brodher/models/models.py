@@ -30,8 +30,9 @@ class ProductTemplate(models.Model):
     is_article = fields.Selection(
         [('yes', 'ATC'), ('no', 'PSIT'), ('other', 'Other')],
         string="Is Article",
-        default='no'
+        default='other'
     )
+
 
 
     # ══════════════════════════════════════════════════════════════════════════
@@ -88,19 +89,23 @@ class ProductTemplate(models.Model):
     # ══════════════════════════════════════════════════════════════════════════
     # VALIDASI NAMA PRODUK TIDAK BOLEH DUPLIKAT (level template)
     # ══════════════════════════════════════════════════════════════════════════
-    @api.constrains('name')
+    @api.constrains('name', 'is_article')
     def _check_unique_product_name(self):
-        from odoo.exceptions import ValidationError
         for tmpl in self:
+            if tmpl.is_article not in ('yes', 'no'):
+                continue
+
             duplicate = self.env['product.template'].search([
                 ('name', '=ilike', tmpl.name),
                 ('id', '!=', tmpl.id),
+                ('is_article', 'in', ('yes', 'no')),
             ], limit=1)
             if duplicate:
                 raise ValidationError(
                     f'Nama produk "{tmpl.name}" sudah digunakan oleh produk lain! '
                     f'Silakan gunakan nama yang berbeda.'
                 )
+
 
 
     @api.constrains('attribute_line_ids')
