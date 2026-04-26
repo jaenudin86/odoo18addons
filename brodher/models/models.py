@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
 from datetime import datetime
 import logging
 
@@ -87,7 +89,6 @@ class ProductTemplate(models.Model):
     # ══════════════════════════════════════════════════════════════════════════
     @api.constrains('name')
     def _check_unique_product_name(self):
-        from odoo.exceptions import ValidationError
         for tmpl in self:
             duplicate = self.env['product.template'].search([
                 ('name', '=ilike', tmpl.name),
@@ -98,6 +99,14 @@ class ProductTemplate(models.Model):
                     f'Nama produk "{tmpl.name}" sudah digunakan oleh produk lain! '
                     f'Silakan gunakan nama yang berbeda.'
                 )
+
+
+    @api.constrains('attribute_line_ids')
+    def _check_attribute_line_ids(self):
+        for tmpl in self:
+            if not tmpl.attribute_line_ids:
+                raise ValidationError('Tab "Attributes & Variants" (Atribut dan Varian) wajib diisi!')
+
 
     @api.onchange('name')
     def _onchange_name_check_duplicate(self):
@@ -427,10 +436,18 @@ class ProductProduct(models.Model):
             variant_name = variant.display_name
             for sibling in siblings:
                 if sibling.display_name == variant_name:
-                    raise models.ValidationError(
+                    raise ValidationError(
                         f'Nama variant "{variant_name}" sudah ada! '
                         f'Setiap variant harus memiliki kombinasi atribut yang unik.'
                     )
+
+
+    @api.constrains('product_template_variant_value_ids')
+    def _check_variant_values(self):
+        for product in self:
+            if not product.product_template_variant_value_ids:
+                raise ValidationError('Varian wajib memiliki atribut yang dipilih!')
+
 
     # ══════════════════════════════════════════════════════════════════════════
 
