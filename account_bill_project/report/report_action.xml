@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+<data>
+    <!-- tidak override action, gunakan tombol print bawaan Odoo -->
+</data>
+</odoo>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+
+        <record id="view_pending_approval_bills_list" model="ir.ui.view">
+            <field name="name">account.move.pending.approval.list.abp</field>
+            <field name="model">account.move</field>
+            <field name="arch" type="xml">
+                <list string="Tagihan Menunggu Persetujuan"
+                      create="false" delete="false"
+                      decoration-info="x_approval_state == 'waiting'">
+                    <field name="name" string="No. Tagihan"/>
+                    <field name="partner_id" string="Vendor"/>
+                    <field name="invoice_date" string="Tgl Tagihan"/>
+                    <field name="invoice_date_due" string="Jatuh Tempo"/>
+                    <field name="amount_total" string="Total" widget="monetary"/>
+                    <field name="currency_id" column_invisible="True"/>
+                    <field name="x_analytic_account_id" string="Project"/>
+                    <field name="x_approval_state" string="Status"
+                           widget="badge"
+                           decoration-info="x_approval_state == 'waiting'"/>
+                    <button name="action_approve"
+                            string="Setujui"
+                            type="object"
+                            icon="fa-check"
+                            groups="account_bill_project.group_bill_finance_manager"/>
+                    <button name="action_reject"
+                            string="Tolak"
+                            type="object"
+                            icon="fa-times"
+                            groups="account_bill_project.group_bill_finance_manager"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_pending_approval_bills" model="ir.actions.act_window">
+            <field name="name">Tagihan Menunggu Persetujuan</field>
+            <field name="res_model">account.move</field>
+            <field name="view_mode">list,form</field>
+            <field name="view_ids" eval="[(5,0,0),(0,0,{'view_mode':'list','view_id':ref('account_bill_project.view_pending_approval_bills_list')})]"/>
+            <field name="domain">[
+                ('move_type', 'in', ['in_invoice', 'in_refund']),
+                ('x_approval_state', '=', 'waiting')
+            ]</field>
+        </record>
+
+    </data>
+</odoo>

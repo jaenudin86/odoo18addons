@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Report Action -->
+    <record id="action_report_serial_number_qrcode" model="ir.actions.report">
+        <field name="name">Serial Number QR Labels</field>
+        <field name="model">stock.lot</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">brodher_product_serial.serial_number_qrcode_template</field>
+        <field name="report_file">brodher_product_serial.serial_number_qrcode_template</field>
+        <field name="binding_model_id" ref="stock.model_stock_lot"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="brodher_product_serial.paperformat_product_qrcode_label_a4"/>
+    </record>
+
+    <!-- Report Template -->
+    <template id="serial_number_qrcode_template">
+        <t t-call="web.basic_layout">
+            <div class="page" style="padding: 0; margin: 0;">
+                <style>
+                    body {
+                        margin-top: 5mm !important;
+                    }
+                    .page {
+                        padding: 0;
+                        margin: 0;
+                    }
+                    table.label-table {
+                        width: 100%;
+                        table-layout: fixed;
+                        border-collapse: collapse;
+                    }
+                    table.label-table td {
+                        width: 25%;
+                        padding: 2px 2px;
+                        box-sizing: border-box;
+                        text-align: center;
+                        vertical-align: top;
+                        overflow: hidden;
+                    }
+                    .label-inner {
+                        width: 100%;
+                        height: 140px;
+                        overflow: hidden;
+                        box-sizing: border-box;
+                        display: block;
+                        padding: 1px;
+                    }
+                    .label-text {
+                        display: block;
+                        font-size: 10px;
+                        line-height: 1.2;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: 100%;
+                    }
+                    .label-ir {
+                        font-weight: bold;
+                        font-size: 10px;
+                    }
+                    .label-name {
+                        font-weight: bold;
+                        font-size: 10px;
+                    }
+                    .label-variant {
+                        font-size: 10px;
+                        color: #333;
+                    }
+                    .label-barcode-text {
+                        font-size: 10px;
+                        color: #555;
+                    }
+                    .qrcode_img {
+                        width: 70px;
+                        height: 70px;
+                        display: block;
+                        margin: 1px auto;
+                    }
+                    .label-sn {
+                        display: block;
+                        font-weight: bold;
+                        font-size: 10px;
+                        margin-top: 1px;
+                        word-break: break-all;
+                    }
+                </style>
+
+                <t t-if="not docs">
+                    <div style="text-align: center; padding: 50px; color: #999;">
+                        <h3>No Serial Numbers Selected</h3>
+                        <p>Please select serial numbers to print.</p>
+                    </div>
+                </t>
+
+                <t t-if="docs">
+                    <t t-set="items_per_row" t-value="5"/>
+                    <t t-set="rows_per_page" t-value="7"/>
+                    <t t-set="labels_per_page" t-value="items_per_row * rows_per_page"/>
+                    <t t-set="total" t-value="len(docs)"/>
+
+                    <t t-foreach="range(0, total, labels_per_page)" t-as="page_start">
+
+                        <t t-if="page_start > 0">
+                            <p style="page-break-before: always; margin: 0; padding: 0;"/>
+                        </t>
+
+                        <table class="label-table">
+                            <tbody>
+                                <t t-set="page_docs" t-value="docs[page_start : page_start + labels_per_page]"/>
+                                <t t-foreach="range(0, len(page_docs), items_per_row)" t-as="row_start">
+                                    <tr>
+                                        <t t-foreach="page_docs[row_start : row_start + items_per_row]" t-as="sn">
+                                            <td>
+                                                <div class="label-inner">
+                                                    <!-- IR Number (Internal Reference) -->
+                                                    <span class="label-text label-ir">
+                                                        <t t-esc="sn.product_id.default_code or '-'"/>
+                                                    </span>
+                                                    <!-- Product Name -->
+                                                    <!-- Product Name (tanpa variant) -->
+                                                    <span class="label-text label-name">
+                                                        <t t-esc="sn.product_id.product_tmpl_id.name"/>
+                                                    </span>
+                                                    <!-- Variant -->
+                                                    <span class="label-text label-variant">
+                                                        <t t-esc="sn.product_id.product_template_attribute_value_ids and ', '.join(sn.product_id.product_template_attribute_value_ids.mapped('product_attribute_value_id.name')) or ''"/>
+                                                    </span>
+                                                    <!-- Barcode (isi = serial number) -->
+                                                 
+                                                    <!-- QR Code -->
+            
+                                                    <img t-att-src="'/report/barcode/QR/%s' % (sn.name + '#' + sn.product_id.default_code + '#' + sn.product_id.brand)"
+                                                        class="qrcode_img"
+                                                        alt="QR"/>
+                                                    <!-- Serial Number -->
+                                                    <span class="label-sn">
+                                                        <t t-esc="sn.name"/>
+                                                    </span>
+                                                </div>
+                                            </td>
+                                        </t>
+                                        <!-- Padding kolom kosong di baris terakhir -->
+                                        <t t-set="row_count" t-value="len(page_docs[row_start : row_start + items_per_row])"/>
+                                        <t t-if="row_count == 4"><td></td></t>
+                                        <t t-if="row_count == 3"><td></td><td></td></t>
+                                        <t t-if="row_count == 2"><td></td><td></td><td></td></t>
+                                        <t t-if="row_count == 1"><td></td><td></td><td></td><td></td></t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                    </t>
+                </t>
+
+            </div>
+        </t>
+    </template>
+</odoo>

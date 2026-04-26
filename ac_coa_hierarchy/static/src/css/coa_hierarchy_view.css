@@ -1,0 +1,256 @@
+/* ============================================================ */
+/* CoA Hierarchy View Styles                                    */
+/* ============================================================ */
+
+.coa-hierarchy-container {
+    padding: 16px 24px;
+    background: #fff;
+    min-height: 100%;
+    font-family: inherit;
+}
+
+/* Header */
+.coa-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.coa-header-left {
+    display: flex;
+    align-items: center;
+}
+
+.coa-title {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+}
+
+.coa-header-right {
+    display: flex;
+    align-items: center;
+}
+
+.coa-search-box {
+    position: relative;
+    width: 280px;
+}
+
+.coa-search-box .form-control {
+    padding-left: 34px;
+    border-radius: 20px;
+    border: 1px solid #ced4da;
+    font-size: 0.9rem;
+    height: 36px;
+}
+
+.coa-search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #6c757d;
+    z-index: 2;
+}
+
+/* Table Header */
+.coa-table-header {
+    display: flex;
+    align-items: center;
+    padding: 10px 8px;
+    background: #f1f3f5;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #495057;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.coa-col-toggle {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.coa-col-code {
+    width: 140px;
+    flex-shrink: 0;
+}
+
+.coa-col-name {
+    flex: 1;
+    min-width: 200px;
+}
+
+.coa-col-type {
+    width: 180px;
+    flex-shrink: 0;
+}
+
+.coa-col-balance {
+    width: 150px;
+    flex-shrink: 0;
+    text-align: right;
+}
+
+.coa-col-children {
+    width: 50px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+/* Tree Content */
+.coa-tree-content {
+    max-height: calc(100vh - 200px);
+    overflow-y: auto;
+}
+
+/* Row */
+.coa-row {
+    border-bottom: 1px solid #f1f3f5;
+    transition: background-color 0.15s ease;
+}
+
+.coa-row:hover {
+    background-color: #e8f4fd;
+    cursor: pointer;
+}
+
+.coa-row-content {
+    display: flex;
+    align-items: center;
+    padding: 8px 8px;
+    min-height: 40px;
+}
+
+/* Toggle / Caret */
+.coa-toggle {
+    width: 28px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+}
+
+.coa-caret {
+    font-size: 1.1rem;
+    color: #6c757d;
+    width: 16px;
+    text-align: center;
+    transition: color 0.15s;
+}
+
+.coa-caret:hover {
+    color: #2c3e50;
+}
+
+.coa-spacer {
+    display: inline-block;
+    width: 16px;
+}
+
+/* Code */
+.coa-code {
+    width: 140px;
+    flex-shrink: 0;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 0.9rem;
+    color: #495057;
+}
+
+/* Name */
+.coa-name {
+    flex: 1;
+    min-width: 200px;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    padding-right: 12px;
+}
+
+/* Type */
+.coa-type {
+    width: 180px;
+    flex-shrink: 0;
+    font-size: 0.82rem;
+    color: #6c757d;
+}
+
+/* Balance */
+.coa-balance {
+    width: 150px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 0.9rem;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+/* Children Badge */
+.coa-children-badge {
+    width: 50px;
+    flex-shrink: 0;
+    text-align: center;
+}
+
+.coa-children-badge .badge {
+    font-size: 0.72rem;
+    padding: 3px 7px;
+}
+
+/* Loading */
+.coa-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+    color: #6c757d;
+    font-size: 1.1rem;
+}
+
+/* Empty State */
+.coa-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 0;
+}
+
+/* Level depth colors for rows */
+.coa-row-content[style*="padding-left: 0px"] .coa-name {
+    color: #1a1a2e;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .coa-hierarchy-container {
+        padding: 8px 12px;
+    }
+
+    .coa-header {
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .coa-search-box {
+        width: 100%;
+    }
+
+    .coa-col-type {
+        display: none;
+    }
+
+    .coa-col-code {
+        width: 100px;
+    }
+
+    .coa-col-balance {
+        width: 120px;
+    }
+}

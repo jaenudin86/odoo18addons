@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+
+    <record id="view_stock_batch_input_wizard_form" model="ir.ui.view">
+        <field name="name">stock.batch.input.wizard.form</field>
+        <field name="model">stock.batch.input.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Input Batch Number &amp; Expired Date">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Input Batch &amp; Expired Date</h1>
+                        <h3><field name="picking_id" readonly="1"/></h3>
+                    </div>
+                    <notebook>
+                        <page string="Per Produk">
+                            <field name="line_ids" widget="one2many">
+                                <list editable="bottom" decoration-danger="not x_batch_number or not expiration_date">
+                                    <field name="product_id" readonly="1"/>
+                                    <field name="sn_count" readonly="1" string="Jumlah SN"/>
+                                    <field name="x_batch_number" string="Batch Number" required="1"/>
+                                    <field name="expiration_date" string="Expired Date" required="1" widget="date"/>
+                                    <field name="move_id" column_invisible="1"/>
+                                    <field name="product_uom_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                    <div class="alert alert-info" role="alert">
+                        <strong>Info:</strong>
+                        Batch Number dan Expired Date akan diterapkan ke <strong>semua Serial Number</strong>
+                        dari produk tersebut secara otomatis.
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_confirm"
+                        string="Simpan &amp; Tutup"
+                        type="object"
+                        class="btn-primary"
+                        data-hotkey="v"/>
+                    <button string="Batal"
+                        class="btn-secondary"
+                        special="cancel"
+                        data-hotkey="z"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+</odoo>

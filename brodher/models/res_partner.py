@@ -93,16 +93,10 @@ class ResPartner(models.Model):
     def create(self, vals_list):
         for vals in vals_list:
             # 1. Cek apakah ini Customer
-            is_customer = (
-                self._context.get('res_partner_search_mode') == 'customer'
-                or vals.get('customer_rank', 0) > 0
-            )
+            is_customer = vals.get('customer_rank', 0) > 0
 
             # 2. Cek apakah ini Supplier
-            is_supplier = (
-                self._context.get('res_partner_search_mode') == 'supplier'
-                or vals.get('supplier_rank', 0) > 0
-            )
+            is_supplier = vals.get('supplier_rank', 0) > 0
 
             # Generate Customer Code
             if is_customer and not vals.get('customer_code'):
@@ -116,5 +110,17 @@ class ResPartner(models.Model):
                 if seq:
                     vals['supplier_code'] = seq
 
-        # FIX: return harus di luar loop, bukan di dalam if block
         return super(ResPartner, self).create(vals_list)
+
+    def write(self, vals):
+        result = super(ResPartner, self).write(vals)
+        for rec in self:
+            if rec.customer_rank > 0 and not rec.customer_code:
+                seq = self.env['ir.sequence'].next_by_code('customer.code.sequence')
+                if seq:
+                    rec.customer_code = seq
+            if rec.supplier_rank > 0 and not rec.supplier_code:
+                seq = self.env['ir.sequence'].next_by_code('supplier.code.sequence')
+                if seq:
+                    rec.supplier_code = seq
+        return result

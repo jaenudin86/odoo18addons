@@ -52,6 +52,7 @@
          'reports/serial_number_qrcode_report.xml', 
          'wizard/sn_status_report_wizard_views.xml', # ← TAMBAHKAN INI
          'reports/sn_status_report.xml',
+         'views/purchase_order_views.xml',
          
          'views/sn_status_report_menu.xml',
          'wizard/sn_print_wizard_views.xml',

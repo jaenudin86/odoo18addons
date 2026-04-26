@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="menu_account_hierarchy_root"
+              name="CoA Hierarchy"
+              parent="account.account_management_menu"
+              sequence="5"/>
+
+    <menuitem id="menu_account_hierarchy_owl"
+              name="Tree Hierarchy"
+              parent="menu_account_hierarchy_root"
+              action="action_coa_hierarchy_owl"
+              sequence="5"/>
+
+    <menuitem id="menu_account_hierarchy_list"
+              name="List View"
+              parent="menu_account_hierarchy_root"
+              action="action_account_hierarchy_list"
+              sequence="10"/>
+
+    <menuitem id="menu_account_hierarchy_grouped"
+              name="Grouped by Parent"
+              parent="menu_account_hierarchy_root"
+              action="action_account_hierarchy_grouped"
+              sequence="20"/>
+
+</odoo>

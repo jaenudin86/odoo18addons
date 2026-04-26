@@ -55,6 +55,8 @@
                         
                         <group>
                             <field name="total_sn_selected" string="SN Dipilih"/>
+                            <field name="batch_size" string="SN per File PDF"
+                                   help="Jika SN yang dipilih melebihi angka ini, hasil download berupa ZIP berisi beberapa file PDF"/>
                         </group>
                         
                         <!-- Quick Actions -->
@@ -106,11 +108,12 @@
                     
                     <!-- STEP 2 Footer -->
                     <div invisible="step != 'serial'">
-                        <button name="action_print_selected" 
-                                string="🖨️ Print Selected" 
-                                type="object" 
+                        <button name="action_print_selected"
+                                string="🖨️ Print Selected"
+                                type="object"
                                 class="btn-primary"
-                                invisible="total_sn_selected == 0"/>
+                                invisible="total_sn_selected == 0"
+                                confirm="Proses print akan dimulai. Untuk data besar (&gt; batch size), hasil berupa file ZIP. Mohon tunggu hingga download otomatis dimulai — jangan tutup halaman ini."/>
                         <button name="action_back_to_product" 
                                 string="⬅ Kembali" 
                                 type="object" 

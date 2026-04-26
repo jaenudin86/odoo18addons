@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Tambah field po_type di form Purchase Order -->
+    <record id="purchase_order_form_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.form.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Tampilkan po_type sebelum partner_id -->
+            <field name="partner_id" position="before">
+                <field name="po_type" widget="radio" options="{'horizontal': true}"/>
+            </field>
+
+            <!-- Domain produk di baris PO berdasarkan po_type -->
+            <xpath expr="//field[@name='order_line']//field[@name='product_id']" position="attributes">
+                <attribute name="domain">[('is_article', 'in', parent.allowed_article_types)]</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Tambah kolom po_type di list view PO -->
+    <record id="purchase_order_tree_inherit_brodher" model="ir.ui.view">
+        <field name="name">purchase.order.tree.inherit.brodher</field>
+        <field name="model">purchase.order</field>
+        <field name="inherit_id" ref="purchase.purchase_order_view_tree"/>
+        <field name="arch" type="xml">
+            <field name="origin" position="before">
+                <field name="po_type" optional="show"/>
+            </field>
+        </field>
+    </record>
+
+
+</odoo>

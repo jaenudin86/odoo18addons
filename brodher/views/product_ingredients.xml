@@ -11,9 +11,9 @@
         <field name="arch" type="xml">
 
             <!-- HIDE PRODUCT TYPE -->
-            <xpath expr="//field[@name='type']" position="attributes">
+            <!-- <xpath expr="//field[@name='type']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
             <xpath expr="//field[@name='company_id']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
@@ -153,9 +153,9 @@
 
 
             <!-- HIDE TYPE -->
-            <xpath expr="//field[@name='type']" position="attributes">
+            <!-- <xpath expr="//field[@name='type']" position="attributes">
                 <attribute name="invisible">1</attribute>
-            </xpath>
+            </xpath> -->
             <xpath expr="//field[@name='barcode']" position="attributes">
                 <attribute name="invisible">1</attribute>
             </xpath>
@@ -236,7 +236,7 @@
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
-                <!-- <field name="gross_weight"
+                <field name="gross_weight"
                        invisible="is_article != 'yes'"
                        required="is_article == 'yes'"/>
 
@@ -246,13 +246,7 @@
 
                 <field name="net_net_weight"
                        invisible="is_article != 'yes'"
-                       required="is_article == 'yes'"/> -->
-                
-                <field name="gross_weight" required="true"/>
-
-                <field name="net_weight" required="true"/>
-
-                <field name="net_net_weight" required="true"/>
+                       required="is_article == 'yes'"/>
 
             </xpath>
 

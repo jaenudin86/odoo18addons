@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- ============================================================ -->
+    <!-- Row Component (recursive) -->
+    <!-- ============================================================ -->
+    <t t-name="ac_coa_hierarchy.CoAHierarchyRow">
+        <div class="coa-row" t-on-click="onRowClick">
+            <div class="coa-row-content" t-attf-style="padding-left: {{ indent }}px;">
+                <!-- Expand/Collapse Toggle -->
+                <span class="coa-toggle" t-on-click="toggleExpand">
+                    <t t-if="hasChildren">
+                        <i t-attf-class="fa {{ state.expanded ? 'fa-caret-down' : 'fa-caret-right' }} coa-caret"/>
+                    </t>
+                    <t t-else="">
+                        <span class="coa-spacer"/>
+                    </t>
+                </span>
+
+                <!-- Code -->
+                <span class="coa-code" t-att-class="{ 'fw-bold': hasChildren }">
+                    <t t-esc="props.account.code"/>
+                </span>
+
+                <!-- Name -->
+                <span class="coa-name" t-att-class="{ 'fw-bold': hasChildren }">
+                    <t t-esc="props.account.name"/>
+                </span>
+
+                <!-- Type -->
+                <span class="coa-type">
+                    <t t-esc="props.account.account_type_label"/>
+                </span>
+
+                <!-- Balance -->
+                <span class="coa-balance" t-att-class="{
+                    'text-success': props.account.current_balance > 0,
+                    'text-danger': props.account.current_balance &lt; 0,
+                    'fw-bold': hasChildren
+                }">
+                    <t t-esc="(props.account.current_balance || 0).toLocaleString('id-ID', { minimumFractionDigits: 2, maximumFractionDigits: 2 })"/>
+                </span>
+
+                <!-- Child Count Badge -->
+                <span class="coa-children-badge" t-if="hasChildren">
+                    <span class="badge rounded-pill bg-info text-dark">
+                        <t t-esc="props.account.children.length"/>
+                    </span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Recursive Children -->
+        <t t-if="hasChildren and state.expanded">
+            <t t-foreach="props.account.children" t-as="child" t-key="child.id">
+                <CoAHierarchyRow
+                    account="child"
+                    depth="(props.depth || 0) + 1"
+                    onAccountClick="props.onAccountClick"/>
+            </t>
+        </t>
+    </t>
+
+    <!-- ============================================================ -->
+    <!-- Main View Component -->
+    <!-- ============================================================ -->
+    <t t-name="ac_coa_hierarchy.CoAHierarchyView">
+        <div class="o_action coa-hierarchy-container">
+            <!-- Header -->
+            <div class="coa-header">
+                <div class="coa-header-left">
+                    <h2 class="coa-title">
+                        <i class="fa fa-sitemap me-2"/>Chart of Accounts - Hierarchy
+                    </h2>
+                    <span class="badge bg-secondary ms-2" t-if="state.total">
+                        <t t-esc="state.total"/> accounts
+                    </span>
+                </div>
+                <div class="coa-header-right">
+                    <div class="coa-search-box">
+                        <i class="fa fa-search coa-search-icon"/>
+                        <input type="text"
+                               class="form-control"
+                               placeholder="Search account..."
+                               t-on-input="onSearchInput"
+                               t-att-value="state.searchQuery"/>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm ms-2" t-on-click="onRefresh">
+                        <i class="fa fa-refresh"/>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Table Header -->
+            <div class="coa-table-header">
+                <span class="coa-col-toggle"></span>
+                <span class="coa-col-code">Code</span>
+                <span class="coa-col-name">Account Name</span>
+                <span class="coa-col-type">Type</span>
+                <span class="coa-col-balance">Balance</span>
+                <span class="coa-col-children"></span>
+            </div>
+
+            <!-- Loading -->
+            <div t-if="state.loading" class="coa-loading">
+                <i class="fa fa-spinner fa-spin fa-2x"/>
+                <span class="ms-2">Loading hierarchy...</span>
+            </div>
+
+            <!-- Tree Content -->
+            <div t-if="!state.loading" class="coa-tree-content">
+                <t t-if="filteredAccounts.length === 0">
+                    <div class="coa-empty">
+                        <i class="fa fa-folder-open-o fa-3x text-muted"/>
+                        <p class="text-muted mt-2">No accounts found</p>
+                    </div>
+                </t>
+                <t t-foreach="filteredAccounts" t-as="account" t-key="account.id">
+                    <CoAHierarchyRow
+                        account="account"
+                        depth="0"
+                        onAccountClick.bind="onAccountClick"/>
+                </t>
+            </div>
+        </div>
+    </t>
+
+</templates>

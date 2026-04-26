@@ -14,7 +14,7 @@ class StockLot(models.Model):
     
     sn_type = fields.Selection([
         ('M', 'Man'), ('W', 'Woman')
-    ], string='Product Type', index=True)
+    ], string='SN Type', index=True)
 
     # Print tracking fields
     is_printed = fields.Boolean('Sudah Dicetak', default=False, readonly=True)

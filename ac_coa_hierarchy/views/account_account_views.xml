@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ============================================================ -->
+    <!-- List View Hierarkis -->
+    <!-- ============================================================ -->
+    <record id="view_account_account_hierarchy_list" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.list</field>
+        <field name="model">account.account</field>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <list string="Chart of Accounts - Hierarchy"
+                  default_order="code">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="parent_id" optional="show"/>
+                <field name="complete_name" optional="hide"/>
+                <field name="hierarchy_level" optional="show"/>
+                <field name="is_parent" optional="hide"/>
+                <field name="child_count" optional="show" string="Children"/>
+                <field name="account_type"/>
+                <field name="reconcile" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- List View dengan Parent-Child Grouping -->
+    <!-- ============================================================ -->
+    <record id="view_account_account_hierarchy_list_grouped" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.list.grouped</field>
+        <field name="model">account.account</field>
+        <field name="priority">25</field>
+        <field name="arch" type="xml">
+            <list string="Chart of Accounts - Grouped"
+                  default_order="code"
+                  default_group_by="parent_id">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="parent_id" column_invisible="True"/>
+                <field name="hierarchy_level"/>
+                <field name="account_type"/>
+                <field name="child_count" string="Children"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Form View - Extend: tambah parent_id di tab Accounting -->
+    <!-- ============================================================ -->
+    <record id="view_account_account_hierarchy_form" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.form</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_form"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+
+            <!-- Tambah Parent Account di atas field account_type dalam tab Accounting -->
+            <xpath expr="//page[@name='accounting']//field[@name='account_type']" position="before">
+                <field name="parent_id" options="{'no_create': True}"/>
+                <field name="hierarchy_level" readonly="1"/>
+                <field name="complete_name" readonly="1"/>
+                <field name="is_parent" invisible="1"/>
+            </xpath>
+
+            <!-- Tambah tab Child Accounts di notebook -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Child Accounts" name="child_accounts"
+                      invisible="not is_parent">
+                    <field name="child_ids" readonly="1">
+                        <list string="Child Accounts" default_order="code">
+                            <field name="code"/>
+                            <field name="name"/>
+                            <field name="account_type"/>
+                            <field name="hierarchy_level" string="Level"/>
+                            <field name="child_count" string="Children"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Search View - Tambah filter dan group by -->
+    <!-- ============================================================ -->
+    <record id="view_account_account_hierarchy_search" model="ir.ui.view">
+        <field name="name">account.account.hierarchy.search</field>
+        <field name="model">account.account</field>
+        <field name="inherit_id" ref="account.view_account_search"/>
+        <field name="priority">20</field>
+        <field name="arch" type="xml">
+            <search position="inside">
+                <filter string="Root Accounts (No Parent)"
+                        name="filter_root"
+                        domain="[('parent_id', '=', False)]"/>
+                <filter string="Parent Accounts"
+                        name="filter_parents"
+                        domain="[('is_parent', '=', True)]"/>
+                <filter string="Detail Accounts (No Children)"
+                        name="filter_detail"
+                        domain="[('is_parent', '=', False)]"/>
+                <separator/>
+                <group expand="0" string="Group By">
+                    <filter string="Parent Account"
+                            name="groupby_parent"
+                            context="{'group_by': 'parent_id'}"/>
+                    <filter string="Hierarchy Level"
+                            name="groupby_level"
+                            context="{'group_by': 'hierarchy_level'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ============================================================ -->
+    <!-- Action untuk Hierarchy View -->
+    <!-- ============================================================ -->
+    <record id="action_account_hierarchy_list" model="ir.actions.act_window">
+        <field name="name">Chart of Accounts - Hierarchy</field>
+        <field name="res_model">account.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_list')}),
+        ]"/>
+        <field name="context">{'default_parent_id': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Buat akun baru dengan hierarki parent-child
+            </p>
+            <p>
+                Gunakan field "Parent Account" untuk membentuk struktur hierarki CoA
+                seperti pada Accurate.
+            </p>
+        </field>
+    </record>
+
+    <!-- Action untuk Grouped View -->
+    <record id="action_account_hierarchy_grouped" model="ir.actions.act_window">
+        <field name="name">CoA - Grouped by Parent</field>
+        <field name="res_model">account.account</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_ids" eval="[(5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_account_account_hierarchy_list_grouped')}),
+        ]"/>
+    </record>
+    <!-- ============================================================ -->
+    <!-- Client Action untuk OWL Hierarchy View -->
+    <!-- ============================================================ -->
+    <record id="action_coa_hierarchy_owl" model="ir.actions.client">
+        <field name="name">CoA - Tree Hierarchy</field>
+        <field name="tag">ac_coa_hierarchy.hierarchy_view</field>
+    </record>
+
+</odoo>
