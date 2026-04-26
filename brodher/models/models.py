@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
 from datetime import datetime
 import logging
 
@@ -98,6 +100,14 @@ class ProductTemplate(models.Model):
                     f'Nama produk "{tmpl.name}" sudah digunakan oleh produk lain! '
                     f'Silakan gunakan nama yang berbeda.'
                 )
+
+
+    @api.constrains('attribute_line_ids')
+    def _check_attribute_line_ids(self):
+        for tmpl in self:
+            if not tmpl.attribute_line_ids:
+                raise ValidationError('Tab "Attributes & Variants" (Atribut dan Varian) wajib diisi!')
+
 
     @api.onchange('name')
     def _onchange_name_check_duplicate(self):
@@ -433,6 +443,13 @@ class ProductProduct(models.Model):
                         f'Nama variant "{variant_name}" sudah ada! '
                         f'Setiap variant harus memiliki kombinasi atribut yang unik.'
                     )
+
+    @api.constrains('product_template_variant_value_ids')
+    def _check_variant_values(self):
+        for product in self:
+            if not product.product_template_variant_value_ids:
+                raise ValidationError('Varian wajib memiliki atribut yang dipilih!')
+
 
     # ══════════════════════════════════════════════════════════════════════════
 

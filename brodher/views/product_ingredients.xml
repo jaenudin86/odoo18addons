@@ -120,6 +120,10 @@
                        force_save="1"/>
             </xpath>
 
+            <xpath expr="//field[@name='attribute_line_ids']" position="attributes">
+                <attribute name="required">1</attribute>
+            </xpath>
+
         </field>
     </record>
 
@@ -256,8 +260,9 @@
 
             <!-- Tambah di atas brand -->
             <xpath expr="//field[@name='brand']" position="after">
-                <field name="product_template_variant_value_ids" widget="many2many_tags" readonly="1" string="Size"/>
+                <field name="product_template_variant_value_ids" widget="many2many_tags" readonly="1" string="Size" required="1"/>
             </xpath>
+
             <!-- DEFAULT CODE di variant - readonly karena auto-generate -->
             <xpath expr="//field[@name='default_code']" position="replace">
                 <field name="default_code"
