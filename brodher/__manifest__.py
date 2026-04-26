@@ -38,7 +38,9 @@ Long description of module's purpose
     # 'reports/suratjalan.xml',
     'views/partner_view.xml',
     'views/purchase_order_view.xml',
+    'views/stock_operation_view.xml',
     ],
+
     # only loaded in demonstration mode
     'demo': [
         'demo/demo.xml',

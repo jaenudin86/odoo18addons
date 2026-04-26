@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Inherit Stock Picking Type Form -->
+    <record id="view_picking_type_form_inherit_brodher" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.inherit.brodher</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='code']" position="after">
+                <field name="operation_category" widget="radio" options="{'horizontal': true}"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit Stock Picking Type Tree -->
+    <record id="view_picking_type_tree_inherit_brodher" model="ir.ui.view">
+        <field name="name">stock.picking.type.tree.inherit.brodher</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="operation_category" optional="show"/>
+            </xpath>
+        </field>
+    <!-- Inherit Stock Picking Form for Product Filtering -->
+    <record id="view_picking_form_inherit_brodher" model="ir.ui.view">
+        <field name="name">stock.picking.form.inherit.brodher</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='move_ids_without_package']//field[@name='product_id']" position="attributes">
+                <attribute name="domain">
+                    operation_category == 'atc' and [('is_article', '=', 'yes')] or 
+                    operation_category == 'psit' and [('is_article', '=', 'no')] or 
+                    []
+                </attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>
+
