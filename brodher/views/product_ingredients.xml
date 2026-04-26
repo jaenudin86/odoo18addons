@@ -69,8 +69,11 @@
             </xpath>
             <!-- Di product template form -->
             <xpath expr="//field[@name='tracking']" position="attributes">
-                <attribute name="invisible">1</attribute>
+                <attribute name="invisible">0</attribute>
+                <attribute name="readonly">is_article != 'other'</attribute>
+                <attribute name="force_save">1</attribute>
             </xpath>
+
 <xpath expr="//div[hasclass('oe_title')]" position="before">
     <group>
         <field name="is_article" widget="radio"  string="Is Artikel"/>
@@ -281,6 +284,13 @@
                        invisible="is_article != 'yes'"
                        readonly="1"/>
             </xpath>
+
+            <xpath expr="//field[@name='tracking']" position="attributes">
+                <attribute name="invisible">0</attribute>
+                <attribute name="readonly">is_article != 'other'</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+
 
         </field>
     </record>
