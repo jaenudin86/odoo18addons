@@ -6,6 +6,8 @@ from . import warehouse
 from . import purchase_order
 from . import stock_operation
 from . import pos_stock
+from . import currency_decimal
+
 
 
 
