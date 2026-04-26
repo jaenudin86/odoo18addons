@@ -5,6 +5,8 @@ from . import scan_barcode
 from . import warehouse
 from . import purchase_order
 from . import stock_operation
+from . import pos_stock
+
 
 
 

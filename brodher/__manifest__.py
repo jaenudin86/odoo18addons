@@ -19,7 +19,8 @@ Long description of module's purpose
 
     # any module necessary for this one to work correctly
     # 'depends': ['product','web'],ß
-'depends': ['stock', 'product', 'contacts', 'purchase'],
+'depends': ['stock', 'product', 'contacts', 'purchase', 'point_of_sale'],
+
     # always loaded
     'data': [
         # 'security/ir.model.access.csv',

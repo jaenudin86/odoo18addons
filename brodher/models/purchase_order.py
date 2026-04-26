@@ -11,6 +11,14 @@ class PurchaseOrder(models.Model):
         ('other', 'Bebas'),
     ], string='Type PO', required=True, default='other', copy=False)
 
+    warehouse_id = fields.Many2one(
+        'stock.warehouse', 
+        string='Warehouse',
+        default=lambda self: self.env['stock.warehouse'].search([('company_id', '=', self.env.company.id)], limit=1)
+    )
+
+
+
     picking_type_id = fields.Many2one(
         'stock.picking.type',
         domain="[('code', '=', 'incoming'), ('operation_category', '=', po_type)]",

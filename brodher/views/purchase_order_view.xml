@@ -11,8 +11,10 @@
             <!-- Tampilkan po_type sebelum partner_id -->
             <field name="partner_id" position="before">
                 <field name="po_type" widget="radio" options="{'horizontal': true}" readonly="id" force_save="1"/>
-
+                <field name="warehouse_id" invisible="1"/>
             </field>
+
+
 
             <!-- Domain produk di baris PO berdasarkan po_type -->
             <xpath expr="//field[@name='order_line']//field[@name='product_id']" position="attributes">
