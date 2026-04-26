@@ -28,10 +28,11 @@ class ProductTemplate(models.Model):
     net_net_weight = fields.Float(string='Net Net Weight*')
     date_month_year = fields.Date(string='Date (Month/Year) Design*')
     is_article = fields.Selection(
-        [('yes', 'ATC'), ('no', 'PSIT')],
+        [('yes', 'ATC'), ('no', 'PSIT'), ('other', 'Other')],
         string="Is Article",
         default='no'
     )
+
 
     # ══════════════════════════════════════════════════════════════════════════
     # HARGA JUAL — tampilkan dari variant pertama, tidak sebar ke semua variant
@@ -129,6 +130,12 @@ class ProductTemplate(models.Model):
     def _onchange_is_article(self):
         if self.is_article in ['yes', 'no']:
             self.default_code = ''
+            self.is_storable = True
+            self.type = 'consu'  # In Odoo 18, 'consu' + is_storable=True is Storable
+        elif self.is_article == 'other':
+            self.is_storable = False
+            self.type = 'consu'
+
 
     @api.onchange('is_article')
     def _onchange_is_article_tracking(self):
@@ -163,11 +170,14 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        vals.setdefault('is_storable', True)
-        vals.setdefault('type', 'product')
         is_article = vals.get('is_article', 'no')
-
+        
+        if is_article in ('yes', 'no'):
+            vals['is_storable'] = True
+            vals['type'] = 'consu'
+        
         if is_article == 'yes':
+
             # ATC: template dan semua variant pakai nomor yang sama
             vals['tracking'] = 'serial'
             if not (vals.get('default_code') or '').strip():
@@ -258,7 +268,15 @@ class ProductTemplate(models.Model):
             vals.pop('default_code')
 
         if 'is_article' in vals:
-            vals['tracking'] = 'serial' if vals['is_article'] == 'yes' else 'none'
+            is_art = vals['is_article']
+            if is_art == 'yes':
+                vals['tracking'] = 'serial'
+            elif is_art == 'no':
+                vals['tracking'] = 'none'
+            
+            if is_art in ('yes', 'no'):
+                vals['is_storable'] = True
+                vals['type'] = 'consu'
 
         res = super().write(vals)
 
