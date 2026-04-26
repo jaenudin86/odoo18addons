@@ -9,8 +9,8 @@ class PurchaseOrder(models.Model):
         ('psit', 'PSIT'),
         ('atc', 'ATC'),
         ('free', 'Bebas'),
-    ], string='Tipe PO', required=True, default='free', copy=False,
-       states={'purchase': [('readonly', True)], 'done': [('readonly', True)], 'cancel': [('readonly', True)]})
+    ], string='Type PO', required=True, default='free', copy=False)
+
 
     allowed_article_types = fields.Json(compute='_compute_allowed_article_types', store=False)
 
