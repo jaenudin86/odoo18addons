@@ -91,47 +91,32 @@ class PurchaseOrder(models.Model):
                         vals['picking_type_id'] = picking_type.id
 
         orders = super().create(vals_list)
-        orders._merge_duplicate_lines()
+        orders._check_duplicate_product_lines()
         return orders
 
-
-    def _merge_duplicate_lines(self):
-        """Menggabungkan baris PO yang memiliki produk yang sama."""
+    def _check_duplicate_product_lines(self):
+        """Mengecek apakah ada produk duplikat di baris PO."""
         for order in self:
-            # Gunakan dict untuk melacak produk yang sudah ada di baris PO
-            # Key: product_id, Value: record purchase.order.line
-            seen_products = {}
-            lines_to_remove = self.env['purchase.order.line']
-            
+            products = []
             for line in order.order_line:
-                # Kita hanya menggabungkan jika produknya sama dan bukan baris catatan/seksi
-                if not line.product_id:
+                if not line.product_id or line.display_type:
                     continue
-                
-                # Gunakan tuple (product_id, price_unit) jika ingin harga yang berbeda tidak digabung
-                # Di sini kita gabung berdasarkan product_id saja sesuai permintaan
-                key = line.product_id.id
-                
-                if key in seen_products:
-                    existing_line = seen_products[key]
-                    # Tambahkan qty ke baris yang sudah ada
-                    existing_line.product_qty += line.product_qty
-                    # Tandai baris ini untuk dihapus
-                    lines_to_remove |= line
-                else:
-                    seen_products[key] = line
-            
-            if lines_to_remove:
-                # Gunakan unlink untuk menghapus baris duplikat dari database
-                lines_to_remove.unlink()
+                if line.product_id.id in products:
+                    raise ValidationError(
+                        f"Produk '{line.product_id.display_name}' sudah ada di daftar baris PO!\n"
+                        "Mohon tidak memasukkan produk yang sama dua kali. "
+                        "Silakan update kuantitas pada baris produk yang sudah ada."
+                    )
+                products.append(line.product_id.id)
 
     def write(self, vals):
         res = super().write(vals)
-        # Jika ada perubahan pada order_line, jalankan fungsi penggabungan
+        # Cek duplikat saat edit
         if 'order_line' in vals:
-            self._merge_duplicate_lines()
+            self._check_duplicate_product_lines()
         
         # Jika po_type atau warehouse_id diubah, update picking_type_id jika masih draft
+
         if ('po_type' in vals or 'warehouse_id' in vals) and all(order.state == 'draft' for order in self):
 
             for order in self:
