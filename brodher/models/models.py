@@ -214,6 +214,7 @@ class ProductTemplate(models.Model):
                     (tmpl_id,)
                 )
 
+
             @self.env.cr.postcommit.add
             def sync_psit_after_commit():
                 with registry.cursor() as cr:
