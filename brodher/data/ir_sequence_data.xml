@@ -24,8 +24,10 @@
 <record id="seq_po_psit" model="ir.sequence">
     <field name="name">Purchase Order PSIT</field>
     <field name="code">purchase.order.psit</field>
-    <field name="prefix">PO/PSIT/</field>
-    <field name="padding">4</field>
+    <field name="prefix"></field>
+    <field name="suffix">/ASBJ/PO/PRD/%(month)s/%(y)s</field>
+    <field name="padding">6</field>
+    <field name="use_date_range">True</field>
     <field name="implementation">standard</field>
 </record>
 
@@ -33,8 +35,10 @@
 <record id="seq_po_atc" model="ir.sequence">
     <field name="name">Purchase Order ATC</field>
     <field name="code">purchase.order.atc</field>
-    <field name="prefix">PO/ATC/</field>
-    <field name="padding">4</field>
+    <field name="prefix"></field>
+    <field name="suffix">/ASBJ/PO/MKL/%(month)s/%(y)s</field>
+    <field name="padding">6</field>
+    <field name="use_date_range">True</field>
     <field name="implementation">standard</field>
 </record>
 
@@ -42,9 +46,12 @@
 <record id="seq_po_free" model="ir.sequence">
     <field name="name">Purchase Order Bebas</field>
     <field name="code">purchase.order.free</field>
-    <field name="prefix">PO/FREE/</field>
-    <field name="padding">4</field>
+    <field name="prefix"></field>
+    <field name="suffix">/ASBJ/PO/NPR/%(month)s/%(y)s</field>
+    <field name="padding">6</field>
+    <field name="use_date_range">True</field>
     <field name="implementation">standard</field>
 </record>
+
 
 </odoo>
