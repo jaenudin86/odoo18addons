@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 from odoo import api, fields, models
+from odoo.exceptions import ValidationError
+
 
 class StockPickingType(models.Model):
     _inherit = 'stock.picking.type'
@@ -33,4 +35,10 @@ class StockPicking(models.Model):
                         f'Operasi ini khusus untuk barang {type_label}! '
                         f'Produk "{move.product_id.display_name}" tidak cocok dengan kategori ini.'
                     )
+
+class StockMove(models.Model):
+    _inherit = 'stock.move'
+
+    operation_category = fields.Selection(related='picking_id.operation_category', store=True)
+
 
