@@ -106,8 +106,9 @@ class ProductTemplate(models.Model):
     @api.constrains('attribute_line_ids')
     def _check_attribute_line_ids(self):
         for tmpl in self:
-            if not tmpl.attribute_line_ids:
+            if tmpl.is_article != 'other' and not tmpl.attribute_line_ids:
                 raise ValidationError('Tab "Attributes & Variants" (Atribut dan Varian) wajib diisi!')
+
 
 
     @api.onchange('name')
@@ -139,7 +140,11 @@ class ProductTemplate(models.Model):
 
     @api.onchange('is_article')
     def _onchange_is_article_tracking(self):
-        self.tracking = 'serial' if self.is_article == 'yes' else 'none'
+        if self.is_article == 'yes':
+            self.tracking = 'serial'
+        else:
+            self.tracking = 'none'  # 'none' is tracking by quantity in Odoo
+
 
     @api.onchange('parent_article_id')
     def _onchange_parent_article(self):
@@ -465,8 +470,9 @@ class ProductProduct(models.Model):
     @api.constrains('product_template_variant_value_ids')
     def _check_variant_values(self):
         for product in self:
-            if not product.product_template_variant_value_ids:
+            if product.is_article != 'other' and not product.product_template_variant_value_ids:
                 raise ValidationError('Varian wajib memiliki atribut yang dipilih!')
+
 
 
     # ══════════════════════════════════════════════════════════════════════════
