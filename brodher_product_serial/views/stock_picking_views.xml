@@ -21,6 +21,53 @@
     </record>
 
     <!-- ========================================== -->
+    <!-- STOCK PICKING FORM - BASE DOCUMENT        -->
+    <!-- ========================================== -->
+    <record id="view_picking_form_base_document" model="ir.ui.view">
+        <field name="name">stock.picking.form.base.document</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Section Base Document di bawah header, hanya untuk internal -->
+            <xpath expr="//page[@name='operations']" position="before">
+                <page string="Dokumen Asal" name="base_document"
+                      invisible="picking_type_code != 'internal'">
+                    <group string="Pilih Dokumen Asal">
+                        <group>
+                            <field name="base_doc_type" widget="radio"
+                                   options="{'horizontal': true}"
+                                   readonly="state not in ['draft', 'confirmed', 'waiting', 'assigned']"/>
+                            <field name="base_po_id"
+                                   invisible="base_doc_type != 'po'"
+                                   readonly="state not in ['draft', 'confirmed', 'waiting', 'assigned']"/>
+                            <field name="base_picking_id"
+                                   invisible="base_doc_type != 'picking'"
+                                   readonly="state not in ['draft', 'confirmed', 'waiting', 'assigned']"/>
+                        </group>
+                    </group>
+                    <div class="o_row mt-2" invisible="not base_doc_type">
+                        <button name="action_load_from_base_document"
+                                string="Ambil Produk dari Dokumen Ini"
+                                type="object"
+                                class="btn-primary"
+                                confirm="Produk yang ada stoknya di lokasi sumber akan ditambahkan ke lines. Lanjutkan?"
+                                readonly="state not in ['draft', 'confirmed', 'waiting', 'assigned']"/>
+                    </div>
+                    <div class="alert alert-info mt-2" invisible="base_doc_type != False and base_doc_type != ''">
+                        <p class="mb-0">
+                            <i class="fa fa-info-circle"/> Pilih tipe dokumen asal, lalu klik
+                            <strong>"Ambil Produk dari Dokumen Ini"</strong> untuk auto-fill lines
+                            berdasarkan stok yang tersedia di lokasi sumber.
+                        </p>
+                    </div>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ========================================== -->
     <!-- STOCK PICKING FORM - ADD BUTTONS -->
     <!-- ========================================== -->
     <record id="view_picking_form_generate_sn_buttons" model="ir.ui.view">

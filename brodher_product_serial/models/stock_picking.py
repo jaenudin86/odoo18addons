@@ -8,7 +8,117 @@ _logger = logging.getLogger(__name__)
 
 class StockPicking(models.Model):
     _inherit = 'stock.picking'
-    
+
+    # ========== BASE DOCUMENT (INTERNAL TRANSFER) ==========
+    base_doc_type = fields.Selection([
+        ('po', 'Purchase Order'),
+        ('picking', 'Transfer / Picking'),
+    ], string='Tipe Dokumen Asal', copy=False)
+
+    base_po_id = fields.Many2one(
+        'purchase.order',
+        string='PO Asal',
+        domain=[('state', '=', 'purchase'), ('invoice_status', '!=', 'nothing')],
+        copy=False,
+    )
+
+    base_picking_id = fields.Many2one(
+        'stock.picking',
+        string='Transfer Asal',
+        domain=[('state', '=', 'done')],
+        copy=False,
+    )
+
+    def action_load_from_base_document(self):
+        """
+        Auto-fill move lines dari base document berdasarkan stok
+        yang tersedia di lokasi sumber internal transfer.
+        Tidak menghapus lines yang sudah ada.
+        """
+        self.ensure_one()
+
+        if self.picking_type_code != 'internal':
+            raise UserError(_('Fitur ini hanya untuk Internal Transfer.'))
+
+        if not self.base_doc_type:
+            raise UserError(_('Pilih tipe dokumen asal terlebih dahulu.'))
+
+        location_src = self.location_id
+        if not location_src:
+            raise UserError(_('Tentukan lokasi sumber (Source Location) terlebih dahulu.'))
+
+        # Kumpulkan produk dari dokumen asal
+        products = self.env['product.product']
+        if self.base_doc_type == 'po':
+            if not self.base_po_id:
+                raise UserError(_('Pilih Purchase Order asal.'))
+            products = self.base_po_id.order_line.mapped('product_id')
+        elif self.base_doc_type == 'picking':
+            if not self.base_picking_id:
+                raise UserError(_('Pilih Transfer asal.'))
+            products = self.base_picking_id.move_ids.filtered(
+                lambda m: m.state == 'done'
+            ).mapped('product_id')
+
+        if not products:
+            raise UserError(_('Tidak ada produk ditemukan di dokumen asal.'))
+
+        # Cek quant di lokasi sumber
+        quants = self.env['stock.quant'].search([
+            ('product_id', 'in', products.ids),
+            ('location_id', '=', location_src.id),
+            ('quantity', '>', 0),
+        ])
+
+        if not quants:
+            raise UserError(_(
+                'Tidak ada stok produk dari dokumen tersebut di lokasi %s.'
+            ) % location_src.display_name)
+
+        # Produk yang sudah ada di lines (skip)
+        existing_product_ids = self.move_ids_without_package.mapped('product_id').ids
+
+        added = 0
+        for quant in quants:
+            if quant.product_id.id in existing_product_ids:
+                continue
+            self.env['stock.move'].create({
+                'name': quant.product_id.display_name,
+                'product_id': quant.product_id.id,
+                'product_uom_qty': quant.quantity,
+                'product_uom': quant.product_id.uom_id.id,
+                'picking_id': self.id,
+                'location_id': location_src.id,
+                'location_dest_id': self.location_dest_id.id,
+                'state': 'draft',
+            })
+            added += 1
+
+        if added == 0:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': _('Info'),
+                    'message': _('Semua produk dari dokumen tersebut sudah ada di lines.'),
+                    'type': 'warning',
+                    'sticky': False,
+                }
+            }
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _('Berhasil'),
+                'message': _('%d produk berhasil ditambahkan dari %s.') % (
+                    added, location_src.display_name
+                ),
+                'type': 'success',
+                'sticky': False,
+            }
+        }
+
     # ========== EXISTING FIELDS (SCAN SN) ==========
     sn_move_ids = fields.One2many('brodher.sn.move', 'picking_id', string='SN Moves')
     scanned_sn_count = fields.Integer(string='Scanned SN', compute='_compute_scanned_sn_count')
