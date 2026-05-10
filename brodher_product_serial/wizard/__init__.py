@@ -16,3 +16,5 @@ from . import product_qrcode_report
 from . import brodher_stock_picking_sn_wizard
 from . import sn_status_report_wizard
 from . import sn_print_wizard  # Add this
+from . import confirm_validate_wizard
+

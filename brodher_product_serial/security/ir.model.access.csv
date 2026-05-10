@@ -17,3 +17,4 @@ access_stock_lot_print_history,stock.lot.print.history,model_stock_lot_print_his
 access_brodher_sn_print_wizard,brodher.sn.print.wizard,model_brodher_sn_print_wizard,stock.group_stock_user,1,1,1,1
 access_brodher_sn_print_wizard_line,brodher.sn.print.wizard.line,model_brodher_sn_print_wizard_line,stock.group_stock_user,1,1,1,1
 access_brodher_sn_print_wizard_product,brodher.sn.print.wizard.product,model_brodher_sn_print_wizard_product,stock.group_stock_user,1,1,1,1
+access_brodher_confirm_validate_wizard_user,brodher.confirm.validate.wizard.user,model_brodher_confirm_validate_wizard,stock.group_stock_user,1,1,1,1

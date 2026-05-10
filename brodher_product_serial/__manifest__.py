@@ -56,6 +56,7 @@
          
          'views/sn_status_report_menu.xml',
          'wizard/sn_print_wizard_views.xml',
+         'wizard/confirm_validate_wizard_views.xml',
      
 
          

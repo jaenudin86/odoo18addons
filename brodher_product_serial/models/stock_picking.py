@@ -626,7 +626,23 @@ class StockPicking(models.Model):
                         }
                     }
         
-        _logger.info(f'[VALIDATE] All checks passed, proceeding to standard validation')
+        _logger.info(f'[VALIDATE] All checks passed, checking for incoming confirmation')
+        
+        # Confirmation for Incoming Shipments (Penerimaan Barang)
+        if picking.picking_type_code == 'incoming' and not self.env.context.get('skip_incoming_confirmation'):
+            return {
+                'name': _('Konfirmasi Validasi'),
+                'type': 'ir.actions.act_window',
+                'res_model': 'brodher.confirm.validate.wizard',
+                'view_mode': 'form',
+                'target': 'new',
+                'context': {
+                    'default_picking_id': picking.id,
+                    'default_message': 'Apakah Anda yakin ingin memvalidasi penerimaan barang ini?',
+                }
+            }
+
+        _logger.info(f'[VALIDATE] Proceeding to standard validation')
         return super(StockPicking, self).button_validate()
     
     def button_validate1(self):

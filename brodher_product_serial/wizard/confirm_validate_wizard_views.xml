@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_brodher_confirm_validate_wizard_form" model="ir.ui.view">
+        <field name="name">brodher.confirm.validate.wizard.form</field>
+        <field name="model">brodher.confirm.validate.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Konfirmasi">
+                <sheet>
+                    <div class="text-center">
+                        <i class="fa fa-question-circle fa-4x text-primary mb-3"/>
+                        <h3 class="mb-3">Konfirmasi Validasi</h3>
+                        <field name="message" nolabel="1" class="text-center font-weight-bold" style="font-size: 1.2em;"/>
+                        <field name="picking_id" invisible="1"/>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_confirm" string="Ya, Validasi" type="object" class="btn-primary"/>
+                    <button string="Tidak" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_brodher_confirm_validate_wizard" model="ir.actions.act_window">
+        <field name="name">Konfirmasi Validasi</field>
+        <field name="res_model">brodher.confirm.validate.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>
