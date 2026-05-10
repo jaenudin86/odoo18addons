@@ -128,22 +128,31 @@ class PurchaseOrderLine(models.Model):
 
     @api.onchange('product_id')
     def _onchange_product_id_check_duplicate(self):
-        """Cek duplikat saat memilih produk di baris PO (sebelum save)."""
-        if self.product_id and self.order_id:
-            # Cek ke baris lain dalam PO yang sama
-            for line in self.order_id.order_line:
-                # Jangan bandingkan dengan diri sendiri
-                if line._origin.id != self._origin.id and line.product_id == self.product_id:
-                    product_name = self.product_id.display_name
-                    # Kosongkan kembali produknya agar "hilang"
-                    self.product_id = False
-                    return {
-                        'warning': {
-                            'title': 'Produk Duplikat!',
-                            'message': f"Produk '{product_name}' sudah ada di daftar.\n"
-                                       "Mohon update kuantitas pada baris yang sudah ada saja."
-                        }
-                    }
+        """Cek duplikat secara real-time saat produk dipilih."""
+        if not self.product_id or not self.order_id:
+            return
+
+        # Hitung berapa kali produk ini muncul di daftar (termasuk baris yang sedang diedit)
+        count = 0
+        for line in self.order_id.order_line:
+            if line.product_id == self.product_id:
+                count += 1
+        
+        # Jika lebih dari 1, berarti baris yang baru saja dimasukkan adalah duplikat
+        if count > 1:
+            product_name = self.product_id.display_name
+            # Kosongkan kembali field produk pada baris ini saja
+            self.product_id = False
+            # Berikan peringatan
+            return {
+                'warning': {
+                    'title': 'Produk Duplikat!',
+                    'message': f"Produk '{product_name}' sudah ada di daftar.\n"
+                               "Satu produk tidak boleh diinput dua kali. "
+                               "Silakan hapus baris ini dan tambahkan kuantitas pada baris yang sudah ada."
+                }
+            }
+
 
     @api.onchange('po_type')
     def _onchange_po_type_warn(self):
