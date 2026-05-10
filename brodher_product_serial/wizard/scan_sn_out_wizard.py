@@ -113,9 +113,11 @@ class ScanSNOutWizard(models.TransientModel):
                 html = '<strong>Recently Scanned:</strong><table class="table table-sm">'
                 html += '<thead><tr><th>SN</th><th>Product</th><th>Time</th></tr></thead><tbody>'
                 for move in wizard.picking_id.sn_move_ids.sorted(lambda m: m.move_date, reverse=True)[:5]:
+                    # Konversi waktu ke zona waktu user (lokal)
+                    local_time = fields.Datetime.context_timestamp(wizard, move.move_date)
                     html += f'<tr><td><code>{move.serial_number_name}</code></td>'
                     html += f'<td>{move.product_tmpl_id.name}</td>'
-                    html += f'<td>{move.move_date.strftime("%H:%M:%S")}</td></tr>'
+                    html += f'<td>{local_time.strftime("%H:%M:%S")}</td></tr>'
                 html += '</tbody></table>'
                 wizard.scanned_list = html
             else:
