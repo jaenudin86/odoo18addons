@@ -23,7 +23,15 @@
                             
                             <!-- QR Code -->
                             <div style="margin: 30px 0;">
-                                <img t-att-src="image_data_uri(sn.qr_code)" 
+                                <t t-set="combined_info" t-value="'#'.join([
+                                    sn.name or '',
+                                    sn.product_id.default_code or '',
+                                    sn.product_id.product_tmpl_id.name or '',
+                                    sn.product_id.brand or '',
+                                    dict(sn.product_id._fields['is_article'].selection).get(sn.product_id.is_article, '') if sn.product_id.is_article else '',
+                                    sn.product_id.size or ''
+                                ])"/>
+                                <img t-att-src="'/report/barcode/QR/%s' % combined_info" 
                                      style="max-width: 300px; max-height: 300px;"/>
                             </div>
                             

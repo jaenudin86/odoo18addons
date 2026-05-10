@@ -230,9 +230,17 @@
                     <div style="display: flex; flex-wrap: wrap;">
                         <t t-foreach="picking.sn_move_ids" t-as="sn_move">
                             <t t-set="sn" t-value="sn_move.serial_number_id"/>
+                            <t t-set="combined_info" t-value="'#'.join([
+                                sn.name or '',
+                                sn.product_id.default_code or '',
+                                sn.product_id.product_tmpl_id.name or '',
+                                sn.product_id.brand or '',
+                                dict(sn.product_id._fields['is_article'].selection).get(sn.product_id.is_article, '') if sn.product_id.is_article else '',
+                                sn.product_id.size or ''
+                            ])"/>
                             <div class="qrcode_container">
                                 <!-- QR Code -->
-                                <img t-att-src="'/report/barcode/QR/%s' % sn.name" 
+                                <img t-att-src="'/report/barcode/QR/%s' % combined_info" 
                                      class="qrcode_img"/>
 
                                 <!-- Serial Number -->
