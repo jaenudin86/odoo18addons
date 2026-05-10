@@ -51,8 +51,8 @@
 
                 <t t-foreach="label_data" t-as="label">
                     <div class="label-wrapper">
-                        <img t-if="label['barcode']"
-                             t-att-src="'/report/barcode/QR/%s' % label['barcode']"
+                        <img t-if="label['combined_info']"
+                             t-att-src="'/report/barcode/QR/%s' % label['combined_info']"
                              class="qrcode_img"
                              alt="QR"/>
                         <div t-else="" style="width:11mm;height:11mm;border:0.2mm dashed #ccc;"/>

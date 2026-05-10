@@ -18,12 +18,26 @@ class ProductQrcodeReport(models.AbstractModel):
                     variant_values = product.product_template_attribute_value_ids.mapped('name')
                     variant_str = ' / '.join(variant_values) if variant_values else ''
                     
+                    # Gabungkan informasi untuk isi QR Code
+                    combined_info = "#".join([
+                        product.barcode or '',
+                        product.default_code or '',
+                        product.product_tmpl_id.name or '',
+                        product.brand or '',
+                        dict(product._fields['is_article'].selection).get(product.is_article, '') if product.is_article else '',
+                        product.size or ''
+                    ])
+                    
                     label_data.append({
                         'ir_number': product.default_code or '',
                         'name': product.product_tmpl_id.name,
                         'variant': variant_str,
                         'barcode': product.barcode or product.default_code or '',
                         'product_id': product.id,
+                        'brand': product.brand or '',
+                        'size': product.size or '',
+                        'product_type': dict(product._fields['is_article'].selection).get(product.is_article, '') if product.is_article else '',
+                        'combined_info': combined_info,
                     })
         
         return {
