@@ -38,7 +38,14 @@ class PosOrder(models.Model):
                             ('product_id', '=', line.product_id.id)
                         ], limit=1)
                         
-                        if lot:
+                        # PERKETAT: Jika produk adalah SN, maka Lot WAJIB valid dan ada di lokasi POS
+                        if line.product_id.tracking == 'serial':
+                            if not lot:
+                                raise ValidationError(_(
+                                    "Serial Number '%s' tidak terdaftar untuk produk '%s'. "
+                                    "Mohon scan QR Code yang valid."
+                                ) % (lot_line.lot_name, line.product_id.display_name))
+                            
                             # Cek stok di lokasi POS (termasuk sub-lokasi)
                             quant = self.env['stock.quant'].search([
                                 ('lot_id', '=', lot.id),
@@ -48,7 +55,7 @@ class PosOrder(models.Model):
                             
                             if not quant:
                                 raise ValidationError(_(
-                                    "Serial Number '%s' untuk produk '%s' tidak ditemukan di gudang %s. "
-                                    "Mohon pastikan Anda men-scan barang yang ada di cabang ini."
-                                ) % (lot.name, line.product_id.display_name, pos_location.complete_name))
+                                    "Serial Number '%s' ditemukan, tapi tidak ada di gudang %s. "
+                                    "Pastikan barang tersebut sudah dimutasi ke cabang ini."
+                                ) % (lot.name, pos_location.complete_name))
         return orders
