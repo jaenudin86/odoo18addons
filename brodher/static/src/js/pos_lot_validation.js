@@ -7,9 +7,12 @@ import { _t } from "@web/core/l10n/translation";
 
 patch(EditListPopup.prototype, {
     async confirm() {
-        // Deteksi apakah ini pop-up Lot/Serial Number
+        // Deteksi lebih agresif: Cek judul atau jika props menunjukkan ini adalah Lot
         const title = (this.props.title || "").toLowerCase();
-        const isLotPopup = title.includes("lot") || title.includes("serial") || this.props.isLot;
+        const isLotPopup = title.includes("lot") || 
+                           title.includes("serial") || 
+                           this.props.isLot ||
+                           this.props.array?.some(i => i.text !== undefined); // Cek jika ada input text
 
         if (isLotPopup) {
             console.log("[Brodher POS] Validating Lot Entry...");
