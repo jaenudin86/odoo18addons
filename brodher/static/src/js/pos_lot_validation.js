@@ -1,55 +1,53 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { AbstractAwaitablePopup } from "@point_of_sale/app/utils/abstract_awaitable_popup/abstract_awaitable_popup";
+import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { _t } from "@web/core/l10n/translation";
 
 console.log("POS LOT VALIDATION LOADED");
 
-patch(AbstractAwaitablePopup.prototype, {
-    async confirm() {
-        const title = (this.props.title || "").toLowerCase();
-        // Cek apakah ini pop-up Lot/Serial
-        const isLotPopup = title.includes("lot") || title.includes("serial") || this.props.isLot;
-
-        if (isLotPopup) {
-            // Kita ambil data dari state pop-up (biasanya array untuk EditListPopup)
-            const items = this.state.array || [];
-            console.log("[Brodher POS] Validating Popup Items:", items);
+patch(PosStore.prototype, {
+    // Fungsi ini dipanggil saat pop-up SN ditutup di Odoo 18
+    async editPackLotLines(line) {
+        const result = await super.editPackLotLines(...arguments);
+        
+        // Jika user klik OK (result !== null/false)
+        if (result) {
+            const lotLines = line.pack_lot_lines || [];
+            console.log("[Brodher POS] Validating Lot Lines in PosStore:", lotLines);
             
-            for (const item of items) {
-                const lotName = (item.text || "").trim();
+            for (const lotLine of lotLines) {
+                const lotName = (lotLine.lot_name || "").trim();
                 if (lotName) {
-                    // Cari di database lokal
-                    const pos = this.env.services.pos;
-                    const allLots = pos.models['stock.lot'] || [];
-                    const foundLot = allLots.find(l => l.name === lotName);
+                    // Cari lot di database lokal POS Odoo 18
+                    const lots = this.models['stock.lot'].filter((l) => l.name === lotName);
                     
-                    if (!foundLot) {
-                        window.alert(_t(`Serial Number '${lotName}' TIDAK DITEMUKAN di sistem! Mohon gunakan QR Code yang valid.`));
-                        // Jangan lanjut confirm, biarkan user memperbaiki inputnya
-                        return; 
+                    if (lots.length === 0) {
+                        window.alert(_t(`Serial Number '${lotName}' tidak ditemukan di sistem! Anda tidak bisa memasukkan nomor asal.`));
+                        
+                        // Kosongkan SN agar tidak bisa lanjut bayar
+                        line.pack_lot_lines = [];
+                        
+                        // Buka kembali pop-up nya agar user dipaksa input yang benar
+                        return this.editPackLotLines(line);
                     }
                 }
             }
         }
-        return super.confirm();
-    }
-});
+        return result;
+    },
 
-import { PosStore } from "@point_of_sale/app/store/pos_store";
-patch(PosStore.prototype, {
+    // Validasi saat SCAN
     async scan_barcode(code) {
         if (code && code.includes("#")) {
             const parts = code.split("#");
             code = parts[0];
         }
         if (code && code.length > 5) {
-            const allLots = this.models['stock.lot'] || [];
-            const foundLot = allLots.find(l => l.name === code);
-            const foundProduct = this.models['product.product'].find(p => p.barcode === code);
+            const lots = this.models['stock.lot'].filter((l) => l.name === code);
+            const product = this.models['product.product'].filter((p) => p.barcode === code);
             
-            if (!foundLot && !foundProduct) {
+            if (lots.length === 0 && product.length === 0) {
                 window.alert(_t(`Kode '${code}' tidak dikenal sebagai Produk atau Serial Number yang sah!`));
                 return false;
             }
