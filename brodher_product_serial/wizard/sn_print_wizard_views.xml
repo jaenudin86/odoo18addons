@@ -1,5 +1,11 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    
+    <!-- Client Action for Progress Bar -->
+    <record id="action_sn_print_progress" model="ir.actions.client">
+        <field name="name">SN Print Progress</field>
+        <field name="tag">sn_print_progress_action</field>
+        <field name="target">new</field>
+    </record>
     
     <record id="view_sn_print_wizard_form" model="ir.ui.view">
         <field name="name">brodher.sn.print.wizard.form</field>
