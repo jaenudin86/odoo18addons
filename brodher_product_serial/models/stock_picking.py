@@ -30,10 +30,20 @@ class StockPicking(models.Model):
     )
 
     def action_load_from_base_document(self):
+        """Manual button to load products from base document."""
+        return self._load_products_from_base_document()
+
+    @api.onchange('base_po_id', 'base_picking_id', 'base_doc_type', 'location_id')
+    def _onchange_base_document_load(self):
+        """Automatically load products when base document or source location changes."""
+        if self.base_doc_type and (self.base_po_id or self.base_picking_id) and self.location_id:
+            # We use a silent version for onchange to avoid popups/notifications
+            self._load_products_from_base_document(is_onchange=True)
+
+    def _load_products_from_base_document(self, is_onchange=False):
         """
         Auto-fill move lines dari base document berdasarkan stok
         yang tersedia di lokasi sumber internal transfer.
-        Tidak menghapus lines yang sudah ada.
         """
         self.ensure_one()
 
@@ -79,20 +89,32 @@ class StockPicking(models.Model):
         existing_product_ids = self.move_ids_without_package.mapped('product_id').ids
 
         added = 0
+        moves_vals = []
         for quant in quants:
             if quant.product_id.id in existing_product_ids:
                 continue
-            self.env['stock.move'].create({
+            
+            vals = {
                 'name': quant.product_id.display_name,
                 'product_id': quant.product_id.id,
                 'product_uom_qty': quant.quantity,
                 'product_uom': quant.product_id.uom_id.id,
-                'picking_id': self.id,
+                'picking_id': self._origin.id if hasattr(self, '_origin') else self.id,
                 'location_id': location_src.id,
                 'location_dest_id': self.location_dest_id.id,
                 'state': 'draft',
-            })
+            }
+            
+            if is_onchange:
+                moves_vals.append((0, 0, vals))
+            else:
+                self.env['stock.move'].create(vals)
             added += 1
+
+        if is_onchange:
+            if moves_vals:
+                self.move_ids_without_package = moves_vals
+            return
 
         if added == 0:
             return {
@@ -100,7 +122,7 @@ class StockPicking(models.Model):
                 'tag': 'display_notification',
                 'params': {
                     'title': _('Info'),
-                    'message': _('Semua produk dari dokumen tersebut sudah ada di lines.'),
+                    'message': _('Semua produk dari dokumen tersebut sudah ada di lines atau tidak ada stok.'),
                     'type': 'warning',
                     'sticky': False,
                 }

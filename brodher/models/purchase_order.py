@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-from odoo import api, fields, models
+from odoo import api, fields, models, _
+from odoo.osv import expression
 
 
 class PurchaseOrder(models.Model):
@@ -41,15 +41,27 @@ class PurchaseOrder(models.Model):
 
     def _get_product_catalog_domain(self):
         domain = super()._get_product_catalog_domain()
-        if self.po_type == 'atc':
-            domain = ['&', ('is_article', '=', 'yes')] + domain
-        elif self.po_type == 'psit':
-            domain = ['&', ('is_article', '=', 'no')] + domain
-        elif self.po_type == 'other':
-            domain = ['&', ('is_article', '=', 'other')] + domain
         
-        # Always allow service products
-        return ['|', ('type', '=', 'service')] + domain
+        # Filter berdasarkan is_article
+        article_domain = []
+        if self.po_type == 'atc':
+            article_domain = [('is_article', '=', 'yes')]
+        elif self.po_type == 'psit':
+            article_domain = [('is_article', '=', 'no')]
+        elif self.po_type == 'other':
+            article_domain = [('is_article', '=', 'other')]
+            
+        if article_domain:
+            # Domain: (Hasil Super) AND (Kategori Artikel OR Produk Service)
+            domain = expression.AND([
+                domain,
+                expression.OR([
+                    article_domain,
+                    [('type', '=', 'service')]
+                ])
+            ])
+            
+        return domain
 
     @api.onchange('partner_id', 'po_type', 'warehouse_id')
 
