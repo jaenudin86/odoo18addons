@@ -133,6 +133,20 @@
                                                 </t>
                                             </span>
                                         </t>
+                                        
+                                        <!-- Batch & Expired Date -->
+                                        <t t-set="move_lines" t-value="move.move_line_ids.filtered(lambda l: l.lot_id)"/>
+                                        <t t-if="move_lines">
+                                            <br/>
+                                            <span style="font-size: 8pt; color: #333;">
+                                                <t t-foreach="move_lines" t-as="ml">
+                                                    <t t-if="ml.lot_id.x_batch_number or ml.lot_id.expiration_date">
+                                                        [Batch: <t t-esc="ml.lot_id.x_batch_number or '-'"/> | Exp: <t t-esc="ml.lot_id.expiration_date.strftime('%d/%m/%Y') if ml.lot_id.expiration_date else '-'"/>]
+                                                        <t t-if="not ml_last"><br/></t>
+                                                    </t>
+                                                </t>
+                                            </span>
+                                        </t>
                                     </td>
                                     
                                     <!-- Quantity Column -->

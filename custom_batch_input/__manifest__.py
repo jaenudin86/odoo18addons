@@ -10,6 +10,7 @@
         'wizard/stock_batch_input_wizard_views.xml',
         'views/stock_lot_views.xml',
         'views/stock_picking_views.xml',
+        'views/stock_quant_views.xml',
     ],
     'installable': True,
     'application': False,

@@ -85,6 +85,8 @@
                                     <tr>
                                         <th>Serial Number</th>
                                         <th>Product</th>
+                                        <th>Batch</th>
+                                        <th>Expired</th>
                                         <th>Type</th>
                                         <th>Status</th>
                                         <th>Generated Date</th>
@@ -97,6 +99,13 @@
                                         <tr>
                                             <td><strong t-esc="sn.name"/></td>
                                             <td t-esc="sn.product_id.display_name"/>
+                                            <td t-esc="sn.x_batch_number or '-'"/>
+                                            <td>
+                                                <t t-if="sn.expiration_date">
+                                                    <span t-esc="sn.expiration_date.strftime('%d/%m/%Y')"/>
+                                                </t>
+                                                <t t-else="">-</t>
+                                            </td>
                                             <td>
                                                 <t t-if="sn.sn_type == 'M'">
                                                     <span class="badge badge-info">Man</span>
