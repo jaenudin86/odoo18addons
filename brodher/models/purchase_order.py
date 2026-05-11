@@ -8,7 +8,7 @@ class PurchaseOrder(models.Model):
     po_type = fields.Selection([
         ('psit', 'PSIT'),
         ('atc', 'ATC'),
-        ('other', 'Bebas'),
+        ('other', 'Operation'),
     ], string='Type PO', required=True, default='other', copy=False)
 
     warehouse_id = fields.Many2one(
@@ -37,15 +37,19 @@ class PurchaseOrder(models.Model):
             elif order.po_type == 'psit':
                 order.allowed_article_types = ['no']
             else:
-                order.allowed_article_types = ['yes', 'no']
+                order.allowed_article_types = ['other']
 
     def _get_product_catalog_domain(self):
         domain = super()._get_product_catalog_domain()
         if self.po_type == 'atc':
-            domain += [('is_article', '=', 'yes')]
+            domain = ['&', ('is_article', '=', 'yes')] + domain
         elif self.po_type == 'psit':
-            domain += [('is_article', '=', 'no')]
-        return domain
+            domain = ['&', ('is_article', '=', 'no')] + domain
+        elif self.po_type == 'other':
+            domain = ['&', ('is_article', '=', 'other')] + domain
+        
+        # Always allow service products
+        return ['|', ('type', '=', 'service')] + domain
 
     @api.onchange('partner_id', 'po_type', 'warehouse_id')
 

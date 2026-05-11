@@ -9,7 +9,7 @@ class StockPickingType(models.Model):
     operation_category = fields.Selection([
         ('atc', 'ATC (Makloon)'),
         ('psit', 'PSIT'),
-        ('other', 'Other / General'),
+        ('other', 'Operation'),
     ], string='Operation Category', default='other', help="Kategori operasi untuk memisahkan barang ATC dan PSIT")
 
 class StockPicking(models.Model):
@@ -29,6 +29,10 @@ class StockPicking(models.Model):
             required_article_type = article_map.get(category)
 
             for move in picking.move_ids:
+                # Lewati validasi untuk produk tipe Service
+                if move.product_id.type == 'service':
+                    continue
+                    
                 if move.product_id.is_article != required_article_type:
                     type_label = 'ATC' if required_article_type == 'yes' else 'PSIT'
                     raise ValidationError(
