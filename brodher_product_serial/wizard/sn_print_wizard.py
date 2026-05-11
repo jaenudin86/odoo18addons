@@ -35,15 +35,16 @@ class SNPrintWizard(models.TransientModel):
         'Serial Numbers'
     )
     
+    total_products_selected = fields.Integer('Produk Dipilih', compute='_compute_totals')
     total_sn_selected = fields.Integer('SN Dipilih', compute='_compute_totals')
-    batch_size = fields.Integer('SN per File PDF', default=100, required=True) # Reduced default for smoother progress
+    batch_size = fields.Integer('SN per File PDF', default=100, required=True)
     
     # Progress tracking
     progress = fields.Float('Progress', default=0.0)
     is_processing = fields.Boolean('Is Processing', default=False)
     current_batch = fields.Integer('Current Batch', default=0)
     total_batches = fields.Integer('Total Batches', default=0)
-    processed_pdf_data = fields.Text('Processed PDF Data') # JSON list of attachment IDs
+    processed_pdf_data = fields.Text('Processed PDF Data')
     
     @api.depends('product_line_ids.selected', 'sn_line_ids.selected')
     def _compute_totals(self):
