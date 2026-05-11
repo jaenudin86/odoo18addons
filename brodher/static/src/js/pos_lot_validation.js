@@ -4,37 +4,52 @@ import { patch } from "@web/core/utils/patch";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { _t } from "@web/core/l10n/translation";
 
+// ALERT TEST: Jika ini muncul, berarti file JS aktif
 console.log("POS LOT VALIDATION LOADED");
 
 patch(PosStore.prototype, {
-    // Fungsi ini dipanggil saat pop-up SN ditutup di Odoo 18
-    async editPackLotLines(line) {
-        const result = await super.editPackLotLines(...arguments);
-        
-        // Jika user klik OK (result !== null/false)
-        if (result) {
-            const lotLines = line.pack_lot_lines || [];
-            console.log("[Brodher POS] Validating Lot Lines in PosStore:", lotLines);
-            
-            for (const lotLine of lotLines) {
-                const lotName = (lotLine.lot_name || "").trim();
-                if (lotName) {
-                    // Cari lot di database lokal POS Odoo 18
-                    const lots = this.models['stock.lot'].filter((l) => l.name === lotName);
-                    
-                    if (lots.length === 0) {
-                        window.alert(_t(`Serial Number '${lotName}' tidak ditemukan di sistem! Anda tidak bisa memasukkan nomor asal.`));
-                        
-                        // Kosongkan SN agar tidak bisa lanjut bayar
-                        line.pack_lot_lines = [];
-                        
-                        // Buka kembali pop-up nya agar user dipaksa input yang benar
-                        return this.editPackLotLines(line);
-                    }
-                }
+    // Kita cegat di level paling tinggi: saat produk ditambahkan atau di-edit
+    async addProductToCurrentOrder(product, options) {
+        const result = await super.addProductToCurrentOrder(...arguments);
+        // Setelah produk masuk, kita cek apakah ada SN yang terinput (lewat popup otomatis)
+        const order = this.get_order();
+        if (order) {
+            const lastLine = order.get_last_orderline();
+            if (lastLine && lastLine.product_id.tracking === 'serial') {
+                this._validateOrderlineLots(lastLine);
             }
         }
         return result;
+    },
+
+    async editPackLotLines(line) {
+        const result = await super.editPackLotLines(...arguments);
+        if (result) {
+            this._validateOrderlineLots(line);
+        }
+        return result;
+    },
+
+    _validateOrderlineLots(line) {
+        const lotLines = line.pack_lot_lines || [];
+        const lotNames = lotLines.map(l => l.lot_name);
+        
+        for (const lotName of lotNames) {
+            if (lotName) {
+                const allLots = this.models['stock.lot'] || [];
+                const foundLot = allLots.find(l => l.name === lotName.trim());
+                
+                if (!foundLot) {
+                    window.alert(_t(`Serial Number '${lotName}' TIDAK DITEMUKAN! Nomor ini tidak sah.`));
+                    // Kosongkan agar tidak bisa bayar
+                    line.pack_lot_lines = [];
+                    // Paksa buka kembali pop-up nya
+                    this.editPackLotLines(line);
+                    return false;
+                }
+            }
+        }
+        return true;
     },
 
     // Validasi saat SCAN
@@ -43,14 +58,13 @@ patch(PosStore.prototype, {
             const parts = code.split("#");
             code = parts[0];
         }
-        if (code && code.length > 5) {
-            const lots = this.models['stock.lot'].filter((l) => l.name === code);
-            const product = this.models['product.product'].filter((p) => p.barcode === code);
-            
-            if (lots.length === 0 && product.length === 0) {
-                window.alert(_t(`Kode '${code}' tidak dikenal sebagai Produk atau Serial Number yang sah!`));
-                return false;
-            }
+        const allLots = this.models['stock.lot'] || [];
+        const foundLot = allLots.find(l => l.name === code);
+        const foundProduct = this.models['product.product'].find(p => p.barcode === code);
+        
+        if (code && code.length > 5 && !foundLot && !foundProduct) {
+            window.alert(_t(`Kode '${code}' tidak dikenal sebagai Produk atau Serial Number yang sah!`));
+            return false;
         }
         return super.scan_barcode(code);
     }
