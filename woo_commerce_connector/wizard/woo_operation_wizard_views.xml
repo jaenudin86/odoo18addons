@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_woo_operation_wizard_form" model="ir.ui.view">
+        <field name="name">woo.operation.wizard.form</field>
+        <field name="model">woo.operation.wizard</field>
+        <field name="arch" type="xml">
+            <form>
+                <group>
+                    <field name="backend_id" readonly="1"/>
+                    <field name="operation"/>
+                </group>
+                <div class="alert alert-info mt-2">
+                    <p class="mb-0">
+                        <i class="fa fa-info-circle"/> <strong>Note:</strong> 
+                        Operations like "Import Categories" and "Import Attributes" will create new records in Odoo and link them to WooCommerce IDs.
+                    </p>
+                </div>
+                <footer>
+                    <button name="action_execute" string="Execute" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

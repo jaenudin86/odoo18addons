@@ -35,9 +35,15 @@ class SNPrintWizard(models.TransientModel):
         'Serial Numbers'
     )
     
-    total_products_selected = fields.Integer('Produk Dipilih', compute='_compute_totals')
     total_sn_selected = fields.Integer('SN Dipilih', compute='_compute_totals')
-    batch_size = fields.Integer('SN per File PDF', default=500, required=True)
+    batch_size = fields.Integer('SN per File PDF', default=100, required=True) # Reduced default for smoother progress
+    
+    # Progress tracking
+    progress = fields.Float('Progress', default=0.0)
+    is_processing = fields.Boolean('Is Processing', default=False)
+    current_batch = fields.Integer('Current Batch', default=0)
+    total_batches = fields.Integer('Total Batches', default=0)
+    processed_pdf_data = fields.Text('Processed PDF Data') # JSON list of attachment IDs
     
     @api.depends('product_line_ids.selected', 'sn_line_ids.selected')
     def _compute_totals(self):
@@ -167,24 +173,52 @@ class SNPrintWizard(models.TransientModel):
         }
     
     def action_print_selected(self):
-        """Print selected serial numbers — batch ZIP jika > batch_size"""
+        """Entry point for printing - starts the progress bar flow."""
         self.ensure_one()
-
         selected_lines = self.sn_line_ids.filtered('selected')
-
         if not selected_lines:
-            raise UserError(_(
-                '❌ Tidak ada SN yang dipilih!\n\n'
-                'Silakan centang serial number yang ingin dicetak.'
-            ))
+            raise UserError(_('Pilih minimal 1 Serial Number!'))
+        
+        total_sn = len(selected_lines)
+        batch_size = max(1, self.batch_size)
+        total_batches = (total_sn + batch_size - 1) // batch_size
+        
+        self.write({
+            'is_processing': True,
+            'total_batches': total_batches,
+            'current_batch': 0,
+            'progress': 0,
+            'processed_pdf_data': '[]'
+        })
+        
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'sn_print_progress_action',
+            'params': {
+                'wizard_id': self.id,
+            }
+        }
 
-        selected_sns = selected_lines.mapped('serial_number_id')
-
-        _logger.info(f'[PRINT WIZARD] Printing {len(selected_sns)} serial numbers')
-
-        # Update print status and create history
+    def action_process_next_batch(self):
+        """Called by JS or manually to process the next batch."""
+        self.ensure_one()
+        if not self.is_processing:
+            return False
+            
+        selected_sns = self.sn_line_ids.filtered('selected').mapped('serial_number_id')
+        batch_size = self.batch_size
+        start = self.current_batch * batch_size
+        end = min(start + batch_size, len(selected_sns))
+        
+        batch_sns = selected_sns[start:end]
+        
+        # 1. Render PDF for this batch
+        report = self.env.ref('brodher_product_serial.action_report_serial_number_qrcode')
+        pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=batch_sns.ids)
+        
+        # Update SN status
         now = fields.Datetime.now()
-        for sn in selected_sns:
+        for sn in batch_sns:
             new_count = sn.print_count + 1
             sn.write({
                 'is_printed': True,
@@ -192,73 +226,74 @@ class SNPrintWizard(models.TransientModel):
                 'last_print_date': now,
                 'last_print_user': self.env.user.id,
             })
-            self.env['stock.lot.print.history'].create({
-                'lot_id': sn.id,
-                'print_date': now,
-                'print_user': self.env.user.id,
-                'print_count_at_time': new_count,
-                'picking_id': self.picking_id.id,
-                'notes': f'Cetak QR Code - Transfer {self.picking_id.name}',
-            })
-
-        batch_size = max(1, self.batch_size or 500)
-        total = len(selected_sns)
-
-        # Jika jumlah SN <= batch_size → langsung render PDF biasa
-        if total <= batch_size:
-            _logger.info(f'[PRINT WIZARD] Single PDF for {total} SNs')
-            return self.env.ref(
-                'brodher_product_serial.action_report_serial_number_qrcode'
-            ).report_action(selected_sns)
-
-        # Lebih dari batch_size → buat ZIP berisi beberapa PDF
-        _logger.info(f'[PRINT WIZARD] Batch ZIP: {total} SNs, batch_size={batch_size}')
-
-        report = self.env.ref('brodher_product_serial.action_report_serial_number_qrcode')
-        sn_list = selected_sns
-        zip_buffer = io.BytesIO()
-
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
-            batch_num = 1
-            for start in range(0, total, batch_size):
-                batch_sns = sn_list[start:start + batch_size]
-                _logger.info(
-                    f'[PRINT WIZARD] Rendering batch {batch_num}: SN {start+1}–{start+len(batch_sns)}'
-                )
-                pdf_content, _ = report._render_qweb_pdf(report.id, res_ids=batch_sns.ids)
-                filename = f'qr_labels_{self.picking_id.name}_batch_{batch_num:03d}.pdf'
-                zf.writestr(filename, pdf_content)
-                batch_num += 1
-
-        zip_data = zip_buffer.getvalue()
-        zip_name = f'qr_labels_{self.picking_id.name}.zip'
-
+        
+        # 2. Save PDF as attachment
+        filename = f'batch_{self.current_batch + 1}.pdf'
         attachment = self.env['ir.attachment'].create({
-            'name': zip_name,
+            'name': filename,
             'type': 'binary',
-            'datas': base64.b64encode(zip_data).decode(),
+            'datas': base64.b64encode(pdf_content).decode(),
+            'res_model': self._name,
+            'res_id': self.id,
+        })
+        
+        # 3. Update Progress
+        import json
+        processed_ids = json.loads(self.processed_pdf_data or '[]')
+        processed_ids.append(attachment.id)
+        
+        new_batch = self.current_batch + 1
+        progress = (new_batch / self.total_batches) * 100
+        
+        self.write({
+            'current_batch': new_batch,
+            'progress': progress,
+            'processed_pdf_data': json.dumps(processed_ids)
+        })
+        
+        if new_batch >= self.total_batches:
+            return self.action_finalize_printing()
+            
+        return True
+
+    def action_finalize_printing(self):
+        """Combine all batches into one ZIP or return single PDF."""
+        import json
+        processed_ids = json.loads(self.processed_pdf_data or '[]')
+        attachments = self.env['ir.attachment'].browse(processed_ids)
+        
+        if not attachments:
+            return False
+            
+        if len(attachments) == 1:
+            # Single PDF - return it
+            self.write({'is_processing': False})
+            return {
+                'type': 'ir.actions.act_url',
+                'url': f'/web/content/{attachments[0].id}?download=true',
+                'target': 'self',
+            }
+            
+        # Multiple PDFs - create ZIP
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            for i, attach in enumerate(attachments):
+                filename = f'qr_labels_{self.picking_id.name}_part_{i+1:03d}.pdf'
+                zf.writestr(filename, base64.b64decode(attach.datas))
+        
+        zip_attachment = self.env['ir.attachment'].create({
+            'name': f'qr_labels_{self.picking_id.name}.zip',
+            'type': 'binary',
+            'datas': base64.b64encode(zip_buffer.getvalue()).decode(),
             'res_model': self._name,
             'res_id': self.id,
             'mimetype': 'application/zip',
         })
-
-        _logger.info(f'[PRINT WIZARD] ZIP created: {zip_name}, attachment id={attachment.id}')
-
-        # Kirim notifikasi sukses ke browser user
-        self.env['bus.bus']._sendone(
-            self.env.user.partner_id,
-            'simple_notification',
-            {
-                'title': 'ZIP Berhasil Dibuat',
-                'message': f'{total} SN selesai diproses dalam {batch_num - 1} file PDF. Download dimulai...',
-                'type': 'success',
-                'sticky': False,
-            }
-        )
-
+        
+        self.write({'is_processing': False})
         return {
             'type': 'ir.actions.act_url',
-            'url': f'/web/content/{attachment.id}?download=true',
+            'url': f'/web/content/{zip_attachment.id}?download=true',
             'target': 'self',
         }
     

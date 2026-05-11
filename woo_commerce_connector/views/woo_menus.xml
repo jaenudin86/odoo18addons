@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Main Menu -->
+    <menuitem id="menu_woo_root"
+              name="WooCommerce"
+              web_icon="woo_commerce_connector,static/description/icon.png"
+              sequence="10"/>
+
+    <!-- Configuration Menu -->
+    <menuitem id="menu_woo_config"
+              name="Configuration"
+              parent="menu_woo_root"
+              sequence="100"/>
+
+    <menuitem id="menu_woo_backend"
+              name="Instances"
+              parent="menu_woo_config"
+              action="action_woo_backend"
+              sequence="10"/>
+
+    <!-- Mapping Menu -->
+    <menuitem id="menu_woo_mapping"
+              name="Mappings"
+              parent="menu_woo_root"
+              sequence="20"/>
+
+    <menuitem id="menu_woo_mapping_category"
+              name="Categories"
+              parent="menu_woo_mapping"
+              action="action_woo_product_category_mapping"
+              sequence="10"/>
+
+    <menuitem id="menu_woo_mapping_attribute"
+              name="Attributes"
+              parent="menu_woo_mapping"
+              action="action_woo_product_attribute_mapping"
+              sequence="20"/>
+
+    <menuitem id="menu_woo_mapping_product"
+              name="Products"
+              parent="menu_woo_mapping"
+              action="action_woo_product_template_mapping"
+              sequence="30"/>
+
+    <menuitem id="menu_woo_mapping_variant"
+              name="Variants"
+              parent="menu_woo_mapping"
+              action="action_woo_product_product_mapping"
+              sequence="40"/>
+
+    <!-- Logs Menu -->
+    <menuitem id="menu_woo_logs"
+              name="Logs"
+              parent="menu_woo_root"
+              action="action_woo_sync_log"
+              sequence="50"/>
+</odoo>

@@ -62,6 +62,12 @@
          
 
     ],
+    'assets': {
+        'web.assets_backend': [
+            'brodher_product_serial/static/src/js/sn_print_progress_bar.js',
+            'brodher_product_serial/static/src/xml/sn_print_progress_bar.xml',
+        ],
+    },
     'installable': True,
     'application': False,
     'auto_install': False,

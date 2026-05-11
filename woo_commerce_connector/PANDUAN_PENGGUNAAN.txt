@@ -1,0 +1,80 @@
+============================================================
+       PANDUAN PENGGUNAAN WOOCOMMERCE CONNECTOR PRO
+============================================================
+
+Modul ini dirancang untuk menghubungkan Odoo 18 dengan satu atau 
+lebih toko WooCommerce secara profesional.
+
+------------------------------------------------------------
+1. PERSIAPAN AWAL (PREREQUISITES)
+------------------------------------------------------------
+Sebelum menginstal modul, pastikan library 'woocommerce' sudah 
+terpasang di server Odoo Anda.
+
+Jalankan perintah ini di terminal:
+pip install woocommerce
+
+------------------------------------------------------------
+2. KONFIGURASI DI WOOCOMMERCE
+------------------------------------------------------------
+A. Masuk ke WP-Admin > WooCommerce > Settings > Advanced > REST API.
+B. Klik 'Add Key'.
+C. Masukkan Deskripsi (misal: Odoo Connector).
+D. Pilih User.
+E. Set Permissions ke 'Read/Write'.
+F. Simpan dan COPY 'Consumer Key' serta 'Consumer Secret'.
+
+------------------------------------------------------------
+3. KONFIGURASI DI ODOO (INSTANCE SETUP)
+------------------------------------------------------------
+A. Masuk ke Menu: WooCommerce > Configuration > Instances.
+B. Klik 'New' dan isi data berikut:
+   - Name: Nama Toko Anda.
+   - Store URL: URL lengkap toko (contoh: https://tokosaya.com).
+   - Consumer Key: Paste dari WooCommerce.
+   - Consumer Secret: Paste dari WooCommerce.
+   - Default Warehouse: Gudang untuk stok & pesanan.
+   - Default Pricelist: Daftar harga yang digunakan.
+C. Klik tombol 'TEST CONNECTION'. 
+   - Jika status berubah menjadi 'Connected' (Hijau), koneksi berhasil.
+
+------------------------------------------------------------
+4. PROSES SINKRONISASI (LANGKAH DEMI LANGKAH)
+------------------------------------------------------------
+PENTING: Lakukan sinkronisasi sesuai urutan di bawah ini agar 
+data terpetakan dengan benar.
+
+Langkah 1: Import Master Data (Kategori & Atribut)
+   - Klik tombol 'Perform Operations' di Instance Anda.
+   - Pilih 'Import Categories' -> Execute.
+   - Pilih 'Import Attributes' -> Execute.
+   - Cek hasilnya di menu WooCommerce > Mappings > Categories/Attributes.
+
+Langkah 2: Import Produk
+   - Pilih 'Import Products' -> Execute.
+   - Odoo akan menarik produk (Simple & Variable) beserta variannya.
+   - Cek hasilnya di menu WooCommerce > Mappings > Products.
+
+Langkah 3: Sinkronisasi Pesanan (Orders)
+   - Pilih 'Import Orders' -> Execute.
+   - Odoo akan mengambil pesanan berstatus 'Processing'.
+   - Pelanggan akan otomatis dibuat jika emailnya belum ada di Odoo.
+
+------------------------------------------------------------
+5. OTOMATISASI (AUTOMATION)
+------------------------------------------------------------
+Agar Anda tidak perlu menekan tombol manual:
+A. Pada form Instance, masuk ke tab 'Automation'.
+B. Centang 'Auto Import Orders' dan 'Auto Export Stock'.
+C. Sistem akan berjalan otomatis sesuai jadwal (Scheduled Actions).
+
+------------------------------------------------------------
+6. MEMANTAU LOG (SYNC LOGS)
+------------------------------------------------------------
+Jika terjadi kendala atau ingin melihat riwayat sinkronisasi:
+Buka menu WooCommerce > Logs.
+Anda bisa melihat detail pesan error jika ada data yang gagal masuk.
+
+============================================================
+Selesai. Selamat menggunakan WooCommerce Connector Pro!
+============================================================

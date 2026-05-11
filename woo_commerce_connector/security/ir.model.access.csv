@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_woo_backend,woo.backend,model_woo_backend,base.group_user,1,1,1,1
+access_woo_sync_log,woo.sync.log,model_woo_sync_log,base.group_user,1,1,1,1
+access_woo_product_category_mapping,woo.product.category.mapping,model_woo_product_category_mapping,base.group_user,1,1,1,1
+access_woo_product_template_mapping,woo.product.template.mapping,model_woo_product_template_mapping,base.group_user,1,1,1,1
+access_woo_product_product_mapping,woo.product.product.mapping,model_woo_product_product_mapping,base.group_user,1,1,1,1
+access_woo_product_attribute_mapping,woo.product.attribute.mapping,model_woo_product_attribute_mapping,base.group_user,1,1,1,1
