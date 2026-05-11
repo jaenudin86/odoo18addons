@@ -14,6 +14,12 @@
                 <field name="warehouse_id" invisible="1"/>
             </field>
 
+            <!-- Disable Deliver To (picking_type_id) agar tidak bisa dirubah manual -->
+            <xpath expr="//field[@name='picking_type_id']" position="attributes">
+                <attribute name="readonly">1</attribute>
+                <attribute name="force_save">1</attribute>
+            </xpath>
+
 
 
             <!-- Domain produk di baris PO berdasarkan po_type -->
