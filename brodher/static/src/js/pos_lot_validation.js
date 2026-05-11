@@ -21,7 +21,8 @@ patch(AbstractAwaitablePopup.prototype, {
                 const lotName = (item.text || "").trim();
                 if (lotName) {
                     // Cari di database lokal
-                    const allLots = this.pos.models['stock.lot'] || [];
+                    const pos = this.env.services.pos;
+                    const allLots = pos.models['stock.lot'] || [];
                     const foundLot = allLots.find(l => l.name === lotName);
                     
                     if (!foundLot) {
