@@ -7,27 +7,32 @@ import { _t } from "@web/core/l10n/translation";
 console.log("POS LOT VALIDATION LOADED");
 
 patch(PosStore.prototype, {
-    // JARING A: Saat SN dimasukkan via Barcode atau Pop-up Otomatis
-    async selectLotBarcode(line) {
-        window.alert("JARING A: selectLotBarcode");
-        const result = await super.selectLotBarcode(...arguments);
-        if (result) this._validateOrderlineLots(line);
+    // Kita cegat di level yang lebih tinggi lagi
+    async addProductToCurrentOrder(product, options) {
+        console.log("[Brodher POS] addProductToCurrentOrder", product.display_name);
+        const result = await super.addProductToCurrentOrder(...arguments);
+        
+        // Cek baris terakhir yang baru masuk
+        const order = this.get_order();
+        if (order) {
+            const lastLine = order.get_last_orderline();
+            if (lastLine && lastLine.product_id.tracking === 'serial') {
+                this._validateOrderlineLots(lastLine);
+            }
+        }
         return result;
     },
 
-    // JARING B: Saat SN ditambahkan ke Orderline
-    async addLotToOrderline(line, lotNames) {
-        window.alert("JARING B: addLotToOrderline");
-        const result = await super.addLotToOrderline(...arguments);
-        if (result) this._validateOrderlineLots(line);
-        return result;
-    },
-
-    // JARING C: Saat klik tombol SN di keranjang
-    async editPackLotLines(line) {
-        window.alert("JARING C: editPackLotLines");
-        const result = await super.editPackLotLines(...arguments);
-        if (result) this._validateOrderlineLots(line);
+    // Kita cegat saat user men-scan barcode apa pun
+    async _processData(data) {
+        const result = await super._processData(...arguments);
+        const order = this.get_order();
+        if (order) {
+            const lastLine = order.get_last_orderline();
+            if (lastLine && lastLine.product_id.tracking === 'serial') {
+                this._validateOrderlineLots(lastLine);
+            }
+        }
         return result;
     },
 
@@ -37,13 +42,15 @@ patch(PosStore.prototype, {
         
         for (const lotName of lotNames) {
             if (lotName) {
+                // Gunakan pencarian yang lebih agresif di database lokal
                 const allLots = this.models['stock.lot'] || [];
                 const foundLot = allLots.find(l => l.name === lotName.trim());
                 
                 if (!foundLot) {
-                    window.alert(_t(`Nomor Seri '${lotName}' TIDAK SAH! Silakan scan QR Code yang benar.`));
+                    window.alert(_t(`Serial Number '${lotName}' TIDAK SAH! Sistem akan menghapusnya.`));
+                    // Hapus SN yang salah
                     line.pack_lot_lines = [];
-                    // Buka kembali pop-up
+                    // Paksa buka kembali pop-up SN agar user mengisi yang benar
                     this.editPackLotLines(line);
                     return false;
                 }
