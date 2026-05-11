@@ -4,20 +4,21 @@ import { patch } from "@web/core/utils/patch";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { _t } from "@web/core/l10n/translation";
 
-// Kita patch PosStore saja, karena ini adalah jantung POS yang pasti ada
 patch(PosStore.prototype, {
+    // 1. Validasi saat SCAN Barcode
     async scan_barcode(code) {
         if (code && code.includes("#")) {
             const parts = code.split("#");
             code = parts[0];
         }
 
-        // Validasi SN jika kodenya panjang
+        // Jika kodenya mirip SN (panjang > 5)
         if (code && code.length > 5) {
-            const lots = this.models['stock.lot'].filter((l) => l.name === code);
-            const product = this.models['product.product'].filter((p) => p.barcode === code);
+            const allLots = this.models['stock.lot'] || [];
+            const foundLot = allLots.find(l => l.name === code);
+            const foundProduct = this.models['product.product'].find(p => p.barcode === code);
             
-            if (lots.length === 0 && product.length === 0) {
+            if (!foundLot && !foundProduct) {
                 window.alert(_t(`Kode '${code}' tidak dikenal sebagai Produk atau Serial Number yang sah!`));
                 return false;
             }
@@ -25,15 +26,24 @@ patch(PosStore.prototype, {
         return super.scan_barcode(code);
     },
 
-    // Validasi saat input manual di pop-up
-    async addLotToOrderline(line, lotNames) {
-        for (const lotName of lotNames) {
-            const lots = this.models['stock.lot'].filter((l) => l.name === lotName.trim());
-            if (lots.length === 0) {
-                window.alert(_t(`Serial Number '${lotName}' tidak ditemukan di sistem!`));
-                return false;
+    // 2. Validasi saat INPUT MANUAL di pop-up
+    async editPackLotLines(line) {
+        const result = await super.editPackLotLines(...arguments);
+        if (result) {
+            const lotNames = line.pack_lot_lines.map(l => l.lot_name);
+            for (const lotName of lotNames) {
+                if (lotName) {
+                    const allLots = this.models['stock.lot'] || [];
+                    const foundLot = allLots.find(l => l.name === lotName.trim());
+                    
+                    if (!foundLot) {
+                        window.alert(_t(`Serial Number '${lotName}' TIDAK DITEMUKAN di sistem! Anda tidak bisa memasukkan nomor asal.`));
+                        line.pack_lot_lines = [];
+                        return false;
+                    }
+                }
             }
         }
-        return super.addLotToOrderline(...arguments);
+        return result;
     }
 });
