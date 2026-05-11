@@ -44,6 +44,7 @@ Long description of module's purpose
     'assets': {
         'point_of_sale._assets_pos': [
             'brodher/static/src/js/pos_barcode_patch.js',
+            'brodher/static/src/js/pos_lot_validation.js',
         ],
     },
 
