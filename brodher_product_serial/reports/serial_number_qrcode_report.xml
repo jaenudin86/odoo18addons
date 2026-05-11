@@ -113,7 +113,7 @@
                                 sn.product_id.is_article or '',
                                 sn.product_id.size or ''
                             ])"/>
-                            <img t-att-src="'/report/barcode/QR/%s' % combined_info"
+                            <img t-att-src="'/report/barcode/QR/%s' % combined_info.replace('#', '%23')"
                                 class="qrcode_img"
                                 alt="QR"/>
                             <!-- Serial Number -->

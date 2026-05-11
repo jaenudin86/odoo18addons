@@ -240,7 +240,7 @@
                             ])"/>
                             <div class="qrcode_container">
                                 <!-- QR Code -->
-                                <img t-att-src="'/report/barcode/QR/%s' % combined_info" 
+                                <img t-att-src="'/report/barcode/QR/%s' % combined_info.replace('#', '%23')" 
                                      class="qrcode_img"/>
 
                                 <!-- Serial Number -->
