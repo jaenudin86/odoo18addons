@@ -1,22 +1,24 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { EditListPopup } from "@point_of_sale/app/utils/edit_list_popup/edit_list_popup";
+import { AbstractAwaitablePopup } from "@point_of_sale/app/utils/abstract_awaitable_popup/abstract_awaitable_popup";
 import { ErrorPopup } from "@point_of_sale/app/errors/popups/error_popup";
 import { _t } from "@web/core/l10n/translation";
 
-patch(EditListPopup.prototype, {
+patch(AbstractAwaitablePopup.prototype, {
     async confirm() {
-        window.alert("JS OK - Sedang Memvalidasi...");
-        // DEBUG: Hapus ini jika sudah muncul
-        console.log("[Brodher POS] Tombol OK diklik!");
+        // ALERT DEBUG: Jika ini muncul, berarti kodenya jalan!
+        console.log("[Brodher POS] Popup Confirm Triggered. Title:", this.props.title);
         
         const title = (this.props.title || "").toLowerCase();
-        // Cek apakah ini pop-up Lot atau setidaknya punya input array
+        // Cek apakah ini pop-up Lot atau setidaknya punya input array (EditList)
         const isLotPopup = title.includes("lot") || title.includes("serial") || this.props.isLot;
 
         if (isLotPopup || (this.props.array && this.props.array.length > 0)) {
-            for (const item of this.state.array) {
+            // Gunakan window.confirm untuk debug paksa
+            // window.alert("Sedang memvalidasi SN...");
+            
+            for (const item of this.state.array || []) {
                 const lotName = (item.text || "").trim();
                 if (lotName) {
                     // Cari lot di database lokal POS
