@@ -118,8 +118,7 @@
                                 string="🖨️ Print Selected"
                                 type="object"
                                 class="btn-primary"
-                                invisible="total_sn_selected == 0"
-                                confirm="Proses print akan dimulai. Untuk data besar (&gt; batch size), hasil berupa file ZIP. Mohon tunggu hingga download otomatis dimulai — jangan tutup halaman ini."/>
+                                invisible="total_sn_selected == 0"/>
                         <button name="action_back_to_product" 
                                 string="⬅ Kembali" 
                                 type="object" 

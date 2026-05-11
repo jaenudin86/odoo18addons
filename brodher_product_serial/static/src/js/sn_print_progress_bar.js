@@ -2,7 +2,7 @@
 
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
-import { Component, onWillStart, useState } from "@odoo/owl";
+import { Component, onMounted, useState } from "@odoo/owl";
 
 export class SNPrintProgressBar extends Component {
     static template = "brodher_product_serial.SNPrintProgressBar";
@@ -16,7 +16,8 @@ export class SNPrintProgressBar extends Component {
             isFinished: false,
         });
 
-        onWillStart(async () => {
+        onMounted(async () => {
+            console.log("SN Print Progress Bar Mounted. Wizard ID:", this.props.action.params.wizard_id);
             await this._processNextBatch();
         });
     }
