@@ -1,39 +1,37 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
-import { AbstractAwaitablePopup } from "@point_of_sale/app/utils/abstract_awaitable_popup/abstract_awaitable_popup";
+import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product_screen";
 import { ErrorPopup } from "@point_of_sale/app/errors/popups/error_popup";
 import { _t } from "@web/core/l10n/translation";
 
-patch(AbstractAwaitablePopup.prototype, {
-    async confirm() {
-        // ALERT DEBUG: Jika ini muncul, berarti kodenya jalan!
-        console.log("[Brodher POS] Popup Confirm Triggered. Title:", this.props.title);
+patch(ProductScreen.prototype, {
+    async editPackLotLines(line) {
+        const result = await super.editPackLotLines(...arguments);
         
-        const title = (this.props.title || "").toLowerCase();
-        // Cek apakah ini pop-up Lot atau setidaknya punya input array (EditList)
-        const isLotPopup = title.includes("lot") || title.includes("serial") || this.props.isLot;
-
-        if (isLotPopup || (this.props.array && this.props.array.length > 0)) {
-            // Gunakan window.confirm untuk debug paksa
-            // window.alert("Sedang memvalidasi SN...");
+        if (result) {
+            // Ambil daftar SN yang diinput user
+            const lotLines = line.pack_lot_lines || [];
             
-            for (const item of this.state.array || []) {
-                const lotName = (item.text || "").trim();
+            for (const lotLine of lotLines) {
+                const lotName = (lotLine.lot_name || "").trim();
                 if (lotName) {
-                    // Cari lot di database lokal POS
+                    // Cari lot di database lokal POS (Odoo 18)
                     const lots = this.pos.models['stock.lot'].filter((l) => l.name === lotName);
                     
                     if (lots.length === 0) {
-                        this.env.services.popup.add(ErrorPopup, {
+                        this.popup.add(ErrorPopup, {
                             title: _t("Serial Number Tidak Valid"),
-                            body: _t(`Serial Number '${lotName}' tidak ditemukan di sistem!`),
+                            body: _t(`Nomor seri '${lotName}' tidak ditemukan! Anda tidak bisa memasukkan nomor asal.`),
                         });
-                        return; 
+                        
+                        // Kosongkan SN yang salah agar tidak bisa lanjut bayar
+                        line.pack_lot_lines = [];
+                        return false;
                     }
                 }
             }
         }
-        return super.confirm();
+        return result;
     }
 });
