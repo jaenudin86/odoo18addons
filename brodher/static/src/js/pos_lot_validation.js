@@ -4,58 +4,45 @@ import { patch } from "@web/core/utils/patch";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V2");
+console.log("POS LOT VALIDATION LOADED V3");
+window.alert("VALIDASI AKTIF V3");
 
-// Beri nama pada patch agar Odoo 18 lebih mantap menimpanya
 patch(PosStore.prototype, {
-    async addProductToCurrentOrder(product, options) {
-        // TEST: Jika ini tidak muncul saat klik produk, berarti patch gagal
-        console.log("DEBUG: addProductToCurrentOrder dipanggil untuk", product.display_name);
-        
-        const result = await super.addProductToCurrentOrder(...arguments);
-        
-        // Cek SN setelah produk masuk
-        const order = this.get_order();
-        if (order) {
-            const lastLine = order.get_last_orderline();
-            if (lastLine && lastLine.product_id.tracking === 'serial') {
-                this._validateOrderlineLots(lastLine);
+    // 1. Validasi saat SCAN Barcode
+    async scan_barcode(code) {
+        if (code && code.includes("#")) {
+            const parts = code.split("#");
+            code = parts[0];
+        }
+        if (code && code.length > 5) {
+            const foundLot = this.models['stock.lot'].find(l => l.name === code);
+            const foundProduct = this.models['product.product'].find(p => p.barcode === code);
+            
+            if (!foundLot && !foundProduct) {
+                window.alert(_t(`Kode '${code}' TIDAK SAH! Mohon gunakan QR Code yang terdaftar.`));
+                return false;
             }
         }
-        return result;
+        return super.scan_barcode(code);
     },
 
+    // 2. Validasi saat klik OK di pop-up mana pun (otomatis atau manual)
     async editPackLotLines(line) {
-        // TEST: Jika ini tidak muncul saat klik tombol SN di keranjang
-        console.log("DEBUG: editPackLotLines dipanggil");
-        
         const result = await super.editPackLotLines(...arguments);
         if (result) {
-            this._validateOrderlineLots(line);
-        }
-        return result;
-    },
-
-    _validateOrderlineLots(line) {
-        const lotLines = line.pack_lot_lines || [];
-        const lotNames = lotLines.map(l => l.lot_name);
-        
-        console.log("DEBUG: Validating Lots:", lotNames);
-        
-        for (const lotName of lotNames) {
-            if (lotName) {
-                // Gunakan pencarian di model stock.lot
-                const foundLot = this.models['stock.lot']?.find(l => l.name === lotName.trim());
-                
-                if (!foundLot) {
-                    window.alert(_t(`Serial Number '${lotName}' TIDAK SAH! Mohon gunakan QR Code.`));
-                    line.pack_lot_lines = [];
-                    // Paksa buka kembali pop-up SN
-                    this.editPackLotLines(line);
-                    return false;
+            const lotLines = line.pack_lot_lines || [];
+            for (const lotLine of lotLines) {
+                const lotName = (lotLine.lot_name || "").trim();
+                if (lotName) {
+                    const foundLot = this.models['stock.lot'].find(l => l.name === lotName);
+                    if (!foundLot) {
+                        window.alert(_t(`Serial Number '${lotName}' TIDAK DITEMUKAN! Sistem akan menghapusnya.`));
+                        line.pack_lot_lines = []; // Kosongkan
+                        return this.editPackLotLines(line); // Buka kembali pop-up
+                    }
                 }
             }
         }
-        return true;
+        return result;
     }
 });

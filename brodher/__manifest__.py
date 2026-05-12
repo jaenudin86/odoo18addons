@@ -42,7 +42,7 @@ Long description of module's purpose
     'views/stock_operation_view.xml',
     ],
     'assets': {
-        'point_of_sale._assets_pos': [
+        'point_of_sale.assets': [
             'brodher/static/src/js/pos_barcode_patch.js',
             'brodher/static/src/js/pos_lot_validation.js',
         ],
