@@ -5,50 +5,65 @@ from odoo.exceptions import ValidationError
 class PosSession(models.Model):
     _inherit = 'pos.session'
 
+    def init(self):
+        super().init()
+        # Safe SQL update to bypass Odoo registry locks and force-apply rules during module upgrade
+        self.env.cr.execute("""
+            -- 1. stock_location rule (perm_read = False)
+            UPDATE ir_rule 
+            SET domain_force = '[\'|\', (\'warehouse_id\', \'=\', False), (\'warehouse_id.user_access_ids\', \'in\', [user.id])]',
+                perm_read = false
+            WHERE id = (
+                SELECT res_id FROM ir_model_data 
+                WHERE name = 'stock_location_user_warehouse_rule' AND module = 'pos_warehouse_access'
+            );
+            
+            -- 2. stock_quant rule
+            UPDATE ir_rule 
+            SET domain_force = '[\'|\', (\'location_id.warehouse_id\', \'=\', False), (\'location_id.warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            WHERE id = (
+                SELECT res_id FROM ir_model_data 
+                WHERE name = 'stock_quant_user_warehouse_rule' AND module = 'pos_warehouse_access'
+            );
+            
+            -- 3. stock_picking rule
+            UPDATE ir_rule 
+            SET domain_force = '[\'|\', (\'picking_type_id.warehouse_id\', \'=\', False), (\'picking_type_id.warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            WHERE id = (
+                SELECT res_id FROM ir_model_data 
+                WHERE name = 'stock_picking_user_warehouse_rule' AND module = 'pos_warehouse_access'
+            );
+            
+            -- 4. stock_picking_type rule
+            UPDATE ir_rule 
+            SET domain_force = '[\'|\', (\'warehouse_id\', \'=\', False), (\'warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            WHERE id = (
+                SELECT res_id FROM ir_model_data 
+                WHERE name = 'stock_picking_type_user_warehouse_rule' AND module = 'pos_warehouse_access'
+            );
+        """)
+
     @api.model
     def _register_hook(self):
         """
-        Auto-update record rules of pos_warehouse_access in the database 
-        to bypass Odoo's XML noupdate cache and prevent AccessErrors in POS.
+        Auto-update products for discount/promo self-healing.
+        This is safe because it only modifies product.product/template records.
         """
         res = super()._register_hook()
         
-        # 1. Update rule stock_location
-        rule_location = self.env.ref('pos_warehouse_access.stock_location_user_warehouse_rule', raise_if_not_found=False)
-        if rule_location:
-            rule_location.sudo().write({
-                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]",
-                'perm_read': False,  # Izinkan membaca nama lokasi untuk mencegah AccessError saat transfer barang
-            })
-            
-        # 2. Update rule stock_quant
-        rule_quant = self.env.ref('pos_warehouse_access.stock_quant_user_warehouse_rule', raise_if_not_found=False)
-        if rule_quant:
-            rule_quant.sudo().write({
-                'domain_force': "['|', ('location_id.warehouse_id', '=', False), ('location_id.warehouse_id.user_access_ids', 'in', [user.id])]"
-            })
-            
-        # 3. Update rule stock_picking
-        rule_picking = self.env.ref('pos_warehouse_access.stock_picking_user_warehouse_rule', raise_if_not_found=False)
-        if rule_picking:
-            rule_picking.sudo().write({
-                'domain_force': "['|', ('picking_type_id.warehouse_id', '=', False), ('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]"
-            })
-            
-        # 4. Update rule stock_picking_type
-        rule_picking_type = self.env.ref('pos_warehouse_access.stock_picking_type_user_warehouse_rule', raise_if_not_found=False)
-        if rule_picking_type:
-            rule_picking_type.sudo().write({
-                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
-            })
-            
-        # 5. SELF-HEALING: Jasa/Diskon/Promo (Service) harus selalu bersih dari IR Number & Tracking
+        # SELF-HEALING: Jasa/Diskon/Promo harus selalu bersih dari IR Number & Tracking
         # Menghapus default_code (IR Number) yang sempat ter-generate oleh bug lama,
-        # dan mereset tracking ke 'none' serta is_article ke 'other'.
+        # dan mereset tracking ke 'none' serta is_article ke 'other' tanpa mengubah tipe produk (goods).
         try:
-            wrong_service_products = self.env['product.product'].sudo().search([
-                ('type', '=', 'service')
-            ])
+            domain = [
+                '|', '|', '|',
+                ('type', '=', 'service'),
+                ('name', 'ilike', 'disc'),
+                ('name', 'ilike', 'discount'),
+                ('name', 'ilike', 'promo')
+            ]
+            
+            wrong_service_products = self.env['product.product'].sudo().search(domain)
             if wrong_service_products:
                 wrong_service_products.write({
                     'tracking': 'none',
@@ -56,9 +71,7 @@ class PosSession(models.Model):
                     'default_code': False
                 })
                 
-            wrong_service_templates = self.env['product.template'].sudo().search([
-                ('type', '=', 'service')
-            ])
+            wrong_service_templates = self.env['product.template'].sudo().search(domain)
             if wrong_service_templates:
                 wrong_service_templates.write({
                     'tracking': 'none',
