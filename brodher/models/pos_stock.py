@@ -57,14 +57,14 @@ class PosSession(models.Model):
             return {'status': 'error', 'message': f"Produk '{product_name}' tidak ditemukan."}
             
         # 1. Cari Lot berdasarkan nama dan produk
-        lot = self.env['stock.lot'].search([
+        lot = self.env['stock.lot'].sudo().search([
             ('name', '=', lot_name),
             ('product_id', '=', product.id)
         ], limit=1)
         
         # Pengecekan silang jika lot terdaftar di produk lain
         if not lot:
-            other_lot = self.env['stock.lot'].search([('name', '=', lot_name)], limit=1)
+            other_lot = self.env['stock.lot'].sudo().search([('name', '=', lot_name)], limit=1)
             if other_lot:
                 return {
                     'status': 'invalid',
@@ -88,7 +88,7 @@ class PosSession(models.Model):
             if allowed_warehouses:
                 quant_domain.append(('location_id.warehouse_id', 'in', allowed_warehouses.ids))
                 
-        quant = self.env['stock.quant'].search(quant_domain, limit=1)
+        quant = self.env['stock.quant'].sudo().search(quant_domain, limit=1)
         
         if not quant:
             allowed_msg = ""
@@ -117,8 +117,8 @@ class PosOrder(models.Model):
             for line in order.lines:
                 if line.pack_lot_ids:
                     for lot_line in line.pack_lot_ids:
-                        # Cari Lot berdasarkan nama dan produk
-                        lot = self.env['stock.lot'].search([
+                        # Cari Lot berdasarkan nama dan produk dengan privileges tinggi
+                        lot = self.env['stock.lot'].sudo().search([
                             ('name', '=', lot_line.lot_name),
                             ('product_id', '=', line.product_id.id)
                         ], limit=1)
@@ -131,7 +131,7 @@ class PosOrder(models.Model):
                                     "Mohon scan QR Code yang valid."
                                 ) % (lot_line.lot_name, line.product_id.display_name))
                             
-                            # Cek stok di lokasi POS (termasuk sub-lokasi)
+                            # Cek stok di lokasi POS (termasuk sub-lokasi) dengan privileges tinggi
                             quant_domain = [
                                 ('lot_id', '=', lot.id),
                                 ('location_id', 'child_of', pos_location.id),
@@ -144,7 +144,7 @@ class PosOrder(models.Model):
                                 if allowed_warehouses:
                                     quant_domain.append(('location_id.warehouse_id', 'in', allowed_warehouses.ids))
                                     
-                            quant = self.env['stock.quant'].search(quant_domain, limit=1)
+                            quant = self.env['stock.quant'].sudo().search(quant_domain, limit=1)
                             
                             if not quant:
                                 raise ValidationError(_(

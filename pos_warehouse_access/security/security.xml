@@ -54,7 +54,7 @@
         <record id="stock_quant_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Quant: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_quant"/>
-            <field name="domain_force">[('location_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            <field name="domain_force">['|', ('location_id.warehouse_id', '=', False), ('location_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
             
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
@@ -79,7 +79,7 @@
         <record id="stock_location_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Location: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_location"/>
-            <field name="domain_force">[('warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            <field name="domain_force">['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]</field>
             
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
@@ -104,7 +104,7 @@
         <record id="stock_picking_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Picking: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_picking"/>
-            <field name="domain_force">[('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            <field name="domain_force">['|', ('picking_type_id.warehouse_id', '=', False), ('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]</field>
             
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
@@ -129,7 +129,7 @@
         <record id="stock_picking_type_user_warehouse_rule" model="ir.rule">
             <field name="name">Stock Picking Type: User Warehouse Access</field>
             <field name="model_id" ref="stock.model_stock_picking_type"/>
-            <field name="domain_force">[('warehouse_id.user_access_ids', 'in', [user.id])]</field>
+            <field name="domain_force">['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]</field>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="False"/>
