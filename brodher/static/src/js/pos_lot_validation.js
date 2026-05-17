@@ -3,10 +3,11 @@
 import { patch } from "@web/core/utils/patch";
 import { EditListPopup } from "@point_of_sale/app/store/select_lot_popup/select_lot_popup";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
+import { Orderline } from "@point_of_sale/app/store/models";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V7");
+console.log("POS LOT VALIDATION LOADED V8 - WITH QTY BLOCK");
 
 // 1. Patch EditListPopup to perform real-time backend validation on Lot/Serial Numbers manually entered
 patch(EditListPopup.prototype, {
@@ -94,5 +95,31 @@ patch(PosStore.prototype, {
             code = parts[0];
         }
         return super.scan_barcode(code);
+    }
+});
+
+// 3. Patch Orderline to prevent manual quantity modification for Serial-tracked products
+patch(Orderline.prototype, {
+    set_quantity(quantity, keep_price) {
+        const product = this.product || (this.get_product ? this.get_product() : null);
+        
+        // Cek jika produk dilacak berdasarkan Serial Number (serial)
+        if (product && product.tracking === 'serial') {
+            // Izinkan jika ingin menghapus baris (qty 0 atau 'remove')
+            if (quantity === 0 || quantity === "remove" || quantity === "") {
+                return super.set_quantity(...arguments);
+            }
+            
+            // Cari tahu jumlah Serial Number yang sudah terdaftar di line ini
+            const lotCount = this.pack_lot_lines ? this.pack_lot_lines.length : 0;
+            const maxQty = lotCount > 0 ? lotCount : 1;
+            
+            // Blokir jika kasir mencoba menaikkan qty lebih dari jumlah SN yang discan/dimasukkan
+            if (parseFloat(quantity) > maxQty) {
+                window.alert(_t("Produk ber-Serial Number tidak dapat diubah Qty secara manual! Silakan scan QR Code Serial Number untuk menambah barang."));
+                return;
+            }
+        }
+        return super.set_quantity(...arguments);
     }
 });
