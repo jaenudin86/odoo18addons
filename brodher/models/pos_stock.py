@@ -41,22 +41,29 @@ class PosSession(models.Model):
                 'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
             })
             
-        # 5. SELF-HEALING: Jasa/Diskon/Promo (Service) harus selalu memiliki tracking 'none'
-        # Kadang di database produk promo bertipe 'service' ter-set tracking 'serial' secara tidak sengaja.
+        # 5. SELF-HEALING: Jasa/Diskon/Promo (Service) harus selalu bersih dari IR Number & Tracking
+        # Menghapus default_code (IR Number) yang sempat ter-generate oleh bug lama,
+        # dan mereset tracking ke 'none' serta is_article ke 'other'.
         try:
             wrong_service_products = self.env['product.product'].sudo().search([
-                ('type', '=', 'service'),
-                ('tracking', '!=', 'none')
+                ('type', '=', 'service')
             ])
             if wrong_service_products:
-                wrong_service_products.write({'tracking': 'none'})
+                wrong_service_products.write({
+                    'tracking': 'none',
+                    'is_article': 'other',
+                    'default_code': False
+                })
                 
             wrong_service_templates = self.env['product.template'].sudo().search([
-                ('type', '=', 'service'),
-                ('tracking', '!=', 'none')
+                ('type', '=', 'service')
             ])
             if wrong_service_templates:
-                wrong_service_templates.write({'tracking': 'none'})
+                wrong_service_templates.write({
+                    'tracking': 'none',
+                    'is_article': 'other',
+                    'default_code': False
+                })
         except Exception as e:
             pass
             

@@ -180,7 +180,7 @@ class ProductTemplate(models.Model):
 
     @api.model
     def create(self, vals):
-        is_article = vals.get('is_article', 'no')
+        is_article = vals.get('is_article', 'other')
         
         if is_article in ('yes', 'no'):
             vals['is_storable'] = True
