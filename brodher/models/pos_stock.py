@@ -76,16 +76,28 @@ class PosSession(models.Model):
             }
             
         # 2. Cek stok di lokasi POS (termasuk sub-lokasi)
-        quant = self.env['stock.quant'].search([
+        quant_domain = [
             ('lot_id', '=', lot.id),
             ('location_id', 'child_of', pos_location.id),
             ('quantity', '>', 0)
-        ], limit=1)
+        ]
+        
+        # Integrasi pos_warehouse_access: jika user dibatasi gudangnya, perketat pencarian
+        if 'warehouse_access_ids' in self.env.user._fields:
+            allowed_warehouses = self.env.user.warehouse_access_ids
+            if allowed_warehouses:
+                quant_domain.append(('location_id.warehouse_id', 'in', allowed_warehouses.ids))
+                
+        quant = self.env['stock.quant'].search(quant_domain, limit=1)
         
         if not quant:
+            allowed_msg = ""
+            if 'warehouse_access_ids' in self.env.user._fields and self.env.user.warehouse_access_ids:
+                allowed_names = ", ".join(self.env.user.warehouse_access_ids.mapped('name'))
+                allowed_msg = f" di gudang akses Anda ({allowed_names})"
             return {
                 'status': 'no_stock',
-                'message': f"Serial Number '{lot_name}' ditemukan, tapi TIDAK ADA DI GUDANG {pos_location.complete_name}. Pastikan barang tersebut sudah dimutasi ke cabang ini."
+                'message': f"Serial Number '{lot_name}' ditemukan, tapi TIDAK ADA STOK{allowed_msg} di bawah lokasi POS {pos_location.complete_name}."
             }
             
         return {'status': 'ok'}
@@ -120,15 +132,22 @@ class PosOrder(models.Model):
                                 ) % (lot_line.lot_name, line.product_id.display_name))
                             
                             # Cek stok di lokasi POS (termasuk sub-lokasi)
-                            quant = self.env['stock.quant'].search([
+                            quant_domain = [
                                 ('lot_id', '=', lot.id),
                                 ('location_id', 'child_of', pos_location.id),
                                 ('quantity', '>', 0)
-                            ], limit=1)
+                            ]
+                            
+                            # Integrasi pos_warehouse_access: jika user dibatasi gudangnya
+                            if 'warehouse_access_ids' in self.env.user._fields:
+                                allowed_warehouses = self.env.user.warehouse_access_ids
+                                if allowed_warehouses:
+                                    quant_domain.append(('location_id.warehouse_id', 'in', allowed_warehouses.ids))
+                                    
+                            quant = self.env['stock.quant'].search(quant_domain, limit=1)
                             
                             if not quant:
                                 raise ValidationError(_(
-                                    "Serial Number '%s' ditemukan, tapi tidak ada di gudang %s. "
-                                    "Pastikan barang tersebut sudah dimutasi ke cabang ini."
+                                    "Serial Number '%s' ditemukan, tapi tidak ada di gudang POS %s."
                                 ) % (lot.name, pos_location.complete_name))
         return orders
