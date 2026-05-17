@@ -11,7 +11,7 @@ class PosSession(models.Model):
         self.env.cr.execute("""
             -- 1. stock_location rule (perm_read = False)
             UPDATE ir_rule 
-            SET domain_force = '[\'|\', (\'warehouse_id\', \'=\', False), (\'warehouse_id.user_access_ids\', \'in\', [user.id])]',
+            SET domain_force = $$['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]$$,
                 perm_read = false
             WHERE id = (
                 SELECT res_id FROM ir_model_data 
@@ -20,7 +20,7 @@ class PosSession(models.Model):
             
             -- 2. stock_quant rule
             UPDATE ir_rule 
-            SET domain_force = '[\'|\', (\'location_id.warehouse_id\', \'=\', False), (\'location_id.warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            SET domain_force = $$['|', ('location_id.warehouse_id', '=', False), ('location_id.warehouse_id.user_access_ids', 'in', [user.id])]$$
             WHERE id = (
                 SELECT res_id FROM ir_model_data 
                 WHERE name = 'stock_quant_user_warehouse_rule' AND module = 'pos_warehouse_access'
@@ -28,7 +28,7 @@ class PosSession(models.Model):
             
             -- 3. stock_picking rule
             UPDATE ir_rule 
-            SET domain_force = '[\'|\', (\'picking_type_id.warehouse_id\', \'=\', False), (\'picking_type_id.warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            SET domain_force = $$['|', ('picking_type_id.warehouse_id', '=', False), ('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]$$
             WHERE id = (
                 SELECT res_id FROM ir_model_data 
                 WHERE name = 'stock_picking_user_warehouse_rule' AND module = 'pos_warehouse_access'
@@ -36,7 +36,7 @@ class PosSession(models.Model):
             
             -- 4. stock_picking_type rule
             UPDATE ir_rule 
-            SET domain_force = '[\'|\', (\'warehouse_id\', \'=\', False), (\'warehouse_id.user_access_ids\', \'in\', [user.id])]'
+            SET domain_force = $$['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]$$
             WHERE id = (
                 SELECT res_id FROM ir_model_data 
                 WHERE name = 'stock_picking_type_user_warehouse_rule' AND module = 'pos_warehouse_access'
