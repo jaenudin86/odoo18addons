@@ -41,6 +41,25 @@ class PosSession(models.Model):
                 'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
             })
             
+        # 5. SELF-HEALING: Jasa/Diskon/Promo (Service) harus selalu memiliki tracking 'none'
+        # Kadang di database produk promo bertipe 'service' ter-set tracking 'serial' secara tidak sengaja.
+        try:
+            wrong_service_products = self.env['product.product'].sudo().search([
+                ('type', '=', 'service'),
+                ('tracking', '!=', 'none')
+            ])
+            if wrong_service_products:
+                wrong_service_products.write({'tracking': 'none'})
+                
+            wrong_service_templates = self.env['product.template'].sudo().search([
+                ('type', '=', 'service'),
+                ('tracking', '!=', 'none')
+            ])
+            if wrong_service_templates:
+                wrong_service_templates.write({'tracking': 'none'})
+        except Exception as e:
+            pass
+            
         return res
 
     def _loader_params_product_product(self):
