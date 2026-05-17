@@ -47,6 +47,11 @@ class PosSession(models.Model):
             product = self.env['product.product'].search([
                 '|', ('name', '=', product_name), ('display_name', '=', product_name)
             ], limit=1)
+            if not product:
+                # Coba pencarian toleran ilike jika pencarian persis gagal
+                product = self.env['product.product'].search([
+                    '|', ('name', 'ilike', product_name), ('display_name', 'ilike', product_name)
+                ], limit=1)
             
         if not product:
             return {'status': 'error', 'message': f"Produk '{product_name}' tidak ditemukan."}

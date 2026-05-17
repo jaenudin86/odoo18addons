@@ -6,7 +6,7 @@ import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V6");
+console.log("POS LOT VALIDATION LOADED V7");
 
 // 1. Patch EditListPopup to perform real-time backend validation on Lot/Serial Numbers manually entered
 patch(EditListPopup.prototype, {
@@ -27,34 +27,55 @@ patch(EditListPopup.prototype, {
         if (isLotPopup) {
             const lotNames = this.state.array.map(item => (item.text || "").trim()).filter(Boolean);
             if (lotNames.length > 0) {
-                const currentOrder = this.pos.get_order();
-                if (currentOrder) {
-                    const currentLine = currentOrder.get_selected_orderline();
-                    if (currentLine) {
-                        const product = currentLine.product || (currentLine.get_product ? currentLine.get_product() : null);
-                        const productId = product ? product.id : null;
-                        const productName = this.props.name || (product ? product.display_name : "");
-                        
-                        if (productId || productName) {
-                            try {
-                                for (const lotName of lotNames) {
-                                    // Panggil validation di backend secara real-time dengan fallback productName
-                                    const res = await this.orm.call(
-                                        "pos.session",
-                                        "check_lot_validation",
-                                        [productId, lotName, productName]
-                                    );
-                                    
-                                    if (res && res.status !== 'ok') {
-                                        // Tampilkan alert error dan batalkan konfirmasi (popup tetap terbuka)
-                                        window.alert(res.message);
-                                        return;
-                                    }
-                                }
-                            } catch (err) {
-                                console.error("Error validating lot:", err);
+                const productName = this.props.name || "";
+                let productId = null;
+
+                // Cari product ID berdasarkan nama produk yang tertera di popup props secara akurat
+                if (productName && this.pos) {
+                    // Coba cari di local POS models
+                    const products = this.pos.models ? this.pos.models["product.product"] : null;
+                    if (products && typeof products.find === 'function') {
+                        const foundProduct = products.find(p => p.display_name === productName || p.name === productName);
+                        if (foundProduct) {
+                            productId = foundProduct.id;
+                        }
+                    }
+                    
+                    // Fallback: cari di seluruh orderlines di keranjang jika ada yang namanya cocok
+                    if (!productId) {
+                        const currentOrder = this.pos.get_order();
+                        if (currentOrder && typeof currentOrder.get_orderlines === 'function') {
+                            const lines = currentOrder.get_orderlines() || [];
+                            const matchingLine = lines.find(line => {
+                                const p = line.product || (line.get_product ? line.get_product() : null);
+                                return p && (p.display_name === productName || p.name === productName);
+                            });
+                            if (matchingLine) {
+                                const p = matchingLine.product || (matchingLine.get_product ? matchingLine.get_product() : null);
+                                productId = p ? p.id : null;
                             }
                         }
+                    }
+                }
+
+                if (productId || productName) {
+                    try {
+                        for (const lotName of lotNames) {
+                            // Panggil validation di backend secara real-time
+                            const res = await this.orm.call(
+                                "pos.session",
+                                "check_lot_validation",
+                                [productId, lotName, productName]
+                            );
+                            
+                            if (res && res.status !== 'ok') {
+                                // Tampilkan alert error dan batalkan konfirmasi (popup tetap terbuka)
+                                window.alert(res.message);
+                                return;
+                            }
+                        }
+                    } catch (err) {
+                        console.error("Error validating lot:", err);
                     }
                 }
             }
