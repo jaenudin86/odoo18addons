@@ -5,6 +5,44 @@ from odoo.exceptions import ValidationError
 class PosSession(models.Model):
     _inherit = 'pos.session'
 
+    @api.model
+    def _register_hook(self):
+        """
+        Auto-update record rules of pos_warehouse_access in the database 
+        to bypass Odoo's XML noupdate cache and prevent AccessErrors in POS.
+        """
+        res = super()._register_hook()
+        
+        # 1. Update rule stock_location
+        rule_location = self.env.ref('pos_warehouse_access.stock_location_user_warehouse_rule', raise_if_not_found=False)
+        if rule_location:
+            rule_location.sudo().write({
+                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
+            })
+            
+        # 2. Update rule stock_quant
+        rule_quant = self.env.ref('pos_warehouse_access.stock_quant_user_warehouse_rule', raise_if_not_found=False)
+        if rule_quant:
+            rule_quant.sudo().write({
+                'domain_force': "['|', ('location_id.warehouse_id', '=', False), ('location_id.warehouse_id.user_access_ids', 'in', [user.id])]"
+            })
+            
+        # 3. Update rule stock_picking
+        rule_picking = self.env.ref('pos_warehouse_access.stock_picking_user_warehouse_rule', raise_if_not_found=False)
+        if rule_picking:
+            rule_picking.sudo().write({
+                'domain_force': "['|', ('picking_type_id.warehouse_id', '=', False), ('picking_type_id.warehouse_id.user_access_ids', 'in', [user.id])]"
+            })
+            
+        # 4. Update rule stock_picking_type
+        rule_picking_type = self.env.ref('pos_warehouse_access.stock_picking_type_user_warehouse_rule', raise_if_not_found=False)
+        if rule_picking_type:
+            rule_picking_type.sudo().write({
+                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
+            })
+            
+        return res
+
     def _loader_params_product_product(self):
         """
         Memastikan pencarian stok produk di POS dibatasi ke lokasi gudang POS tersebut.
