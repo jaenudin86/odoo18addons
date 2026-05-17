@@ -6,7 +6,7 @@ import { PosStore } from "@point_of_sale/app/store/pos_store";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V5");
+console.log("POS LOT VALIDATION LOADED V6");
 
 // 1. Patch EditListPopup to perform real-time backend validation on Lot/Serial Numbers manually entered
 patch(EditListPopup.prototype, {
@@ -33,15 +33,16 @@ patch(EditListPopup.prototype, {
                     if (currentLine) {
                         const product = currentLine.product || (currentLine.get_product ? currentLine.get_product() : null);
                         const productId = product ? product.id : null;
+                        const productName = this.props.name || (product ? product.display_name : "");
                         
-                        if (productId) {
+                        if (productId || productName) {
                             try {
                                 for (const lotName of lotNames) {
-                                    // Panggil validation di backend secara real-time (hanya butuh productId & lotName)
+                                    // Panggil validation di backend secara real-time dengan fallback productName
                                     const res = await this.orm.call(
                                         "pos.session",
                                         "check_lot_validation",
-                                        [productId, lotName]
+                                        [productId, lotName, productName]
                                     );
                                     
                                     if (res && res.status !== 'ok') {

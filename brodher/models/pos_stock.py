@@ -18,7 +18,7 @@ class PosSession(models.Model):
         return params
 
     @api.model
-    def check_lot_validation(self, product_id, lot_name):
+    def check_lot_validation(self, product_id, lot_name, product_name=""):
         """
         Mengecek apakah serial number / lot untuk produk tertentu 
         terdaftar dan tersedia di lokasi POS session yang sedang aktif.
@@ -38,15 +38,33 @@ class PosSession(models.Model):
             
         config = session.config_id
         pos_location = config.picking_type_id.default_location_src_id
-        product = self.env['product.product'].browse(product_id)
         
+        # Fallback pencarian produk berdasarkan product_id atau product_name
+        product = None
+        if product_id:
+            product = self.env['product.product'].browse(product_id)
+        if (not product or not product.exists()) and product_name:
+            product = self.env['product.product'].search([
+                '|', ('name', '=', product_name), ('display_name', '=', product_name)
+            ], limit=1)
+            
+        if not product:
+            return {'status': 'error', 'message': f"Produk '{product_name}' tidak ditemukan."}
+            
         # 1. Cari Lot berdasarkan nama dan produk
         lot = self.env['stock.lot'].search([
             ('name', '=', lot_name),
-            ('product_id', '=', product_id)
+            ('product_id', '=', product.id)
         ], limit=1)
         
+        # Pengecekan silang jika lot terdaftar di produk lain
         if not lot:
+            other_lot = self.env['stock.lot'].search([('name', '=', lot_name)], limit=1)
+            if other_lot:
+                return {
+                    'status': 'invalid',
+                    'message': f"Serial Number '{lot_name}' terdaftar untuk produk '{other_lot.product_id.display_name}', bukan untuk '{product.display_name}'!"
+                }
             return {
                 'status': 'invalid', 
                 'message': f"Serial Number '{lot_name}' TIDAK TERDAFTAR untuk produk '{product.display_name}'. Mohon gunakan QR Code yang valid."
@@ -88,8 +106,8 @@ class PosOrder(models.Model):
                             ('product_id', '=', line.product_id.id)
                         ], limit=1)
                         
-                        # PERKETAT: Jika produk adalah SN, maka Lot WAJIB valid dan ada di lokasi POS
-                        if line.product_id.tracking == 'serial':
+                        # PERKETAT: Jika produk adalah SN atau Lot, maka Lot WAJIB valid dan ada di lokasi POS
+                        if line.product_id.tracking in ('serial', 'lot'):
                             if not lot:
                                 raise ValidationError(_(
                                     "Serial Number '%s' tidak terdaftar untuk produk '%s'. "
