@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Scheduled action: Re-enforce currency rounding daily.
+        noupdate="1" prevents overwriting admin's manual interval changes.
+        The action itself is enforced at ORM level; this is a safety net.
+    -->
+    <record id="ir_cron_enforce_currency_rounding" model="ir.cron">
+        <field name="name">Currency Decimal Fix: Re-enforce Rounding</field>
+        <field name="model_id" ref="base.model_res_currency"/>
+        <field name="state">code</field>
+        <field name="code">env['res.currency'].sudo()._enforce_all_rounding()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+        <field name="priority">100</field>
+    </record>
+</odoo>

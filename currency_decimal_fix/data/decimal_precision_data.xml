@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+    <!--
+        Enforce decimal precision via a direct model method call.
+        This avoids referencing external XML IDs that may not exist yet
+        (e.g. base.decimal_account requires `account` to be installed first).
+        The method does a safe SQL UPDATE that only affects rows that already exist.
+    -->
+    <function model="decimal.precision" name="_enforce_currency_precision_all"/>
+</odoo>

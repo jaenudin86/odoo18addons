@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Override the res.currency form view to:
+        1. Make `rounding` field read-only (users cannot change it manually)
+        2. Add an informational note explaining the mandatory policy
+    -->
+    <record id="view_currency_form_fix_rounding" model="ir.ui.view">
+        <field name="name">res.currency.form.fix.rounding</field>
+        <field name="model">res.currency</field>
+        <field name="inherit_id" ref="base.view_currency_form"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+
+            <!-- Make rounding field read-only -->
+            <xpath expr="//field[@name='rounding']" position="attributes">
+                <attribute name="readonly">1</attribute>
+                <attribute name="help">
+                    Rounding is enforced by the system:
+                    IDR = 0.01 (2 decimal places),
+                    All other currencies = 0.001 (3 decimal places).
+                    This value cannot be changed manually.
+                </attribute>
+            </xpath>
+
+            <!-- Add a banner/note below the rounding field -->
+            <xpath expr="//field[@name='rounding']" position="after">
+                <div class="alert alert-info" style="margin-top:4px; margin-bottom:4px; font-size:0.85em;">
+                    <i class="fa fa-info-circle"/> 
+                    <strong>Mandatory Policy:</strong>
+                    Decimal precision is managed automatically.
+                    IDR uses <strong>2 decimals</strong>;
+                    all other currencies use <strong>3 decimals</strong>.
+                </div>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!--
+        Override the decimal.precision list view to show currency-related
+        precisions as read-only.
+    -->
+    <record id="view_decimal_precision_form_fix" model="ir.ui.view">
+        <field name="name">decimal.precision.form.fix</field>
+        <field name="model">decimal.precision</field>
+        <field name="inherit_id" ref="base.view_decimal_precision_form"/>
+        <field name="priority">100</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='digits']" position="attributes">
+                <attribute name="readonly">name in ('Account', 'Currency', 'Payment Terms', 'Product Price')</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

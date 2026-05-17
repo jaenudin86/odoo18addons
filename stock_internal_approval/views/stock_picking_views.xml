@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Refuse Wizard View
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_stock_picking_refuse_wizard_form" model="ir.ui.view">
+        <field name="name">stock.picking.refuse.wizard.form</field>
+        <field name="model">stock.picking.refuse.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Refuse Transfer">
+                <sheet>
+                    <group>
+                        <field name="picking_ids" widget="many2many_tags" readonly="1"/>
+                        <field name="refused_reason"
+                               placeholder="Provide a reason for refusing this transfer…"
+                               required="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_refuse"
+                            string="Refuse Transfer"
+                            type="object"
+                            class="btn-danger"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Inherit stock.picking form – add approval status bar + buttons
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_picking_form_approval" model="ir.ui.view">
+        <field name="name">stock.picking.form.approval</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+
+            <!-- 1. Approval status bar injected into the existing header -->
+            <xpath expr="//header/button[@name='button_validate']" position="before">
+
+                <!-- Approval action buttons (visible only when approval required) -->
+                <button
+                    name="action_approve_transfer"
+                    string="Approve"
+                    type="object"
+                    class="btn-success"
+                    groups="stock_internal_approval.group_internal_transfer_approver"
+                    attrs="{
+                        'invisible': [
+                            '|',
+                            ('approval_required', '=', False),
+                            ('approval_state', '!=', 'pending')
+                        ]
+                    }"
+                    confirm="Are you sure you want to approve this internal transfer?"
+                />
+
+                <button
+                    name="action_refuse_transfer"
+                    string="Refuse"
+                    type="object"
+                    class="btn-danger"
+                    groups="stock_internal_approval.group_internal_transfer_approver"
+                    attrs="{
+                        'invisible': [
+                            '|',
+                            ('approval_required', '=', False),
+                            ('approval_state', '!=', 'pending')
+                        ]
+                    }"
+                />
+
+                <button
+                    name="action_request_approval"
+                    string="Re-submit for Approval"
+                    type="object"
+                    class="btn-warning"
+                    attrs="{
+                        'invisible': [
+                            '|',
+                            ('approval_required', '=', False),
+                            ('approval_state', '!=', 'refused')
+                        ]
+                    }"
+                />
+
+            </xpath>
+
+            <!-- 2. Override Validate button to be disabled when pending approval -->
+            <xpath expr="//header/button[@name='button_validate']" position="attributes">
+                <attribute name="attrs">{
+                    "invisible": [("state", "in", ["done", "cancel"])],
+                    "string": "Validate"
+                }</attribute>
+            </xpath>
+
+            <!-- 3. Approval status badge in the statusbar -->
+            <xpath expr="//field[@name='state'][@widget='statusbar']" position="after">
+                <field
+                    name="approval_state"
+                    widget="statusbar"
+                    statusbar_visible="pending,approved,refused"
+                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                />
+            </xpath>
+
+            <!-- 4. Approval info block inside the form -->
+            <xpath expr="//sheet//group[1]" position="after">
+                <group
+                    string="Approval Information"
+                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                    name="approval_info_group"
+                >
+                    <group>
+                        <field name="approval_required" invisible="1"/>
+                        <field name="approval_state" readonly="1"/>
+                        <field
+                            name="approved_by"
+                            readonly="1"
+                            attrs="{'invisible': [('approved_by', '=', False)]}"
+                        />
+                        <field
+                            name="approved_date"
+                            readonly="1"
+                            attrs="{'invisible': [('approved_date', '=', False)]}"
+                        />
+                        <field
+                            name="refused_by"
+                            readonly="1"
+                            attrs="{'invisible': [('refused_by', '=', False)]}"
+                        />
+                        <field
+                            name="refused_reason"
+                            readonly="1"
+                            attrs="{'invisible': [('refused_reason', '=', False)]}"
+                        />
+                    </group>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Inherit stock.picking list view – add approval_state column
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_picking_list_approval" model="ir.ui.view">
+        <field name="name">stock.picking.list.approval</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.vpicktree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='state']" position="after">
+                <field
+                    name="approval_state"
+                    optional="show"
+                    string="Approval"
+                    decoration-warning="approval_state == 'pending'"
+                    decoration-success="approval_state == 'approved'"
+                    decoration-danger="approval_state == 'refused'"
+                    decoration-muted="approval_state == 'not_required'"
+                    widget="badge"
+                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                />
+                <field name="approval_required" column_invisible="1"/>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

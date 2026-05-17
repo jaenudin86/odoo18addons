@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="0">
+        <!--
+            These server actions keep the res.users boolean fields
+            is_internal_transfer_creator / is_internal_transfer_approver
+            in sync with the security groups.
+
+            Odoo 18 supports implied_group on fields for this pattern;
+            we use the standard groups= attribute approach on the view
+            instead and keep the boolean as a convenience computed flag.
+        -->
+    </data>
+</odoo>

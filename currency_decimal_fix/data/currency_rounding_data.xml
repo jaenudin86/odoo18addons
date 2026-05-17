@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="0">
+    <!--
+        Enforce mandatory rounding on common currencies shipped with Odoo.
+        noupdate="0" ensures these are RE-APPLIED every time the module is updated.
+
+        Policy:
+          - IDR  = 0.01   (2 decimal places)
+          - All others = 0.001 (3 decimal places)
+
+        Note: The Python ORM layer (res_currency.py) enforces this for ALL currencies
+        including ones not listed here. This XML handles the most common ones
+        declaratively and ensures the DB is correct from the start.
+    -->
+
+    <!-- ── IDR: 2 decimal places ─────────────────────────────────────────── -->
+    <record id="base.IDR" model="res.currency">
+        <field name="rounding">0.01</field>
+        <field name="decimal_places">2</field>
+    </record>
+
+    <!-- ── Major currencies: 3 decimal places ────────────────────────────── -->
+    <record id="base.USD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.EUR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.GBP" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.SGD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.MYR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.AUD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.CAD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.JPY" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.CNY" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.HKD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.CHF" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.THB" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.PHP" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.VND" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.KRW" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.INR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.SAR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.AED" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.NZD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.BRL" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.ZAR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.MXN" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.DKK" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.SEK" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.NOK" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.PLN" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.TRY" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.RUB" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.PKR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.BDT" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.QAR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.KWD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.OMR" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+    <record id="base.BHD" model="res.currency">
+        <field name="rounding">0.001</field>
+        <field name="decimal_places">3</field>
+    </record>
+
+</odoo>

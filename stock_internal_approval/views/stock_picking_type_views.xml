@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════════════
+         Inherit the stock.picking.type form view to add the approval
+         checkbox. It is shown only when code == 'internal'.
+    ══════════════════════════════════════════════════════════════════ -->
+    <record id="view_picking_type_form_approval" model="ir.ui.view">
+        <field name="name">stock.picking.type.form.approval</field>
+        <field name="model">stock.picking.type</field>
+        <field name="inherit_id" ref="stock.view_picking_type_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Insert after the "Reservation Method" group or
+                 at the end of the first "page" in the notebook -->
+            <xpath expr="//field[@name='reservation_method']" position="after">
+                <field
+                    name="require_internal_approval"
+                    string="Require Approval for Internal Transfer"
+                    widget="boolean_toggle"
+                    attrs="{'invisible': [('code', '!=', 'internal')]}"
+                    help="Enable approval workflow for internal transfers of this operation type."
+                />
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>
