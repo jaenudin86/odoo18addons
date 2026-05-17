@@ -2,6 +2,22 @@
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError
 
+class IrRule(models.Model):
+    _inherit = 'ir.rule'
+
+    @api.model
+    def _compute_domain(self, model_name, mode='read'):
+        # Jalankan penyembuhan otomatis database pada evaluasi rule pertama kali
+        try:
+            self.env.cr.execute("""
+                UPDATE ir_rule 
+                SET domain_force = '[]' 
+                WHERE domain_force = 'false' OR domain_force = 'False';
+            """)
+        except Exception:
+            pass
+        return super(IrRule, self)._compute_domain(model_name, mode)
+
 class PosSession(models.Model):
     _inherit = 'pos.session'
 
