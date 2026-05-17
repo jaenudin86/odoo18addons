@@ -82,7 +82,7 @@
             <field name="domain_force">['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]</field>
             
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
-            <field name="perm_read" eval="True"/>
+            <field name="perm_read" eval="False"/>
             <field name="perm_write" eval="False"/>
             <field name="perm_create" eval="False"/>
             <field name="perm_unlink" eval="False"/>

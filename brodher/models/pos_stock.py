@@ -17,7 +17,8 @@ class PosSession(models.Model):
         rule_location = self.env.ref('pos_warehouse_access.stock_location_user_warehouse_rule', raise_if_not_found=False)
         if rule_location:
             rule_location.sudo().write({
-                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]"
+                'domain_force': "['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]",
+                'perm_read': False,  # Izinkan membaca nama lokasi untuk mencegah AccessError saat transfer barang
             })
             
         # 2. Update rule stock_quant
