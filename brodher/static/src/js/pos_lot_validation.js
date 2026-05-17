@@ -3,11 +3,11 @@
 import { patch } from "@web/core/utils/patch";
 import { EditListPopup } from "@point_of_sale/app/store/select_lot_popup/select_lot_popup";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
-import { Orderline } from "@point_of_sale/app/store/models";
+import { PosOrderline } from "@point_of_sale/app/models/pos_order_line";
 import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V8 - WITH QTY BLOCK");
+console.log("POS LOT VALIDATION LOADED V9 - FIXED ORDERLINE IMPORT");
 
 // 1. Patch EditListPopup to perform real-time backend validation on Lot/Serial Numbers manually entered
 patch(EditListPopup.prototype, {
@@ -98,8 +98,8 @@ patch(PosStore.prototype, {
     }
 });
 
-// 3. Patch Orderline to prevent manual quantity modification for Serial-tracked products
-patch(Orderline.prototype, {
+// 3. Patch PosOrderline to prevent manual quantity modification for Serial-tracked products
+patch(PosOrderline.prototype, {
     set_quantity(quantity, keep_price) {
         const product = this.product || (this.get_product ? this.get_product() : null);
         
