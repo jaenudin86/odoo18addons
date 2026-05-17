@@ -650,8 +650,11 @@ class StockPicking(models.Model):
         
         _logger.info(f'[VALIDATE] All checks passed, checking for incoming confirmation')
         
-        # Confirmation for Incoming Shipments (Penerimaan Barang)
-        if picking.picking_type_code == 'incoming' and not self.env.context.get('skip_incoming_confirmation'):
+        # Confirmation for Incoming Shipments & Internal Transfers
+        if picking.picking_type_code in ('incoming', 'internal') and not self.env.context.get('skip_incoming_confirmation'):
+            msg = 'Apakah Anda yakin ingin memvalidasi penerimaan barang ini?'
+            if picking.picking_type_code == 'internal':
+                msg = 'Apakah Anda yakin ingin memvalidasi internal transfer ini?'
             return {
                 'name': _('Konfirmasi Validasi'),
                 'type': 'ir.actions.act_window',
@@ -660,7 +663,7 @@ class StockPicking(models.Model):
                 'target': 'new',
                 'context': {
                     'default_picking_id': picking.id,
-                    'default_message': 'Apakah Anda yakin ingin memvalidasi penerimaan barang ini?',
+                    'default_message': msg,
                 }
             }
 
