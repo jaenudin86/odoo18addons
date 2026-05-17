@@ -18,7 +18,7 @@
                     name="require_internal_approval"
                     string="Require Approval for Internal Transfer"
                     widget="boolean_toggle"
-                    attrs="{'invisible': [('code', '!=', 'internal')]}"
+                    invisible="code != 'internal'"
                     help="Enable approval workflow for internal transfers of this operation type."
                 />
             </xpath>

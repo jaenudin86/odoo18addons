@@ -13,8 +13,8 @@
                     <group>
                         <field name="picking_ids" widget="many2many_tags" readonly="1"/>
                         <field name="refused_reason"
-                               placeholder="Provide a reason for refusing this transfer…"
-                               required="1"/>
+                                placeholder="Provide a reason for refusing this transfer…"
+                                required="1"/>
                     </group>
                 </sheet>
                 <footer>
@@ -39,7 +39,7 @@
         <field name="inherit_id" ref="stock.view_picking_form"/>
         <field name="arch" type="xml">
 
-            <!-- 1. Approval status bar injected into the existing header -->
+            <!-- 1. Approval action buttons (visible only when approval required) -->
             <xpath expr="//header/button[@name='button_validate']" position="before">
 
                 <!-- Approval action buttons (visible only when approval required) -->
@@ -49,13 +49,7 @@
                     type="object"
                     class="btn-success"
                     groups="stock_internal_approval.group_internal_transfer_approver"
-                    attrs="{
-                        'invisible': [
-                            '|',
-                            ('approval_required', '=', False),
-                            ('approval_state', '!=', 'pending')
-                        ]
-                    }"
+                    invisible="not approval_required or approval_state != 'pending'"
                     confirm="Are you sure you want to approve this internal transfer?"
                 />
 
@@ -65,13 +59,7 @@
                     type="object"
                     class="btn-danger"
                     groups="stock_internal_approval.group_internal_transfer_approver"
-                    attrs="{
-                        'invisible': [
-                            '|',
-                            ('approval_required', '=', False),
-                            ('approval_state', '!=', 'pending')
-                        ]
-                    }"
+                    invisible="not approval_required or approval_state != 'pending'"
                 />
 
                 <button
@@ -79,23 +67,15 @@
                     string="Re-submit for Approval"
                     type="object"
                     class="btn-warning"
-                    attrs="{
-                        'invisible': [
-                            '|',
-                            ('approval_required', '=', False),
-                            ('approval_state', '!=', 'refused')
-                        ]
-                    }"
+                    invisible="not approval_required or approval_state != 'refused'"
                 />
 
             </xpath>
 
             <!-- 2. Override Validate button to be disabled when pending approval -->
             <xpath expr="//header/button[@name='button_validate']" position="attributes">
-                <attribute name="attrs">{
-                    "invisible": [("state", "in", ["done", "cancel"])],
-                    "string": "Validate"
-                }</attribute>
+                <attribute name="invisible">state in ('done', 'cancel')</attribute>
+                <attribute name="string">Validate</attribute>
             </xpath>
 
             <!-- 3. Approval status badge in the statusbar -->
@@ -104,7 +84,7 @@
                     name="approval_state"
                     widget="statusbar"
                     statusbar_visible="pending,approved,refused"
-                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                    invisible="not approval_required"
                 />
             </xpath>
 
@@ -112,7 +92,7 @@
             <xpath expr="//sheet//group[1]" position="after">
                 <group
                     string="Approval Information"
-                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                    invisible="not approval_required"
                     name="approval_info_group"
                 >
                     <group>
@@ -121,22 +101,22 @@
                         <field
                             name="approved_by"
                             readonly="1"
-                            attrs="{'invisible': [('approved_by', '=', False)]}"
+                            invisible="not approved_by"
                         />
                         <field
                             name="approved_date"
                             readonly="1"
-                            attrs="{'invisible': [('approved_date', '=', False)]}"
+                            invisible="not approved_date"
                         />
                         <field
                             name="refused_by"
                             readonly="1"
-                            attrs="{'invisible': [('refused_by', '=', False)]}"
+                            invisible="not refused_by"
                         />
                         <field
                             name="refused_reason"
                             readonly="1"
-                            attrs="{'invisible': [('refused_reason', '=', False)]}"
+                            invisible="not refused_reason"
                         />
                     </group>
                 </group>
@@ -163,7 +143,7 @@
                     decoration-danger="approval_state == 'refused'"
                     decoration-muted="approval_state == 'not_required'"
                     widget="badge"
-                    attrs="{'invisible': [('approval_required', '=', False)]}"
+                    invisible="not approval_required"
                 />
                 <field name="approval_required" column_invisible="1"/>
             </xpath>
