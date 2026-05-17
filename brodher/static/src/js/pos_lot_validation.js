@@ -1,48 +1,76 @@
 /** @odoo-module **/
 
 import { patch } from "@web/core/utils/patch";
+import { EditListPopup } from "@point_of_sale/app/store/select_lot_popup/select_lot_popup";
 import { PosStore } from "@point_of_sale/app/store/pos_store";
+import { useService } from "@web/core/utils/hooks";
 import { _t } from "@web/core/l10n/translation";
 
-console.log("POS LOT VALIDATION LOADED V3");
-window.alert("VALIDASI AKTIF V3");
+console.log("POS LOT VALIDATION LOADED V4");
 
+// 1. Patch EditListPopup to perform real-time backend validation on Lot/Serial Numbers manually entered
+patch(EditListPopup.prototype, {
+    setup() {
+        super.setup(...arguments);
+        this.pos = useService("pos");
+        this.orm = useService("orm");
+    },
+
+    async confirm() {
+        // Cek apakah ini popup Lot/Serial
+        const isLotPopup = this.props.title && (
+            this.props.title.includes("Serial") || 
+            this.props.title.includes("Lot") || 
+            this.props.title.includes("Nomor")
+        );
+
+        if (isLotPopup) {
+            const lotNames = this.state.array.map(item => (item.text || "").trim()).filter(Boolean);
+            if (lotNames.length > 0) {
+                const currentOrder = this.pos.get_order();
+                if (currentOrder) {
+                    const currentLine = currentOrder.get_selected_orderline();
+                    if (currentLine) {
+                        const product = currentLine.product;
+                        const productId = product ? product.id : null;
+                        
+                        if (productId) {
+                            try {
+                                for (const lotName of lotNames) {
+                                    // Panggil validation di backend secara real-time
+                                    const res = await this.orm.call(
+                                        "pos.session",
+                                        "check_lot_validation",
+                                        [this.pos.pos_session.id, productId, lotName, this.pos.config.id]
+                                    );
+                                    
+                                    if (res && res.status !== 'ok') {
+                                        // Tampilkan alert error dan batalkan konfirmasi (popup tetap terbuka)
+                                        window.alert(res.message);
+                                        return;
+                                    }
+                                }
+                            } catch (err) {
+                                console.error("Error validating lot:", err);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Jika semua lolos validasi, panggil standard confirm
+        return super.confirm(...arguments);
+    }
+});
+
+// 2. Patch PosStore to handle scanned barcodes
 patch(PosStore.prototype, {
-    // 1. Validasi saat SCAN Barcode
     async scan_barcode(code) {
         if (code && code.includes("#")) {
             const parts = code.split("#");
             code = parts[0];
         }
-        if (code && code.length > 5) {
-            const foundLot = this.models['stock.lot'].find(l => l.name === code);
-            const foundProduct = this.models['product.product'].find(p => p.barcode === code);
-            
-            if (!foundLot && !foundProduct) {
-                window.alert(_t(`Kode '${code}' TIDAK SAH! Mohon gunakan QR Code yang terdaftar.`));
-                return false;
-            }
-        }
         return super.scan_barcode(code);
-    },
-
-    // 2. Validasi saat klik OK di pop-up mana pun (otomatis atau manual)
-    async editPackLotLines(line) {
-        const result = await super.editPackLotLines(...arguments);
-        if (result) {
-            const lotLines = line.pack_lot_lines || [];
-            for (const lotLine of lotLines) {
-                const lotName = (lotLine.lot_name || "").trim();
-                if (lotName) {
-                    const foundLot = this.models['stock.lot'].find(l => l.name === lotName);
-                    if (!foundLot) {
-                        window.alert(_t(`Serial Number '${lotName}' TIDAK DITEMUKAN! Sistem akan menghapusnya.`));
-                        line.pack_lot_lines = []; // Kosongkan
-                        return this.editPackLotLines(line); // Buka kembali pop-up
-                    }
-                }
-            }
-        }
-        return result;
     }
 });

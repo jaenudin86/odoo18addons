@@ -17,6 +17,46 @@ class PosSession(models.Model):
         })
         return params
 
+    @api.model
+    def check_lot_validation(self, session_id, product_id, lot_name, config_id):
+        """
+        Mengecek apakah serial number / lot untuk produk tertentu 
+        terdaftar dan tersedia di lokasi POS config.
+        """
+        config = self.env['pos.config'].browse(config_id)
+        if not config:
+            return {'status': 'error', 'message': 'POS Configuration not found.'}
+            
+        pos_location = config.picking_type_id.default_location_src_id
+        product = self.env['product.product'].browse(product_id)
+        
+        # 1. Cari Lot berdasarkan nama dan produk
+        lot = self.env['stock.lot'].search([
+            ('name', '=', lot_name),
+            ('product_id', '=', product_id)
+        ], limit=1)
+        
+        if not lot:
+            return {
+                'status': 'invalid', 
+                'message': f"Serial Number '{lot_name}' TIDAK TERDAFTAR untuk produk '{product.display_name}'. Mohon gunakan QR Code yang valid."
+            }
+            
+        # 2. Cek stok di lokasi POS (termasuk sub-lokasi)
+        quant = self.env['stock.quant'].search([
+            ('lot_id', '=', lot.id),
+            ('location_id', 'child_of', pos_location.id),
+            ('quantity', '>', 0)
+        ], limit=1)
+        
+        if not quant:
+            return {
+                'status': 'no_stock',
+                'message': f"Serial Number '{lot_name}' ditemukan, tapi TIDAK ADA DI GUDANG {pos_location.complete_name}. Pastikan barang tersebut sudah dimutasi ke cabang ini."
+            }
+            
+        return {'status': 'ok'}
+
 class PosOrder(models.Model):
     _inherit = 'pos.order'
 
