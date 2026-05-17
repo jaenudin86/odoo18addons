@@ -9,10 +9,10 @@ class PosSession(models.Model):
         super().init()
         # Safe SQL update to bypass Odoo registry locks and force-apply rules during module upgrade
         self.env.cr.execute("""
-            -- 1. stock_location rule (perm_read = False)
+            -- 1. stock_location rule (domain_force = [(1, '=', 1)] to allow reading all locations)
             UPDATE ir_rule 
-            SET domain_force = $$['|', ('warehouse_id', '=', False), ('warehouse_id.user_access_ids', 'in', [user.id])]$$,
-                perm_read = false
+            SET domain_force = '[(1, '=', 1)]',
+                perm_read = true
             WHERE id = (
                 SELECT res_id FROM ir_model_data 
                 WHERE name = 'stock_location_user_warehouse_rule' AND module = 'pos_warehouse_access'
