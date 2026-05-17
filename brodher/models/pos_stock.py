@@ -18,15 +18,25 @@ class PosSession(models.Model):
         return params
 
     @api.model
-    def check_lot_validation(self, session_id, product_id, lot_name, config_id):
+    def check_lot_validation(self, product_id, lot_name):
         """
         Mengecek apakah serial number / lot untuk produk tertentu 
-        terdaftar dan tersedia di lokasi POS config.
+        terdaftar dan tersedia di lokasi POS session yang sedang aktif.
         """
-        config = self.env['pos.config'].browse(config_id)
-        if not config:
-            return {'status': 'error', 'message': 'POS Configuration not found.'}
+        # Cari session yang sedang aktif untuk user saat ini
+        session = self.env['pos.session'].search([
+            ('state', '=', 'opened'),
+            ('user_id', '=', self.env.user.id)
+        ], limit=1)
+        
+        if not session:
+            # Fallback jika tidak ada session spesifik untuk user
+            session = self.env['pos.session'].search([('state', '=', 'opened')], limit=1)
             
+        if not session:
+            return {'status': 'error', 'message': 'Tidak ada POS Session yang aktif.'}
+            
+        config = session.config_id
         pos_location = config.picking_type_id.default_location_src_id
         product = self.env['product.product'].browse(product_id)
         
