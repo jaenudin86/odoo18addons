@@ -9,6 +9,11 @@ class PosSession(models.Model):
         super().init()
         # Safe SQL update to bypass Odoo registry locks and force-apply rules during module upgrade
         self.env.cr.execute("""
+            -- 0. REPAIR: Perbaiki jika ada record rule yang terlanjur corrupt berisi string 'false' atau 'False' di database
+            UPDATE ir_rule 
+            SET domain_force = '[]' 
+            WHERE domain_force = 'false' OR domain_force = 'False';
+
             -- 1. stock_location rule (domain_force = [(1, '=', 1)] to allow reading all locations)
             UPDATE ir_rule 
             SET domain_force = '[(1, '=', 1)]',
